@@ -1,5 +1,3 @@
-// -*- mode: Bluespec; -*-
-
 module rock_paper_scissors {
 
     type Player = PLAYER1 | PLAYER2
@@ -15,6 +13,7 @@ module rock_paper_scissors {
         (m1 == Paper and m2 == Rock),
         (m1 == Scissors and m2 == Paper),
     }
+
     /// Initialize the game with both players in 'Init' state and game status as 'Started'
     action init = all {
         p1State' = Init,
@@ -22,34 +21,40 @@ module rock_paper_scissors {
         status' = Started
     }
 
-    /// Randomly decide moves for both players from the set of possible moves
+    /// Randomly decide moves for both players; enabled only when game is in 'Started' state
     action decide_moves = {
-        nondet move1 = Set(Rock, Paper, Scissors).oneOf() // Non-deterministically pick a move for player 1
-        nondet move2 = Set(Rock, Paper, Scissors).oneOf() // Non-deterministically pick a move for player 2
+        nondet move1 = Set(Rock, Paper, Scissors).oneOf()
+        nondet move2 = Set(Rock, Paper, Scissors).oneOf()
         all {
+            status == Started,
             p1State' = move1,
             p2State' = move2,
             status' = Pending,
         }
     }
 
-    /// Determine the winner based on the current moves of both players
-    action find_winner = any {
-        if (beats(p1State, p2State)) status' = Winner(PLAYER1) // Player 1 wins if their move beats player 2's move
-        else if (beats(p2State, p1State)) status' = Winner(PLAYER2) // Player 2 wins if their move beats player 1's move
-        else status' = Draw // It's a draw if both players chose the same move
-    }
-
-    action step = if (status == Started) {
-        decide_moves
-    } else if (status == Pending) all {
+    /// Determine the winner based on current moves; enabled only when game is 'Pending'
+    action find_winner = all {
+        status == Pending,
         p1State' = p1State,
         p2State' = p2State,
-        find_winner,
-    }  else all {
+        if (beats(p1State, p2State)) status' = Winner(PLAYER1)
+        else if (beats(p2State, p1State)) status' = Winner(PLAYER2)
+        else status' = Draw,
+    }
+
+    /// Reset to a new round; enabled once a result (Draw or Winner) has been reached
+    action restart = all {
+        not(status == Started or status == Pending),
         p1State' = Init,
         p2State' = Init,
-        status' = Started
+        status' = Started,
+    }
+
+    action step = any {
+        decide_moves,
+        find_winner,
+        restart,
     }
 
     /// Invariant to check if the game status matches the expected winner

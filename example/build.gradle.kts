@@ -17,13 +17,11 @@ kotlin {
 dependencies {
     implementation(project(":core"))
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines)
 
     kspTest(project(":ksp"))
 
     testImplementation(project(":core"))
     testImplementation(libs.kotlinx.serialization.json)
-    testImplementation(libs.kotlinx.coroutines)
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

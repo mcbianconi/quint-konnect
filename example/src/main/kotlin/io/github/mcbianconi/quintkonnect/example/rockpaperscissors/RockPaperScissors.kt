@@ -1,55 +1,44 @@
 package io.github.mcbianconi.quintkonnect.example.rockpaperscissors
 
-import kotlinx.coroutines.delay
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
+enum class Move { INIT, ROCK, PAPER, SCISSORS }
+enum class Player { PLAYER1, PLAYER2 }
 
+sealed class GameStatus {
+    object Started : GameStatus()
+    object Pending : GameStatus()
+    object Draw : GameStatus()
+    data class Winner(val player: Player) : GameStatus()
+}
 
-enum class Move {
-    ROCK, PAPER, SCISSORS;
+class RockPaperScissors {
+    var p1Move: Move = Move.INIT
+    var p2Move: Move = Move.INIT
+    var status: GameStatus = GameStatus.Started
 
-    fun beats(other: Move): Boolean {
-        return when (this) {
-            ROCK -> other == SCISSORS
-            PAPER -> other == ROCK
-            SCISSORS -> other == PAPER
+    fun init() {
+        p1Move = Move.INIT
+        p2Move = Move.INIT
+        status = GameStatus.Started
+    }
+
+    fun decideMoves(move1: Move, move2: Move) {
+        p1Move = move1
+        p2Move = move2
+        status = GameStatus.Pending
+    }
+
+    fun findWinner() {
+        status = when {
+            beats(p1Move, p2Move) -> GameStatus.Winner(Player.PLAYER1)
+            beats(p2Move, p1Move) -> GameStatus.Winner(Player.PLAYER2)
+            else -> GameStatus.Draw
         }
     }
 
-}
-
-class Player(val name: String) {
-
-    var chosenMove: Move? = null
-
-    suspend fun pickMove(): Move {
-        delay(Random.nextLong(100, 500).milliseconds)
-        val move = Move.entries.random()
-        chosenMove = move
-        return move
+    private fun beats(m1: Move, m2: Move): Boolean = when {
+        m1 == Move.ROCK && m2 == Move.SCISSORS -> true
+        m1 == Move.PAPER && m2 == Move.ROCK -> true
+        m1 == Move.SCISSORS && m2 == Move.PAPER -> true
+        else -> false
     }
-
-    override fun toString(): String {
-        return name
-    }
-}
-
-class RockPaperScissors
-    (
-    val player1: Player = Player("P1"),
-    val player2: Player = Player("P2")
-) {
-
-    lateinit var winner: Player
-
-    suspend fun pickMoves() {
-
-        val player1Move = player1.pickMove()
-        val player2Move = player2.pickMove()
-
-        winner = if (player1Move.beats(player2Move)) player1 else player2
-    }
-
-
-
 }
