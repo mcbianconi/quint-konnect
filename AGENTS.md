@@ -27,7 +27,7 @@ comment on that line in `.github/workflows/ci.yml`).
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
-./gradlew :itf:test                  # Run ITF parsing/normalization unit tests
+./gradlew :itf:test                  # Run ITF parsing/decoding unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :ksp:test                  # Run KSP processor tests (kotlin-compile-testing + KSP2, no quint CLI required)
@@ -74,8 +74,9 @@ Five modules, in dependency order:
 
 - `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
   dependency, so it stays on a driver's compile classpath without pulling in `core`.
-- `itf` — ITF parsing and value normalization (`ItfValue`, `ItfTrace`/`parseTrace`,
-  `ItfValueSerializer`, `ItfValue.decode`). JSON normalization is internal to the module.
+- `itf` — ITF parsing and decoding (`ItfValue`, `ItfTrace`/`parseTrace`,
+  `ItfValueSerializer`, `ItfValue.decode`). `ItfValue.decode` runs an internal kotlinx
+  `Decoder` over the `ItfValue` tree.
 - `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`, behind the
   injectable `TraceSource`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`),
   state comparison (`State.kt`), and the replay loop (`ReplayRunner`, observed by a

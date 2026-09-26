@@ -152,8 +152,8 @@ and [the decision record](./docs/decisions/quint-test-needs-nondet-path.md).
 For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
 
 A `Map<List<Long>, V>` / `Map<R, V>` field and an `Option[T]` field (`T?` in Kotlin) all decode
-correctly, including when empty/`None`, through `ItfValue.decode`, `State`, or `NondetPicks.decode`
-— they pass the target type's `SerialDescriptor` into the normalizer automatically.
+correctly, including when empty/`None`, through `ItfValue.decode`, `State`, or `NondetPicks.decode`,
+which decode the ITF value directly against the target type.
 
 ## ITF (Informal Trace Format)
 
@@ -195,7 +195,7 @@ QUINT_SEED=0x1234 ./gradlew :example:test
 | Module | Description |
 |---|---|
 | `annotations` | Annotation declarations only. No runtime dependency. |
-| `itf` | ITF parsing and value normalization (`ItfValue`, `ItfTrace`). |
+| `itf` | ITF parsing and decoding into `@Serializable` types (`ItfValue`, `ItfTrace`). |
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
 | `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes. |
 | `example` | TicTacToe end-to-end example. |
@@ -212,7 +212,7 @@ See [`example/`](./example) for a complete TicTacToe example:
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
-./gradlew :itf:test                  # Run ITF parsing/normalization unit tests
+./gradlew :itf:test                  # Run ITF parsing/decoding unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
