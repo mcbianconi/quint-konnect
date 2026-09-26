@@ -25,4 +25,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+    val typesMd = layout.projectDirectory.file("../skills/quint-konnect/references/types.md")
+    systemProperty("quintKonnect.typesMdPath", typesMd.asFile.absolutePath)
+    // https://docs.gradle.org/current/userguide/incremental_build.html#sec:task_input_output_runtime_api
+    inputs.file(typesMd).withPathSensitivity(PathSensitivity.RELATIVE)
 }
