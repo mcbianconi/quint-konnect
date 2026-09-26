@@ -4,6 +4,8 @@ import io.github.mcbianconi.quintkonnect.itf.ItfTrace
 import io.github.mcbianconi.quintkonnect.itf.parseTrace
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 object TraceGenerator {
 
@@ -12,13 +14,19 @@ object TraceGenerator {
         try {
             val command = config.toCommand(tmpDir)
             val process = ProcessBuilder(command)
-                .redirectErrorStream(false)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .start()
 
-            val exitCode = process.waitFor()
+            var stderr = ""
+            val stderrReader = thread(isDaemon = true) { stderr = process.errorStream.bufferedReader().readText() }
 
-            if (exitCode != 0) {
-                val stderr = process.errorStream.bufferedReader().readText()
+            if (!process.waitFor(config.timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)) {
+                process.destroyForcibly()
+                error("Quint did not finish within ${config.timeout}: ${command.joinToString(" ")}")
+            }
+            stderrReader.join()
+
+            if (process.exitValue() != 0) {
                 error("Quint returned non-zero exit code.\n$stderr")
             }
 
