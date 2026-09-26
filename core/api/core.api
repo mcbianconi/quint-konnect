@@ -58,6 +58,7 @@ public final class io/github/mcbianconi/quintkonnect/Step {
 public abstract class io/github/mcbianconi/quintkonnect/TypedState : io/github/mcbianconi/quintkonnect/State {
 	public fun <init> (Lkotlinx/serialization/KSerializer;)V
 	public fun check (Lio/github/mcbianconi/quintkonnect/Driver;Lio/github/mcbianconi/itf/ItfValue;)V
+	public fun compareField (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Boolean;
 	public abstract fun extractFromDriver (Lio/github/mcbianconi/quintkonnect/Driver;)Ljava/lang/Object;
 }
 
