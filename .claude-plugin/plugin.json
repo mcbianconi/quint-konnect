@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "quint-konnect",
+  "description": "Wires quint-konnect model-based testing into a Kotlin/Gradle project, replaying Quint spec traces against a driver class.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Murillo Cesar Bianconi"
+  },
+  "homepage": "https://github.com/mcbianconi/quint-konnect",
+  "repository": "https://github.com/mcbianconi/quint-konnect",
+  "license": "Apache-2.0",
+  "keywords": ["quint", "model-based-testing", "kotlin", "gradle", "itf", "formal-verification"],
+  "skills": ["./skills/quint-konnect"]
+}

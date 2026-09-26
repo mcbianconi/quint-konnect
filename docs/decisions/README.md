@@ -16,3 +16,4 @@ comment next to the code it governs is easier to keep in sync than a separate fi
 - [quint test needs a nondet path](quint-test-needs-nondet-path.md) — `@QuintTest` replay requires the spec to model the action taken as a sum type and `nondetPath` to point at it
 - [Gradle plugin distribution](gradle-plugin-distribution.md) — `quint-konnect-gradle-plugin` publishes to Maven Central with its marker artifact, not the Gradle Plugin Portal
 - [Agent skill](agent-skill.md) — a user-facing skill at `skills/quint-konnect/`, separate from this repo's dev skills, defers spec authoring to quint-llm-kit
+- [Agent skill plugin packaging](agent-skill-plugin.md) — root-rooted `.claude-plugin/` (source `"./"`) so the skill doesn't move; `npx skills add` still surfaces the dev skills, plugin.json version pinned to the library version

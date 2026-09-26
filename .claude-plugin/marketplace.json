@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "quint-konnect",
+  "owner": {
+    "name": "Murillo Cesar Bianconi"
+  },
+  "description": "The quint-konnect agent skill: wire a Kotlin driver to a Quint spec for model-based testing.",
+  "plugins": [
+    {
+      "name": "quint-konnect",
+      "source": "./",
+      "description": "quint-konnect: model-based testing for Kotlin, replaying Quint spec traces against a driver class.",
+      "skills": ["./skills/quint-konnect"]
+    }
+  ]
+}
