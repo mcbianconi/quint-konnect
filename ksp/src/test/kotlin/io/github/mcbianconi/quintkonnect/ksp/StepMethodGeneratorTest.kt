@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+// MultiActionDriver below has no `override fun step`, so every test in this class also exercises
+// qk-vmya: Driver.step's default implementation reaching the generated `generatedStep` via
+// reflection, not just StepMethodGenerator's own codegen.
 class StepMethodGeneratorTest {
 
     private companion object {
@@ -37,8 +40,6 @@ class StepMethodGeneratorTest {
                 class MultiActionDriver : Driver {
                     var lastAction: String = ""
                     var lastArgs: List<Any?> = emptyList()
-
-                    override fun step(step: Step) = generatedStep(step)
 
                     @QuintAction("simple")
                     fun simple(x: Long, flag: Boolean) {

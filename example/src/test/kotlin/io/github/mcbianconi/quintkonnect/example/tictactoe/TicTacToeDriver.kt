@@ -2,7 +2,6 @@ package io.github.mcbianconi.quintkonnect.example.tictactoe
 
 import io.github.mcbianconi.quintkonnect.Driver
 import io.github.mcbianconi.quintkonnect.State
-import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.annotations.QuintAction
 import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 
@@ -12,8 +11,6 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 )
 class TicTacToeDriver : Driver {
     val game = TicTacToe()
-
-    override fun step(step: Step) = generatedStep(step)
 
     override fun quintState(): State<*> = TicTacToeState()
 

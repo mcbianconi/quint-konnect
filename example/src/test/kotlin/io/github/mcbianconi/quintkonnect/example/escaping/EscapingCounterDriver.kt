@@ -2,7 +2,6 @@ package io.github.mcbianconi.quintkonnect.example.escaping
 
 import io.github.mcbianconi.quintkonnect.Driver
 import io.github.mcbianconi.quintkonnect.State
-import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.annotations.QuintAction
 import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 
@@ -16,8 +15,6 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 )
 class EscapingCounterDriver : Driver {
     var count = 0L
-
-    override fun step(step: Step) = generatedStep(step)
 
     override fun quintState(): State<*> = EscapingCounterState()
 

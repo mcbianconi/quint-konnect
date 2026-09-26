@@ -84,7 +84,8 @@ Five modules, in dependency order:
   facade generated tests call, delegating to a fresh `ReplayRunner`.
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
   class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
-  (`ksp/generators/`).
+  (`ksp/generators/`). `Driver.step`'s default implementation (`core`) finds the generated
+  dispatcher by class name, so a driver doesn't need to override `step` itself.
 - `example` — end-to-end examples: TicTacToe, rock-paper-scissors, a buggy driver the
   tests expect to fail, a `@QuintTest` counter, and a fixture for escaped names.
 

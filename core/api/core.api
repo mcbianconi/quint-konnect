@@ -1,12 +1,13 @@
 public abstract interface class io/github/mcbianconi/quintkonnect/Driver {
 	public fun config ()Lio/github/mcbianconi/quintkonnect/DriverConfig;
 	public fun quintState ()Lio/github/mcbianconi/quintkonnect/State;
-	public abstract fun step (Lio/github/mcbianconi/quintkonnect/Step;)V
+	public fun step (Lio/github/mcbianconi/quintkonnect/Step;)V
 }
 
 public final class io/github/mcbianconi/quintkonnect/Driver$DefaultImpls {
 	public static fun config (Lio/github/mcbianconi/quintkonnect/Driver;)Lio/github/mcbianconi/quintkonnect/DriverConfig;
 	public static fun quintState (Lio/github/mcbianconi/quintkonnect/Driver;)Lio/github/mcbianconi/quintkonnect/State;
+	public static fun step (Lio/github/mcbianconi/quintkonnect/Driver;Lio/github/mcbianconi/quintkonnect/Step;)V
 }
 
 public final class io/github/mcbianconi/quintkonnect/DriverConfig {

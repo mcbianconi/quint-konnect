@@ -3,7 +3,6 @@ package io.github.mcbianconi.quintkonnect.example.quinttest
 import io.github.mcbianconi.quintkonnect.Driver
 import io.github.mcbianconi.quintkonnect.DriverConfig
 import io.github.mcbianconi.quintkonnect.State
-import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.annotations.QuintAction
 import io.github.mcbianconi.quintkonnect.annotations.QuintTest
 
@@ -14,8 +13,6 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintTest
 )
 class CounterDriver : Driver {
     var count = 0L
-
-    override fun step(step: Step) = generatedStep(step)
 
     override fun config(): DriverConfig = DriverConfig(nondetPath = listOf("lastAction"))
 

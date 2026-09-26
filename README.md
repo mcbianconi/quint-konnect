@@ -54,7 +54,6 @@ The driver is a class annotated with `@QuintRun` or `@QuintTest` and implements 
 // src/test/kotlin/
 @QuintRun(spec = "src/test/resources/my.qnt", maxSamples = 10)
 class MyDriver : Driver {
-    override fun step(step: Step) = generatedStep(step)
     override fun quintState(): State<*> = MyState()
 
     @QuintAction("init")
@@ -68,7 +67,7 @@ class MyDriver : Driver {
 }
 ```
 
-KSP generates `MyDriver.generatedStep(step)`, which dispatches to the right method based on `step.actionTaken`.
+KSP generates `MyDriver.generatedStep(step)`, which dispatches to the right method based on `step.actionTaken`. `Driver.step`'s default implementation finds it by class name, so you don't need to override `step` yourself.
 
 ### 3. Implement state checking (optional)
 
