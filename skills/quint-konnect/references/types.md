@@ -38,6 +38,11 @@ inside a map value or nested field. Reach for `@Contextual BigInteger` (never `B
 for a Quint `int` that can exceed `Long`'s range; Quint integers are never fractional. See
 `docs/decisions/itf-option-and-bigint.md`.
 
+`Map<List<Long>, V>` and `Map<R, V>` fields (the tuple-keyed and record-keyed map rows above)
+decode correctly when empty too, the same as `Option[T]`'s `None` case — `ItfValue.decode` reads
+the ITF value tree directly rather than going through an intermediate JSON representation, so an
+empty `{"#map": []}` doesn't need special-casing per key type.
+
 ## Nondet picks use the same table
 
 A `@QuintAction` method parameter decodes the same way: its Kotlin type follows this table, and

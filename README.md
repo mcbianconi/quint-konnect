@@ -210,26 +210,9 @@ and [the decision record](./docs/decisions/quint-test-needs-nondet-path.md).
 
 ## Representing Quint types in Kotlin
 
-| Quint type | Kotlin `@Serializable` type |
-|---|---|
-| `int` | `Long` |
-| `int` (larger than `Long`) | `@Contextual BigInteger` |
-| `bool` | `Boolean` |
-| `str` | `String` |
-| `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
-| `int -> V` map | `Map<Long, V>` |
-| `(int, int) -> V` map | `Map<List<Long>, V>` (not `Map<Pair<Long, Long>, V>`) |
-| record-keyed map | `Map<R, V>`, `R` a `@Serializable` data class |
-| `Set[T]` | `Set<T>` |
-| `Option[T]` | `T?` |
-| `type P = X \| O` sum type | `@Serializable @JsonClassDiscriminator("tag") sealed class` |
-| `type S = Foo(P) \| Bar` | sealed class with `data class Foo(val value: P)` and `object Bar` |
-
-For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
-
-A `Map<List<Long>, V>` / `Map<R, V>` field and an `Option[T]` field (`T?` in Kotlin) all decode
-correctly, including when empty/`None`, through `ItfValue.decode`, `State`, or `NondetPicks.decode`,
-which decode the ITF value directly against the target type.
+See [`skills/quint-konnect/references/types.md`](skills/quint-konnect/references/types.md) for
+the full Quint-to-Kotlin type table (state fields and `@QuintAction` nondet picks alike), covering
+sum types, tuples, maps, `Option[T]` and oversized integers.
 
 ## ITF (Informal Trace Format)
 

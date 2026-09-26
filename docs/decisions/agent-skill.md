@@ -18,10 +18,10 @@ sync with the API as Phase 3 (developer experience) lands, instead of writing it
 end against a frozen snapshot; publishing/distribution (a Claude Code marketplace entry,
 `npx skills`) is separate and waits for real Maven Central coordinates.
 
-**How to apply:** A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, or the
-`QUINT_SEED`/`QUINT_VERBOSE`/`QUINT_COLOR` env vars must update `skills/quint-konnect/` in the
-same change. `skills/quint-konnect/references/types.md` is meant to become the canonical copy
-of the Quint-to-Kotlin type table once qk-o00w makes README/CLAUDE.md link to it instead of
-carrying their own copies — don't let a third copy drift in the meantime. Packaging as a Claude
+**How to apply:** A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the
+Gradle plugin, or env vars/Gradle properties must update `skills/quint-konnect/` in the same
+change (the rule is also in CLAUDE.md and AGENTS.md). `skills/quint-konnect/references/types.md`
+is the only copy of the Quint-to-Kotlin type table; README and CLAUDE.md link to it and
+`TypesMdDocTest` decodes every row's example. Packaging as a Claude
 Code plugin/marketplace entry and replacing the `<VERSION>` placeholder with real coordinates
 are separate beads (qk-8o8s, qk-q6aq), not part of this decision.

@@ -132,7 +132,13 @@ generated test classes expose `@TestFactory fun traces(): List<DynamicTest>` bui
 
 ## Conventions & Patterns
 
-See `CLAUDE.md` for the Quint-to-Kotlin type mapping table and `docs/decisions/` for
-standing project decisions (license, platform support, ITF collection/Option/BigInt
-mapping, the `@QuintTest` nondet path requirement, `gradle-plugin`'s Maven-Central-only
-distribution).
+See `skills/quint-konnect/references/types.md` for the Quint-to-Kotlin type mapping table and
+`docs/decisions/` for standing project decisions (license, platform support, ITF
+collection/Option/BigInt mapping, the `@QuintTest` nondet path requirement, `gradle-plugin`'s
+Maven-Central-only distribution).
+
+## Keeping the agent skill in sync
+
+A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the Gradle plugin, or the
+`QUINT_SEED`/`QUINT_VERBOSE`/`QUINT_COLOR` env vars or Gradle properties must update
+`skills/quint-konnect/` in the same change.

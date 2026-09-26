@@ -7,25 +7,11 @@ instead (a code comment, an error message) rather than in a separate file.
 
 ## Representing Quint Types in Kotlin
 
-| Quint type | Kotlin `@Serializable` type |
-|------------|----------------------------|
-| `int` | `Long` |
-| `int` (larger than `Long`) | `BigInteger`, with `@Contextual` |
-| `bool` | `Boolean` |
-| `str` | `String` |
-| `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
-| `int -> V` map | `Map<Long, V>` |
-| `(int, int) -> V` map | `Map<List<Long>, V>` (not `Map<Pair<Long, Long>, V>`) |
-| record-keyed map | `Map<R, V>`, `R` a `@Serializable` data class |
-| `Set[T]` | `Set<T>` |
-| `Option[T]` | `T?` |
-| `type P = X \| O` sum type | `@Serializable @JsonClassDiscriminator("tag") sealed class` |
-| `type S = Foo(P) \| Bar` | `sealed class` with `data class Foo(val value: P)` and `object Bar` |
+See `skills/quint-konnect/references/types.md` for the Quint-to-Kotlin type table; it's the
+canonical copy, not duplicated here or in README.md.
 
-For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
+## Keeping the agent skill in sync
 
-`Map<List<Long>, V>` / `Map<R, V>` and `Option[T]` fields decode correctly (including when
-empty/`None`) through `ItfValue.decode`, `State`, or `NondetPicks.decode`, which all read the
-`ItfValue` tree directly via a custom `Decoder` (`ItfValueDecoder`) rather than going through an
-intermediate JSON representation. See `docs/decisions/itf-collection-mapping.md` and
-`docs/decisions/itf-option-and-bigint.md`.
+A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the Gradle plugin, or the
+`QUINT_SEED`/`QUINT_VERBOSE`/`QUINT_COLOR` env vars or Gradle properties must update
+`skills/quint-konnect/` in the same change.
