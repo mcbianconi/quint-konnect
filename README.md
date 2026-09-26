@@ -17,11 +17,66 @@ Quint Spec → [quint CLI] → ITF trace files → quint-konnect → your Kotlin
 
 ## Quick start
 
-### 1. Add dependencies
+### 1. Apply the plugin
 
-Published on Maven Central under `io.github.mcbianconi`. `quint-konnect-core`'s API
-brings in `quint-konnect-annotations` and `itf-kotlin` transitively, so only `core` and
-`ksp` need to be declared directly.
+Published on Maven Central under `io.github.mcbianconi`, with its plugin marker artifact
+(not the Gradle Plugin Portal, see
+[the decision record](docs/decisions/gradle-plugin-distribution.md)):
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+```
+
+```kotlin
+// build.gradle.kts, on a module that already applies org.jetbrains.kotlin.jvm
+plugins {
+    kotlin("jvm") version "2.4.20"
+    id("io.github.mcbianconi.quint-konnect") version "0.1.0"
+}
+```
+
+Applying `io.github.mcbianconi.quint-konnect` to a Kotlin JVM module:
+- applies `com.google.devtools.ksp` and adds `kspTest("io.github.mcbianconi:quint-konnect-ksp")`
+  and `testImplementation("io.github.mcbianconi:quint-konnect-core")`, at the plugin's own version;
+- adds `build/generated/ksp/test/kotlin` to the `test` source set;
+- configures every `Test` task with `useJUnitPlatform()` and a system property that lets a
+  relative `spec` (`@QuintRun`/`@QuintTest`) resolve against the Gradle project directory instead
+  of the test JVM's working directory (only for test JVMs Gradle itself launches; an IDE test
+  runner that bypasses Gradle still resolves against its own working directory);
+- registers a `checkQuint` task, that every `Test` task depends on, which fails the build if
+  `quint` isn't on `PATH` and warns (without failing) if its version doesn't match
+  `quintKonnect.quintVersion` (default `"0.32.0"`, matching CI's pin).
+
+```kotlin
+quintKonnect {
+    quintVersion.set("0.32.0") // default; only needed to pin a different version
+}
+```
+
+`quint-konnect-core`'s API brings in `kotlinx-serialization-json` transitively, so you don't need
+to declare it yourself. You still need the Kotlin serialization compiler plugin (for your driver's
+`@Serializable` spec state classes) and JUnit 5:
+
+```kotlin
+plugins {
+    alias(libs.plugins.kotlin.serialization)
+}
+
+dependencies {
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+```
+
+<details>
+<summary>Without the plugin</summary>
 
 ```kotlin
 // build.gradle.kts
@@ -43,7 +98,13 @@ kotlin {
         kotlin.srcDir("build/generated/ksp/test/kotlin")
     }
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
 ```
+
+</details>
 
 Requires `quint` in `PATH`.
 
@@ -203,6 +264,7 @@ QUINT_SEED=0x1234 ./gradlew :example:test
 | `itf` | ITF parsing and decoding into `@Serializable` types (`ItfValue`, `ItfTrace`). |
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
 | `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes with one dynamic test per trace. |
+| `gradle-plugin` | Gradle plugin (`io.github.mcbianconi.quint-konnect`): applies KSP and dependencies, resolves spec paths, checks the `quint` CLI. |
 | `example` | TicTacToe end-to-end example. |
 
 ## Example
@@ -220,6 +282,7 @@ See [`example/`](./example) for a complete TicTacToe example:
 ./gradlew :itf:test                  # Run ITF parsing/decoding unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
+./gradlew :gradle-plugin:build        # Build the Gradle plugin + run its unit/functional tests
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
 ./gradlew build                      # Build all modules
 ```

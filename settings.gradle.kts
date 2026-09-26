@@ -13,4 +13,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "quint-konnect"
 
-include(":annotations", ":itf", ":core", ":ksp", ":example")
+include(":annotations", ":itf", ":core", ":ksp", ":gradle-plugin", ":example")

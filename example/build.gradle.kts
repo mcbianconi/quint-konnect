@@ -29,4 +29,8 @@ tasks.test {
     testLogging {
         showStandardStreams = true
     }
+    // Matches PROJECT_DIR_PROPERTY in core/.../trace/GeneratorConfig.kt: without the
+    // quintkonnect Gradle plugin (qk-udpu) to set this, wire it by hand so a relative `spec`
+    // resolves the same way from `gradle test` and from an IDE run.
+    systemProperty("quintkonnect.projectDir", project.projectDir.absolutePath)
 }
