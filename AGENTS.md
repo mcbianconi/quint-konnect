@@ -80,8 +80,9 @@ Five modules, in dependency order:
 - `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`, behind the
   injectable `TraceSource`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`),
   state comparison (`State.kt`), and the replay loop (`ReplayRunner`, observed by a
-  `ReplayListener`; `listener/ConsoleReplayListener` is the default). `Runner` is the
-  facade generated tests call, delegating to a fresh `ReplayRunner`.
+  `ReplayListener`; `listener/ConsoleReplayListener` is the default). Generated tests call
+  `ReplayRunner.traceReplays` to get one `TraceReplay` per trace; `Runner.runTest` is kept for
+  binary compatibility.
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
   class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
   (`ksp/generators/`). `Driver.step`'s default implementation (`core`) finds the generated
@@ -99,8 +100,8 @@ provides a `TypedState`, compares implementation state against the spec's state
 naming the trace, step, action and nondet picks (see `ReplayRunner.kt`), and every
 `ReplayListener` (the console one included) is notified of the failure before it's thrown.
 Construct a `ReplayRunner` directly to plug in a custom `TraceSource` or `ReplayListener`;
-`Runner.runTest` stays the entry point generated code calls, delegating to a default
-`ReplayRunner`.
+generated test classes expose `@TestFactory fun traces(): List<DynamicTest>` built from
+`ReplayRunner.traceReplays`, and `Runner.runTest` stays for binary compatibility.
 
 `@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
 `mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).

@@ -11,7 +11,7 @@ Quint Spec → [quint CLI] → ITF trace files → quint-konnect → your Kotlin
 ```
 
 1. You annotate a *driver* class with `@QuintRun` or `@QuintTest`.
-2. KSP generates a JUnit 5 test class and a `generatedStep()` dispatcher at compile time.
+2. KSP generates a JUnit 5 test class (one dynamic test per trace) and a `generatedStep()` dispatcher at compile time.
 3. At test runtime, the library invokes the `quint` CLI to generate randomized traces from your spec.
 4. Each trace step is replayed against your driver. Optionally, state is compared after every step.
 
@@ -54,7 +54,7 @@ The driver is a class annotated with `@QuintRun` or `@QuintTest` and implements 
 // src/test/kotlin/
 @QuintRun(spec = "src/test/resources/my.qnt", maxSamples = 10)
 class MyDriver : Driver {
-    override fun quintState(): State<*> = MyState()
+    override fun quintState(): State<MyDriver> = MyState()
 
     @QuintAction("init")
     fun init() { /* reset implementation state */ }
@@ -69,6 +69,8 @@ class MyDriver : Driver {
 
 KSP generates `MyDriver.generatedStep(step)`, which dispatches to the right method based on `step.actionTaken`. `Driver.step`'s default implementation finds it by class name, so you don't need to override `step` yourself.
 
+`quintState()` must return a `State` for this driver type (`State<MyDriver>`, not `State<*>`); KSP reports a compile error otherwise. `@QuintAction` functions may be `suspend`: the generated dispatcher runs them with `runBlocking`, so the driver module needs `kotlinx-coroutines-core`.
+
 ### 3. Implement state checking (optional)
 
 ```kotlin
@@ -82,7 +84,9 @@ class MyState : TypedState<MyDriver, MySpecState>(serializer()) {
 }
 ```
 
-The framework deserializes the spec state from the ITF trace and compares it with `extractFromDriver()` using `equals()` after each step.
+The framework decodes the spec state from the ITF trace and compares it field by field with `extractFromDriver()` after each step; a mismatch names the differing fields (e.g. `cells.(1, 2): spec="X", impl="O"`). Sets compare regardless of order.
+
+Mark state properties the implementation doesn't track with `@QuintIgnore` (from the annotations module); they still decode, so give them a default if the spec may omit them. Override `TypedState.compareField(path, spec, impl)` to compare a field your own way (return `null` to keep the default).
 
 ### 4. Run
 
@@ -198,7 +202,7 @@ QUINT_SEED=0x1234 ./gradlew :example:test
 | `annotations` | Annotation declarations only. No runtime dependency. |
 | `itf` | ITF parsing and decoding into `@Serializable` types (`ItfValue`, `ItfTrace`). |
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
-| `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes. |
+| `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes with one dynamic test per trace. |
 | `example` | TicTacToe end-to-end example. |
 
 ## Example
