@@ -113,13 +113,17 @@ The framework deserializes the spec state from the ITF trace and compares it wit
 | `str` | `String` |
 | `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
 | `int -> V` map | `Map<Long, V>` |
-| `(int, int) -> V` map | `Map<List<Long>, V>` (not `Map<Pair<Long, Long>, V>`; empty maps of this shape aren't supported) |
-| record-keyed map | `Map<R, V>`, `R` a `@Serializable` data class (same caveat on empty maps) |
+| `(int, int) -> V` map | `Map<List<Long>, V>` (not `Map<Pair<Long, Long>, V>`) |
+| record-keyed map | `Map<R, V>`, `R` a `@Serializable` data class |
 | `Set[T]` | `Set<T>` |
 | `type P = X \| O` sum type | `@Serializable @JsonClassDiscriminator("tag") sealed class` |
 | `type S = Foo(P) \| Bar` | sealed class with `data class Foo(val value: P)` and `object Bar` |
 
 For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
+
+A `Map<List<Long>, V>` / `Map<R, V>` field decodes correctly even when empty, as long as it goes
+through `State`/`NondetPicks.decode` (which pass the field's `SerialDescriptor` to the normalizer);
+decoding an `ItfValue` directly with `toNormalizedJson()` (no descriptor) keeps the old behavior.
 
 ## ITF (Informal Trace Format)
 

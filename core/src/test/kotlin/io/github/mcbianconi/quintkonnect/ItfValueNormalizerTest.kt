@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.serializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -158,12 +159,11 @@ class ItfValueNormalizerTest {
     }
 
     @Test
-    fun `empty map normalizes to JsonObject regardless of intended key type`() {
-        // An empty ItfValue.Map carries no entries, so the normalizer has no way to tell an
-        // intended tuple/record key type apart from a primitive one; it always produces `{}`.
-        // That only decodes into primitive-keyed Kotlin maps (Map<Long, V>, Map<String, V>, ...);
-        // an empty Map<List<Long>, V> or Map<R, V> fails to decode. Disambiguating this would
-        // require the target type's serializer at normalization time, not just the ITF value.
+    fun `empty map normalizes to JsonObject when no descriptor is given`() {
+        // Without a descriptor, an empty ItfValue.Map carries no entries to tell an intended
+        // tuple/record key type apart from a primitive one, so it always produces `{}`. That only
+        // decodes into primitive-keyed Kotlin maps (Map<Long, V>, Map<String, V>, ...); an empty
+        // Map<List<Long>, V> or Map<R, V> fails to decode.
         val json = ItfValue.Map(emptyList()).toNormalizedJson()
 
         assertEquals(JsonObject(emptyMap()), json)
@@ -171,5 +171,31 @@ class ItfValueNormalizerTest {
         assertThrows<SerializationException> {
             QuintJson.decodeFromJsonElement<Map<List<Long>, String>>(json)
         }
+    }
+
+    @Test
+    fun `empty map with tuple-key descriptor normalizes to JsonArray and decodes`() {
+        val descriptor = serializer<Map<List<Long>, String>>().descriptor
+        val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
+
+        assertTrue(json is JsonArray)
+        assertEquals(emptyMap<List<Long>, String>(), QuintJson.decodeFromJsonElement<Map<List<Long>, String>>(json))
+    }
+
+    @Test
+    fun `empty map with record-key descriptor normalizes to JsonArray and decodes`() {
+        val descriptor = serializer<Map<Point, String>>().descriptor
+        val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
+
+        assertTrue(json is JsonArray)
+        assertEquals(emptyMap<Point, String>(), QuintJson.decodeFromJsonElement<Map<Point, String>>(json))
+    }
+
+    @Test
+    fun `empty map with primitive-key descriptor still normalizes to JsonObject`() {
+        val descriptor = serializer<Map<Long, String>>().descriptor
+        val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
+
+        assertEquals(JsonObject(emptyMap()), json)
     }
 }

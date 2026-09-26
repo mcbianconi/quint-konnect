@@ -15,6 +15,9 @@ structured-key array form. `Map<Pair<A, B>, V>` does not work: `Pair` expects
 `{"first", "second"}`, not the array a tuple normalizes to.
 
 **How to apply:** Keep the type tables in README.md and CLAUDE.md in line with this.
-Don't recommend `List<T>` for sets or `Pair` for tuples. An empty complex-keyed map
-normalizes to `{}` and cannot decode yet (bead qk-kl73); a fix needs the target
-serializer during normalization, not a heuristic on the value.
+Don't recommend `List<T>` for sets or `Pair` for tuples. `toNormalizedJson` takes an
+optional target `SerialDescriptor` (bead qk-kl73): `State.check` and
+`NondetPicks.decode`/`decodeOrNull` pass the field's serializer descriptor, so an empty
+tuple/record-keyed map picks the flat-array shape from the key descriptor's kind instead
+of guessing from (zero) entries. Calling `toNormalizedJson()` with no descriptor keeps
+the old value-only heuristic, so an empty map still normalizes to `{}` in that path.

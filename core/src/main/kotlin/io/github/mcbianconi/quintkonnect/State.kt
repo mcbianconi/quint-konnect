@@ -22,7 +22,7 @@ abstract class TypedState<D : Driver, S : Any>(
     abstract fun extractFromDriver(driver: D): S
 
     override fun check(driver: D, specValue: ItfValue) {
-        val specState = QuintJson.decodeFromJsonElement(serializer, specValue.toNormalizedJson())
+        val specState = QuintJson.decodeFromJsonElement(serializer, specValue.toNormalizedJson(serializer.descriptor))
         val driverState = extractFromDriver(driver)
 
         if (specState != driverState) {
