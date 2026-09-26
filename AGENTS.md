@@ -30,6 +30,7 @@ comment on that line in `.github/workflows/ci.yml`).
 ./gradlew :itf:test                  # Run ITF parsing/normalization unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
+./gradlew :ksp:test                  # Run KSP processor tests (kotlin-compile-testing + KSP2, no quint CLI required)
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
 ./gradlew build                      # Build all modules
 ```
