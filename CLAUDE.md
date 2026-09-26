@@ -13,7 +13,9 @@ going forward.
 | `str` | `String` |
 | `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
 | `int -> V` map | `Map<Long, V>` |
-| `Set[T]` | `List<T>` |
+| `(int, int) -> V` map | `Map<List<Long>, V>` (not `Map<Pair<Long, Long>, V>`; empty maps of this shape aren't supported) |
+| record-keyed map | `Map<R, V>`, `R` a `@Serializable` data class (same caveat on empty maps) |
+| `Set[T]` | `Set<T>` |
 | `type P = X \| O` sum type | `@Serializable @JsonClassDiscriminator("tag") sealed class` |
 | `type S = Foo(P) \| Bar` | `sealed class` with `data class Foo(val value: P)` and `object Bar` |
 
