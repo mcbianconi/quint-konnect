@@ -90,7 +90,7 @@ private fun diffValues(
     compareField: FieldComparator,
     out: MutableList<String>,
 ) {
-    val override = compareField(path, spec.render(), impl.render())
+    val override = compareField(path.orRoot(), spec.render(), impl.render())
     if (override != null) {
         if (!override) out += "${path.orRoot()}: spec=${spec.render()}, impl=${impl.render()}"
         return

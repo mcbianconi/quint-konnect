@@ -144,6 +144,6 @@ class QuintIgnoreTest {
 
         assertTrue(seen.contains("counter.count"))
         assertTrue(seen.contains("counter"))
-        assertTrue(seen.contains(""))
+        assertTrue(seen.contains("<root>"))
     }
 }
