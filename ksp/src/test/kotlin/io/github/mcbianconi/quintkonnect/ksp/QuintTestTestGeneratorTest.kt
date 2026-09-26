@@ -5,7 +5,10 @@ package io.github.mcbianconi.quintkonnect.ksp
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import java.lang.reflect.ParameterizedType
 
 class QuintTestTestGeneratorTest {
 
@@ -44,14 +47,19 @@ class QuintTestTestGeneratorTest {
     }
 
     @Test
-    fun `generates a JUnit test class with a public no-arg constructor and a Test-annotated run method`() {
+    fun `generates a JUnit test class with a public no-arg constructor and a TestFactory-annotated traces method`() {
         check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
 
         val testClass = result.classLoader.loadClass("test1.TestDriverQuintTestTest")
         testClass.getDeclaredConstructor()
 
-        val runMethod = testClass.getDeclaredMethod("run")
-        assertTrue(runMethod.isAnnotationPresent(org.junit.jupiter.api.Test::class.java))
+        val tracesMethod = testClass.getDeclaredMethod("traces")
+        assertTrue(tracesMethod.isAnnotationPresent(org.junit.jupiter.api.TestFactory::class.java))
+        assertTrue(java.util.Collection::class.java.isAssignableFrom(tracesMethod.returnType))
+        val elementType = (tracesMethod.genericReturnType as ParameterizedType).actualTypeArguments[0]
+        assertEquals(DynamicTest::class.java, elementType)
+
+        assertThrows<NoSuchMethodException> { testClass.getDeclaredMethod("run") }
     }
 
     @Test
@@ -77,7 +85,7 @@ class QuintTestTestGeneratorTest {
 
         val testClass = defaultsResult.classLoader.loadClass("test2.DefaultsTestDriverQuintTestTest")
         testClass.getDeclaredConstructor()
-        val runMethod = testClass.getDeclaredMethod("run")
-        assertTrue(runMethod.isAnnotationPresent(org.junit.jupiter.api.Test::class.java))
+        val tracesMethod = testClass.getDeclaredMethod("traces")
+        assertTrue(tracesMethod.isAnnotationPresent(org.junit.jupiter.api.TestFactory::class.java))
     }
 }

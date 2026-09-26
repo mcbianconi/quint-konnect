@@ -7,7 +7,9 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -18,10 +20,11 @@ internal class QuintRunTestGenerator(
     private val logger: KSPLogger,
 ) {
 
-    private val runnerClassName = ClassName("io.github.mcbianconi.quintkonnect", "Runner")
+    private val replayRunnerClassName = ClassName("io.github.mcbianconi.quintkonnect", "ReplayRunner")
     private val runConfigClassName = ClassName("io.github.mcbianconi.quintkonnect.trace", "RunConfig")
     private val genSeedMember = MemberName("io.github.mcbianconi.quintkonnect.trace", "genSeed")
-    private val testAnnotation = ClassName("org.junit.jupiter.api", "Test")
+    private val dynamicTestClassName = ClassName("org.junit.jupiter.api", "DynamicTest")
+    private val testFactoryAnnotation = ClassName("org.junit.jupiter.api", "TestFactory")
 
     fun generate(clazz: KSClassDeclaration) {
         val packageName = clazz.packageName.asString()
@@ -51,24 +54,24 @@ internal class QuintRunTestGenerator(
         maxSteps?.let { configBlock.add("maxSteps = %L,\n", it) }
         configBlock.unindent().add(")")
 
-        val runBody = CodeBlock.builder()
-            .add("%T.runTest(\n", runnerClassName)
+        val tracesBody = CodeBlock.builder()
+            .add("return %T(%L).traceReplays(\n", replayRunnerClassName, configBlock.build())
             .indent()
             .add("driverFactory = { %T() },\n", clazz.toClassName())
-            .add("generatorConfig = %L,\n", configBlock.build())
             .add("testName = %S,\n", className)
             .unindent()
-            .add(")\n")
+            .add(").map { %T.dynamicTest(it.displayName) { it.run() } }\n", dynamicTestClassName)
             .build()
 
-        val runMethod = FunSpec.builder("run")
-            .addAnnotation(testAnnotation)
-            .addCode(runBody)
+        val tracesMethod = FunSpec.builder("traces")
+            .addAnnotation(testFactoryAnnotation)
+            .returns(LIST.parameterizedBy(dynamicTestClassName))
+            .addCode(tracesBody)
             .build()
 
         val typeSpec = TypeSpec.classBuilder(outputName)
             .addOriginatingKSFile(clazz.containingFile!!)
-            .addFunction(runMethod)
+            .addFunction(tracesMethod)
             .build()
 
         val fileSpec = FileSpec.builder(packageName, outputName)
