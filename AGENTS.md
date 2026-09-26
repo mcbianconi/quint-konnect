@@ -23,7 +23,10 @@ actions rather than telling them to run commands.
 ## Build & Test
 
 Requires JDK 21 and `quint` in `PATH` (CI pins `@informalsystems/quint@0.32.0`, see the
-comment on that line in `.github/workflows/ci.yml`).
+comment on that line in `.github/workflows/ci.yml`). A consumer project can instead set
+`quintKonnect { downloadQuint.set(true) }` to have the Gradle plugin download the pinned version
+itself (README.md's "Downloading quint instead of installing it" section); `gradle-plugin`'s own
+`functionalTest` exercises that path against a local `file://` fixture, not a real download.
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations

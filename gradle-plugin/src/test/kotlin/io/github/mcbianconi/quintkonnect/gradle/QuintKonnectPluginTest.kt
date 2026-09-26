@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.Test as TestTask
 import org.gradle.testfixtures.ProjectBuilder
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -58,5 +59,70 @@ class QuintKonnectPluginTest {
         val testSourceSet = project.extensions.getByType(KotlinJvmProjectExtension::class.java)
             .sourceSets.getByName("test")
         assertTrue(testSourceSet.kotlin.srcDirs.contains(expectedSrcDir))
+    }
+
+    @Test
+    fun `downloadQuint defaults to false and checkQuint keeps resolving quint from PATH`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+
+        val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
+        assertFalse(extension.downloadQuint.get())
+
+        val checkQuint = project.tasks.getByName("checkQuint") as CheckQuintTask
+        assertEquals("quint", checkQuint.quintExecutable.get())
+        assertTrue(checkQuint.taskDependencies.getDependencies(checkQuint).none { it.name == "downloadQuint" })
+    }
+
+    @Test
+    fun `registers downloadQuint with the pinned version's cache path`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+
+        val downloadQuint = project.tasks.getByName("downloadQuint") as DownloadQuintTask
+        assertEquals(DEFAULT_QUINT_VERSION, downloadQuint.version.get())
+
+        val expectedPrefix = project.gradle.gradleUserHomeDir.resolve("caches/quint-konnect/quint/$DEFAULT_QUINT_VERSION")
+        assertTrue(downloadQuint.executable.get().asFile.absolutePath.startsWith(expectedPrefix.absolutePath))
+        assertTrue(downloadQuint.executable.get().asFile.name == "quint")
+    }
+
+    @Test
+    fun `enabling downloadQuint points checkQuint at the downloaded executable and depends on it`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
+        extension.downloadQuint.set(true)
+
+        // checkQuint.quintExecutable resolves to downloadQuint's output only once downloadQuint
+        // has actually run (Gradle refuses to query a task-output-derived Provider before that:
+        // see the E2E functionalTest for the resolved value). Here just assert the dependency.
+        val checkQuint = project.tasks.getByName("checkQuint") as CheckQuintTask
+        assertTrue(checkQuint.taskDependencies.getDependencies(checkQuint).any { it.name == "downloadQuint" })
+    }
+
+    @Test
+    fun `enabling downloadQuint makes Test tasks depend on downloadQuint`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
+        extension.downloadQuint.set(true)
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertTrue(testTask.taskDependencies.getDependencies(testTask).any { it.name == "downloadQuint" })
+    }
+
+    @Test
+    fun `leaving downloadQuint disabled does not depend on downloadQuint`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertTrue(testTask.taskDependencies.getDependencies(testTask).none { it.name == "downloadQuint" })
+
+        val checkQuint = project.tasks.getByName("checkQuint") as CheckQuintTask
+        assertEquals("quint", checkQuint.quintExecutable.get())
     }
 }

@@ -56,8 +56,20 @@ Applying `io.github.mcbianconi.quint-konnect` to a Kotlin JVM module:
 ```kotlin
 quintKonnect {
     quintVersion.set("0.32.0") // default; only needed to pin a different version
+    downloadQuint.set(true) // opt-in; default false keeps resolving "quint" from PATH
 }
 ```
+
+### Downloading quint instead of installing it
+
+`quintKonnect.downloadQuint` (default `false`) makes a `downloadQuint` task fetch the pinned
+`quintVersion`'s standalone binary from quint's GitHub releases (macOS and Linux only, see
+[the decision record](docs/decisions/no-windows-support.md)) into
+`<gradleUserHome>/caches/quint-konnect/quint/<version>/<os-arch>/quint`, verifying its checksum
+when one is known for that version. Every `Test` task and `checkQuint` then depend on
+`downloadQuint` and use that executable instead of `quint` on `PATH`, so a fresh clone needs no
+Node/quint install. Leaving it at the default `false` keeps resolving `quint` from `PATH`, as
+before.
 
 `quint-konnect-core`'s API brings in `kotlinx-serialization-json` transitively, so you don't need
 to declare it yourself. You still need the Kotlin serialization compiler plugin (for your driver's

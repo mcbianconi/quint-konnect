@@ -10,8 +10,18 @@ public final class io/github/mcbianconi/quintkonnect/gradle/CheckQuintTaskKt {
 	public static final field QUINT_INSTALL_COMMAND Ljava/lang/String;
 }
 
+public abstract class io/github/mcbianconi/quintkonnect/gradle/DownloadQuintTask : org/gradle/api/DefaultTask {
+	public fun <init> ()V
+	public final fun download ()V
+	public abstract fun getDownloadUrl ()Lorg/gradle/api/provider/Property;
+	public abstract fun getExecutable ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getExpectedSha256 ()Lorg/gradle/api/provider/Property;
+	public abstract fun getVersion ()Lorg/gradle/api/provider/Property;
+}
+
 public abstract class io/github/mcbianconi/quintkonnect/gradle/QuintKonnectExtension {
 	public fun <init> ()V
+	public abstract fun getDownloadQuint ()Lorg/gradle/api/provider/Property;
 	public abstract fun getQuintVersion ()Lorg/gradle/api/provider/Property;
 }
 

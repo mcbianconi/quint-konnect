@@ -24,3 +24,12 @@ internal fun resolveSpec(spec: String, projectDir: String? = System.getProperty(
     if (specPath.isAbsolute) return spec
     return Path.of(projectDir).resolve(specPath).toString()
 }
+
+// Set by the quintkonnect Gradle plugin's Test tasks and CheckQuintTask (gradle-plugin/.../
+// QuintKonnectPlugin.kt, DownloadQuintTask.kt) to the downloaded quint executable's absolute path
+// when `quintKonnect.downloadQuint` is enabled; otherwise unset, and "quint" is resolved from PATH
+// as before.
+internal const val QUINT_EXECUTABLE_PROPERTY: String = "quintkonnect.quintExecutable"
+
+internal fun quintExecutable(quintExecutable: String? = System.getProperty(QUINT_EXECUTABLE_PROPERTY)): String =
+    quintExecutable ?: "quint"

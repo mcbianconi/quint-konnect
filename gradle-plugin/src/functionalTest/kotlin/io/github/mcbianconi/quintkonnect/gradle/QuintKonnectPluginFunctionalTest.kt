@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.security.MessageDigest
 
 // Doesn't resolve `io.github.mcbianconi:quint-konnect-core`/`-ksp` (unpublished at test time, and
 // publishToMavenLocal isn't allowed in tests): asserts the configured dependency coordinates and
@@ -140,6 +141,71 @@ class QuintKonnectPluginFunctionalTest {
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":checkQuint")?.outcome)
         assertTrue(result.output.contains("but this project is configured for 0.0.0-does-not-exist"))
+    }
+
+    @Test
+    fun `downloadQuint fetches a file fixture, verifies it and checkQuint uses it`() {
+        // Stands in for a GitHub release asset: a real (shell-script) executable so checkQuint's
+        // `quintExecutable --version` exec actually runs it, no network involved.
+        val fixtureVersion = "0.0.0-download-e2e"
+        val fixture = File(projectDir, "fixture-quint").apply {
+            writeText("#!/bin/sh\necho $fixtureVersion\n")
+        }
+        val sha256 = MessageDigest.getInstance("SHA-256").digest(fixture.readBytes())
+            .joinToString("") { "%02x".format(it) }
+
+        buildFile.writeText(
+            """
+            plugins {
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            quintKonnect {
+                quintVersion.set("$fixtureVersion")
+                downloadQuint.set(true)
+            }
+
+            tasks.withType<io.github.mcbianconi.quintkonnect.gradle.DownloadQuintTask>().configureEach {
+                downloadUrl.set("${fixture.toURI()}")
+                expectedSha256.set("$sha256")
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("checkQuint").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":downloadQuint")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkQuint")?.outcome)
+        assertTrue(!result.output.contains("but this project is configured for"))
+    }
+
+    @Test
+    fun `downloadQuint fails checkQuint's build when the checksum does not match`() {
+        val fixture = File(projectDir, "fixture-quint").apply {
+            writeText("#!/bin/sh\necho mismatched\n")
+        }
+
+        buildFile.writeText(
+            """
+            plugins {
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            quintKonnect {
+                quintVersion.set("0.0.0-download-mismatch")
+                downloadQuint.set(true)
+            }
+
+            tasks.withType<io.github.mcbianconi.quintkonnect.gradle.DownloadQuintTask>().configureEach {
+                downloadUrl.set("${fixture.toURI()}")
+                expectedSha256.set("0000000000000000000000000000000000000000000000000000000000000000")
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("checkQuint").buildAndFail()
+
+        assertTrue(result.output.contains("checksum verification"))
     }
 
     private fun runner(vararg args: String): GradleRunner =

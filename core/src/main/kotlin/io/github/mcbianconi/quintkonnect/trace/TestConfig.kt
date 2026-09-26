@@ -14,7 +14,7 @@ public data class TestConfig(
     override val nTraces: Int get() = maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
-        add("quint"); add("test")
+        add(quintExecutable()); add("test")
         add(resolveSpec(spec))
         add("--seed"); add(seed)
         add("--match"); add("^${escapeRegex(test)}$")

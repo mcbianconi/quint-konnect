@@ -16,7 +16,7 @@ public data class RunConfig(
     override val nTraces: Int get() = maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
-        add("quint"); add("run")
+        add(quintExecutable()); add("run")
         add(resolveSpec(spec))
         add("--seed"); add(seed)
         add("--max-samples"); add(nTraces.toString())
