@@ -15,6 +15,9 @@ dependencies {
     compileOnly(project(":annotations"))
     compileOnly(project(":core"))
     compileOnly(libs.ksp.api)
+    // implementation, not compileOnly: KSP runs the processor in its own classloader, so
+    // kotlinpoet-ksp must be on the processor's runtime classpath, not just its compile classpath.
+    implementation(libs.kotlinpoet.ksp)
 
     // The processor's own compileOnly deps need to be on the test classpath too, since
     // kotlin-compile-testing (inheritClassPath = true) compiles and loads driver fixtures

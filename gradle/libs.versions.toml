@@ -18,6 +18,9 @@ vanniktech-publish = "0.37.0"
 # versions above. Latest version at
 # https://repo1.maven.org/maven2/dev/zacsweers/kctfork/core/maven-metadata.xml
 kctfork           = "0.14.0"
+# latest stable, built against kotlin-stdlib 2.4.20 (matches `kotlin` above):
+# https://repo1.maven.org/maven2/com/squareup/kotlinpoet/maven-metadata.xml
+kotlinpoet        = "2.4.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serial" }
@@ -26,6 +29,7 @@ junit5-api                 = { module = "org.junit.jupiter:junit-jupiter-api",  
 junit5-engine              = { module = "org.junit.jupiter:junit-jupiter-engine",           version.ref = "junit5" }
 kctfork-core               = { module = "dev.zacsweers.kctfork:core",                       version.ref = "kctfork" }
 kctfork-ksp                = { module = "dev.zacsweers.kctfork:ksp",                        version.ref = "kctfork" }
+kotlinpoet-ksp             = { module = "com.squareup:kotlinpoet-ksp",                       version.ref = "kotlinpoet" }
 
 [plugins]
 kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm",                  version.ref = "kotlin" }
