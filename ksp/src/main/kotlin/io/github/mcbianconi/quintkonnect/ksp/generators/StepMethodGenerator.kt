@@ -43,15 +43,15 @@ class StepMethodGenerator(
                 val actionName = (nameArg?.value as? String)?.takeIf { it.isNotBlank() }
                     ?: fn.simpleName.asString()
 
-                w.appendLine("        \"$actionName\" -> {")
+                w.appendLine("        ${actionName.kotlinStringLiteral()} -> {")
                 for (param in fn.parameters) {
                     val paramName = param.name!!.asString()
                     val typeName  = param.type.resolve().typeName()
                     val isNullable = param.type.resolve().isMarkedNullable
                     if (isNullable) {
-                        w.appendLine("            val $paramName = step.nondetPicks.decodeOrNull<$typeName>(\"$paramName\")")
+                        w.appendLine("            val $paramName = step.nondetPicks.decodeOrNull<$typeName>(${paramName.kotlinStringLiteral()})")
                     } else {
-                        w.appendLine("            val $paramName = step.nondetPicks.decode<$typeName>(\"$paramName\")")
+                        w.appendLine("            val $paramName = step.nondetPicks.decode<$typeName>(${paramName.kotlinStringLiteral()})")
                     }
                 }
                 val args = fn.parameters.joinToString(", ") { it.name!!.asString() }
