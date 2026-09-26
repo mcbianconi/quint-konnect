@@ -21,9 +21,12 @@ kctfork           = "0.14.0"
 # latest stable, built against kotlin-stdlib 2.4.20 (matches `kotlin` above):
 # https://repo1.maven.org/maven2/com/squareup/kotlinpoet/maven-metadata.xml
 kotlinpoet        = "2.4.0"
+# latest stable: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/maven-metadata.xml
+kotlinx-coroutines = "1.11.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serial" }
+kotlinx-coroutines-core    = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",     version.ref = "kotlinx-coroutines" }
 ksp-api                    = { module = "com.google.devtools.ksp:symbol-processing-api",    version.ref = "ksp" }
 junit5-api                 = { module = "org.junit.jupiter:junit-jupiter-api",              version.ref = "junit5" }
 junit5-engine              = { module = "org.junit.jupiter:junit-jupiter-engine",           version.ref = "junit5" }

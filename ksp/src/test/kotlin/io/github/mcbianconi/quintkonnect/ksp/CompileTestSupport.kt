@@ -9,6 +9,7 @@ import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.quintkonnect.Step
+import java.io.File
 import java.lang.reflect.Constructor
 
 // `Step`/`NondetPicks` constructors are `internal` to :core, so they compile down to public
@@ -50,3 +51,26 @@ internal fun compileWithProcessor(vararg sources: SourceFile): JvmCompilationRes
 }
 
 internal fun kotlinSource(name: String, source: String): SourceFile = SourceFile.kotlin(name, source)
+
+// qk-33ky: proves the processor's own "kotlinx.coroutines.runBlocking isn't resolvable" error
+// fires. `compileWithProcessor`'s inheritClassPath = true always carries a transitive
+// kotlinx-coroutines-core (the Kotlin compiler tooling itself depends on it), so that path can't
+// produce a classpath without it; rebuild this process' own classpath from `java.class.path`
+// (populated with real per-jar entries under Gradle's test worker) with every kotlinx-coroutines
+// jar filtered out instead.
+internal fun compileWithProcessorWithoutCoroutines(vararg sources: SourceFile): JvmCompilationResult {
+    val classpathWithoutCoroutines = System.getProperty("java.class.path")
+        .split(File.pathSeparatorChar)
+        .map(::File)
+        .filterNot { it.name.contains("kotlinx-coroutines") }
+    val compilation = KotlinCompilation().apply {
+        this.sources = sources.toList()
+        inheritClassPath = false
+        classpaths = classpathWithoutCoroutines
+        jvmTarget = "21"
+        useKsp2()
+        symbolProcessorProviders = mutableListOf(QuintKonnectProcessorProvider())
+        messageOutputStream = System.out
+    }
+    return compilation.compile()
+}

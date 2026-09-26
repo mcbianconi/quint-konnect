@@ -556,4 +556,36 @@ class ProcessorErrorTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
     }
+
+    // qk-33ky: a suspend @QuintAction needs kotlinx.coroutines.runBlocking on the driver module's
+    // own classpath; without it, the processor must report a clear error instead of letting the
+    // generated dispatcher fail with an unresolved reference the user never wrote.
+    @Test
+    fun `suspend QuintAction without kotlinx-coroutines on the classpath should be rejected by the processor`() {
+        val result = compileWithProcessorWithoutCoroutines(
+            kotlinSource(
+                "NoCoroutinesSuspendDriver.kt",
+                """
+                package nocoroutines
+
+                import io.github.mcbianconi.quintkonnect.Driver
+                import io.github.mcbianconi.quintkonnect.Step
+                import io.github.mcbianconi.quintkonnect.annotations.QuintAction
+                import io.github.mcbianconi.quintkonnect.annotations.QuintRun
+
+                @QuintRun(spec = "unused.qnt")
+                class NoCoroutinesSuspendDriver : Driver {
+                    override fun step(step: Step) = generatedStep(step)
+
+                    @QuintAction("go")
+                    suspend fun go() {}
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("runBlocking"), result.messages)
+        assertTrue(result.messages.contains("kotlinx-coroutines-core"), result.messages)
+    }
 }

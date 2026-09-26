@@ -27,6 +27,10 @@ dependencies {
     testImplementation(libs.ksp.api)
     testImplementation(libs.kctfork.core)
     testImplementation(libs.kctfork.ksp)
+    // Pins the version driver fixtures compile a suspend @QuintAction's generated `runBlocking`
+    // call against explicitly (qk-33ky), rather than relying on the version the Kotlin compiler
+    // tooling itself transitively pulls in via kctfork.
+    testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

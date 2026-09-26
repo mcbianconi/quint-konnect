@@ -20,7 +20,7 @@ internal class QuintKonnectProcessor(
             .forEach { clazz ->
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
-                StepMethodGenerator(codeGenerator, logger).generate(clazz)
+                StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
                 QuintRunTestGenerator(codeGenerator, logger).generate(clazz)
             }
 
@@ -29,7 +29,7 @@ internal class QuintKonnectProcessor(
             .forEach { clazz ->
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
-                StepMethodGenerator(codeGenerator, logger).generate(clazz)
+                StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
                 QuintTestTestGenerator(codeGenerator, logger).generate(clazz)
             }
 

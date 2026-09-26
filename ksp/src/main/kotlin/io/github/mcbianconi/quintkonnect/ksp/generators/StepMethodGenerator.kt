@@ -3,9 +3,11 @@ package io.github.mcbianconi.quintkonnect.ksp.generators
 import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -26,6 +28,7 @@ internal class StepMethodGenerator(
     private val stepClassName = ClassName("io.github.mcbianconi.quintkonnect", "Step")
     private val decodeMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decode")
     private val decodeOrNullMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decodeOrNull")
+    private val runBlockingMember = MemberName("kotlinx.coroutines", "runBlocking")
 
     // A function and the @QuintAction annotation that applies to it, which may live on an
     // overridee further up the class hierarchy (see `findQuintAction`).
@@ -36,7 +39,7 @@ internal class StepMethodGenerator(
         }
     }
 
-    fun generate(clazz: KSClassDeclaration) {
+    fun generate(clazz: KSClassDeclaration, resolver: Resolver) {
         val packageName = clazz.packageName.asString()
         val className = clazz.simpleName.asString()
         val outputName = "${className}Steps"
@@ -48,7 +51,8 @@ internal class StepMethodGenerator(
 
         val hasNonPublic = rejectNonPublicActions(actions)
         val hasDuplicate = rejectDuplicateActionNames(actions)
-        if (hasNonPublic || hasDuplicate) return
+        val hasMissingRunBlocking = rejectMissingRunBlocking(actions, resolver)
+        if (hasNonPublic || hasDuplicate || hasMissingRunBlocking) return
 
         val classTypeParams = clazz.typeParameters.toTypeParameterResolver()
 
@@ -69,7 +73,24 @@ internal class StepMethodGenerator(
                 )
             }
             val args = fn.parameters.map { CodeBlock.of("%N", it.name!!.asString()) }.joinToCode(", ")
-            whenBlock.addStatement("this.%N(%L)", fn.simpleName.asString(), args)
+            if (fn.modifiers.contains(Modifier.SUSPEND)) {
+                // generatedStep itself stays non-suspend (Driver.step's reflective dispatch calls
+                // it as a plain function); runBlocking bridges into the suspend action instead.
+                // Its block has an implicit CoroutineScope receiver, which would shadow `this`, so
+                // the driver receiver needs the explicit `this@generatedStep` label.
+                //
+                // Not kotlinx.coroutines.test.runTest: it starts a fresh TestScope per call, so
+                // virtual time would reset every step instead of advancing across a trace, and it
+                // needs kotlinx-coroutines-test, which a driver module has no other reason to
+                // depend on. runBlocking uses real time (a suspend action's `delay` costs wall
+                // clock time during replay) but keeps a single, real dispatcher across the whole
+                // trace.
+                whenBlock.beginControlFlow("%M", runBlockingMember)
+                whenBlock.addStatement("this@generatedStep.%N(%L)", fn.simpleName.asString(), args)
+                whenBlock.endControlFlow()
+            } else {
+                whenBlock.addStatement("this.%N(%L)", fn.simpleName.asString(), args)
+            }
             whenBlock.endControlFlow()
         }
         whenBlock.addStatement("else -> error(\"Unimplemented action: \${step.actionTaken}\")")
@@ -141,5 +162,28 @@ internal class StepMethodGenerator(
             }
         }
         return hasDuplicate
+    }
+
+    // qk-33ky: a suspend @QuintAction's generated call needs kotlinx.coroutines.runBlocking on
+    // the driver module's own classpath (generated code runs there, not in :core, which doesn't
+    // depend on kotlinx-coroutines). Report that plainly instead of an unresolved-reference error
+    // in generated code the user never wrote.
+    private fun rejectMissingRunBlocking(actions: List<ActionMember>, resolver: Resolver): Boolean {
+        val firstSuspendAction = actions.firstOrNull { it.function.modifiers.contains(Modifier.SUSPEND) }
+            ?: return false
+
+        val runBlockingResolvable = resolver
+            .getFunctionDeclarationsByName(resolver.getKSNameFromString("kotlinx.coroutines.runBlocking"), includeTopLevel = true)
+            .any()
+        if (runBlockingResolvable) return false
+
+        logger.error(
+            "@QuintAction function \"${firstSuspendAction.function.simpleName.asString()}\" is " +
+                "suspend, so the generated dispatcher needs kotlinx.coroutines.runBlocking to " +
+                "call it, but kotlinx-coroutines-core isn't on this module's compile classpath. " +
+                "Add it, e.g. testImplementation(\"org.jetbrains.kotlinx:kotlinx-coroutines-core:<version>\").",
+            firstSuspendAction.function,
+        )
+        return true
     }
 }
