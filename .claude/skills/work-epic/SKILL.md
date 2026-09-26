@@ -40,6 +40,12 @@ background. Each brief contains:
   `but commit -b <branch> -m "type(scope): summary" <ids>`, one commit per bead (edit in
   stages when beads share a file), with the Co-Authored-By trailer; never commit without
   IDs, never push, never `tbd sync`, never touch other agents' changes;
+- if its work builds on an unlanded branch (e.g. a new module needs a convention plugin
+  from another branch), create its branch stacked before the first commit:
+  `but branch new <branch> --above <dependency-branch>` (a plain `but commit -b` is
+  refused when the changes touch files committed on that branch);
+- after each commit, check `but status` shows no leftover changes to files it committed,
+  and compare them with the commit (`git show <sha>:<path>`);
 - close each bead after its commit (`tbd close <id> --reason "..."`); add a
   `docs/decisions/` entry only for a standing decision that isn't already visible in
   code, tests, or other docs — otherwise put it there instead (see
