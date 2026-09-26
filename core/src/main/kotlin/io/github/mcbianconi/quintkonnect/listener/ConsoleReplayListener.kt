@@ -20,29 +20,60 @@ private fun indent(text: String, spaces: Int = 3): String {
 }
 
 /**
+ * Whether ANSI colour codes should be emitted.
+ *
+ * `quintColor` (`QUINT_COLOR` env var) is an override: `"always"`/`"never"` decide it outright,
+ * any other value (including unset) falls through to `hasConsole && noColor.isNullOrEmpty()`.
+ * `noColor` (`NO_COLOR` env var) disables colour when present and not an empty string, regardless
+ * of its value, per https://no-color.org. `hasConsole` is `System.console() != null`, false
+ * whenever output isn't a terminal (e.g. piped, or a CI log).
+ */
+internal fun resolveUseColor(noColor: String?, quintColor: String?, hasConsole: Boolean): Boolean =
+    when (quintColor) {
+        "always" -> true
+        "never" -> false
+        else -> hasConsole && noColor.isNullOrEmpty()
+    }
+
+private fun defaultUseColor(): Boolean =
+    resolveUseColor(System.getenv("NO_COLOR"), System.getenv("QUINT_COLOR"), System.console() != null)
+
+/**
  * The default [ReplayListener]: prints replay progress to [err] at [verbosity].
  *
  * The no-arg constructor honors `QUINT_VERBOSE` and prints to [System.err], read when this
- * listener is constructed, not at class init.
+ * listener is constructed, not at class init. Every public constructor also decides ANSI colour
+ * the same way: `QUINT_COLOR=always`/`QUINT_COLOR=never` force it on/off, `NO_COLOR`
+ * (https://no-color.org) disables it when set to a non-empty value, and otherwise it's on only
+ * when [System.console] is non-null (a real terminal).
  */
 public class ConsoleReplayListener(
     private val verbosity: Int,
     private val err: PrintStream,
 ) : ReplayListener {
 
+    private var useColor: Boolean = defaultUseColor()
+
+    internal constructor(verbosity: Int, err: PrintStream, useColor: Boolean) : this(verbosity, err) {
+        this.useColor = useColor
+    }
+
     public constructor() : this(System.getenv("QUINT_VERBOSE")?.toIntOrNull() ?: 0, System.err)
 
-    private fun title(msg: String) = err.println("$BOLD== $msg$RESET")
+    private fun wrap(vararg codes: String, text: String): String =
+        if (useColor) "${codes.joinToString("")}$text$RESET" else text
+
+    private fun title(msg: String) = err.println(wrap(BOLD, text = "== $msg"))
 
     private fun info(msg: String) = err.println(indent(msg))
 
-    private fun success(msg: String) = err.println("$BOLD$GREEN${indent(msg)}$RESET")
+    private fun success(msg: String) = err.println(wrap(BOLD, GREEN, text = indent(msg)))
 
-    private fun error(msg: String) = err.println("$BOLD$RED${indent(msg)}$RESET")
+    private fun error(msg: String) = err.println(wrap(BOLD, RED, text = indent(msg)))
 
     private fun trace(level: Int, msg: String) {
         if (verbosity >= level) {
-            err.println("$DIM$WHITE${indent(msg)}$RESET")
+            err.println(wrap(DIM, WHITE, text = indent(msg)))
         }
     }
 

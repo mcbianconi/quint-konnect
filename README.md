@@ -136,7 +136,7 @@ and [the decision record](./docs/decisions/quint-test-needs-nondet-path.md).
 | Quint type | Kotlin `@Serializable` type |
 |---|---|
 | `int` | `Long` |
-| `int` (larger than `Long`) | `BigInteger`, with `@Serializable(with = BigIntegerSerializer::class)` |
+| `int` (larger than `Long`) | `@Contextual BigInteger` |
 | `bool` | `Boolean` |
 | `str` | `String` |
 | `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
@@ -183,6 +183,8 @@ The library reads these to dispatch to the correct driver method and deserialize
 |---|---|---|
 | `QUINT_VERBOSE` | `0` (default), `1`, `2` | `1` logs each trace and step; `2` also dumps raw ITF state |
 | `QUINT_SEED` | hex string, e.g. `0xdeadbeef` | Fixes the random seed for reproducible runs |
+| `QUINT_COLOR` | `always`, `never` | Forces ANSI colours on or off; by default colours are used only in a terminal |
+| `NO_COLOR` | any non-empty value | Disables ANSI colours ([no-color.org](https://no-color.org)); `QUINT_COLOR` wins |
 
 ```bash
 QUINT_VERBOSE=1 ./gradlew :example:test

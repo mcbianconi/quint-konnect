@@ -36,8 +36,8 @@ comment on that line in `.github/workflows/ci.yml`).
 ```
 
 Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGeneratorTest`.
-`QUINT_VERBOSE=1`/`2` and `QUINT_SEED=<hex>` control logging and reproducibility (see
-README.md's Environment variables section).
+`QUINT_VERBOSE=1`/`2`, `QUINT_SEED=<hex>` and `QUINT_COLOR=always|never` control logging,
+reproducibility and colours (see README.md's Environment variables section).
 
 `annotations`, `itf`, `core` and `ksp` (not `example`) build with Kotlin's explicit API
 mode (`quintkonnect.library` convention plugin in `build-logic/`): every public

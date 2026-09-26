@@ -19,9 +19,9 @@ class ConsoleReplayListenerTest {
         override fun toCommand(tmpDir: java.nio.file.Path): List<String> = emptyList()
     }
 
-    private fun capture(verbosity: Int = 0, block: (ConsoleReplayListener) -> Unit): String {
+    private fun capture(verbosity: Int = 0, useColor: Boolean = false, block: (ConsoleReplayListener) -> Unit): String {
         val buffer = ByteArrayOutputStream()
-        block(ConsoleReplayListener(verbosity, PrintStream(buffer)))
+        block(ConsoleReplayListener(verbosity, PrintStream(buffer), useColor))
         return buffer.toString()
     }
 
@@ -84,5 +84,55 @@ class ConsoleReplayListenerTest {
         val atTwo = capture(verbosity = 2) { it.onStepStarted(0, 0, rawState) }
         assertTrue(atTwo.contains("Deriving step from"))
         assertTrue(atTwo.contains("mbt::actionTaken"))
+    }
+
+    @Test
+    fun `no ANSI codes when colour is disabled`() {
+        val output = capture(useColor = false) { it.onRunFinished("passing test", config, null) }
+
+        assertFalse(output.contains("\u001B["))
+    }
+
+    @Test
+    fun `ANSI codes present when colour is enabled`() {
+        val output = capture(useColor = true) { it.onRunFinished("passing test", config, null) }
+
+        assertTrue(output.contains("\u001B["))
+    }
+
+    @Test
+    fun `QUINT_COLOR=always wins over no console and NO_COLOR`() {
+        assertTrue(resolveUseColor(noColor = "1", quintColor = "always", hasConsole = false))
+    }
+
+    @Test
+    fun `QUINT_COLOR=never wins over a real console and no NO_COLOR`() {
+        assertFalse(resolveUseColor(noColor = null, quintColor = "never", hasConsole = true))
+    }
+
+    @Test
+    fun `NO_COLOR disables colour regardless of its value when QUINT_COLOR is unset`() {
+        assertFalse(resolveUseColor(noColor = "0", quintColor = null, hasConsole = true))
+    }
+
+    @Test
+    fun `an empty NO_COLOR does not disable colour`() {
+        assertTrue(resolveUseColor(noColor = "", quintColor = null, hasConsole = true))
+    }
+
+    @Test
+    fun `no console disables colour when neither env var applies`() {
+        assertFalse(resolveUseColor(noColor = null, quintColor = null, hasConsole = false))
+    }
+
+    @Test
+    fun `a real console with no overrides enables colour`() {
+        assertTrue(resolveUseColor(noColor = null, quintColor = null, hasConsole = true))
+    }
+
+    @Test
+    fun `an unrecognized QUINT_COLOR value falls back to the console and NO_COLOR check`() {
+        assertFalse(resolveUseColor(noColor = null, quintColor = "sometimes", hasConsole = false))
+        assertTrue(resolveUseColor(noColor = null, quintColor = "sometimes", hasConsole = true))
     }
 }
