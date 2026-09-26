@@ -22,8 +22,8 @@ actions rather than telling them to run commands.
 
 ## Build & Test
 
-Requires JDK 21 and `quint` in `PATH` (CI pins `@informalsystems/quint@0.32.0`, see
-`docs/decisions/quint-version-pin.md`).
+Requires JDK 21 and `quint` in `PATH` (CI pins `@informalsystems/quint@0.32.0`, see the
+comment on that line in `.github/workflows/ci.yml`).
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
@@ -59,7 +59,7 @@ output into `ItfTrace`/`ItfValue`; `Runner` replays each trace step against the 
 nondet picks into method parameters) and, when the driver provides a `TypedState`,
 compares implementation state against the spec's state (`State.check`) after each step.
 A step or state mismatch surfaces as an `AssertionError` naming the trace, step, action
-and nondet picks (`docs/decisions/runner-failure-contract.md`).
+and nondet picks (see `Runner.kt`).
 
 `@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
 `mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).
@@ -68,4 +68,4 @@ and nondet picks (`docs/decisions/runner-failure-contract.md`).
 
 See `CLAUDE.md` for the Quint-to-Kotlin type mapping table and `docs/decisions/` for
 standing project decisions (license, platform support, ITF collection/Option/BigInt
-mapping, runner failure contract, quint version pin, parallel agent work, ship-it).
+mapping, the `@QuintTest` nondet path requirement).
