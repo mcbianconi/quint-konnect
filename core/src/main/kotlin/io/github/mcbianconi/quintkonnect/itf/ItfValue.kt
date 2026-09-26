@@ -37,9 +37,10 @@ sealed class ItfValue {
     /**
      * An arbitrary-precision integer encoded as `{"#bigint": "123"}`.
      *
-     * [value] is the decimal string representation. Use [toNormalizedJson] to convert to a
-     * [kotlinx.serialization.json.JsonPrimitive] backed by [Long] (when it fits) for use with
-     * `@Serializable` classes.
+     * [value] is the decimal string representation. [toNormalizedJson] converts this to a
+     * [kotlinx.serialization.json.JsonPrimitive] backed by [Long] when the value fits, otherwise
+     * [java.math.BigInteger]; decode a field of this type with
+     * `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger`.
      */
     data class BigInt(val value: String) : ItfValue()
 
@@ -58,16 +59,24 @@ sealed class ItfValue {
     /**
      * A Quint `Set[T]`, encoded as `{"#set": [...]}`.
      *
-     * The element order in the array is unspecified. [toNormalizedJson] converts this to a plain
-     * JSON array; map to a Kotlin [kotlin.collections.List] in your `@Serializable` state class.
+     * The element order in the array is unspecified, so map this to a Kotlin
+     * [kotlin.collections.Set] in your `@Serializable` state class, not a
+     * [kotlin.collections.List]; ITF gives no element order to preserve, and a `List` would fail
+     * state comparison for correct implementations that happen to enumerate elements differently.
+     * [toNormalizedJson] converts this to a plain JSON array, which kotlinx.serialization decodes
+     * into `Set<T>` directly.
      */
     data class Set(val values: KList<ItfValue>) : ItfValue()
 
     /**
      * A Quint map (`T -> V`), encoded as `{"#map": [[k, v], ...]}`.
      *
-     * [toNormalizedJson] converts this to a JSON object with string keys, enabling
-     * `Map<Long, V>` deserialization via kotlinx.serialization.
+     * [toNormalizedJson] converts this to a JSON object with string keys when the key type is
+     * primitive (`int`, `str`, `bool`) or an enum, enabling `Map<Long, V>` / `Map<String, V>` /
+     * `Map<Boolean, V>` deserialization. For a tuple, record or sum-type key, it instead converts
+     * to a flat `[k1, v1, k2, v2, ...]` JSON array, decoded via `QuintJson`'s
+     * `allowStructuredMapKeys` into `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record/sum
+     * keys, `R` a `@Serializable` type).
      */
     data class Map(val entries: KList<Pair<ItfValue, ItfValue>>) : ItfValue()
 
