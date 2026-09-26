@@ -21,7 +21,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          # Active LTS schedule: https://github.com/nodejs/Release#release-schedule
+          node-version: "24"
 
       - name: Install quint
         # Pinned: RunConfig.kt/TestConfig.kt build CLI flags (--mbt, --n-traces, --out-itf,
