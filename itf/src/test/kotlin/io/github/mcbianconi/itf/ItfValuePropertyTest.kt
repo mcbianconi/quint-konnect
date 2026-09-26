@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.math.BigInteger
 import kotlin.random.Random
@@ -243,14 +242,10 @@ class ItfValuePropertyTest {
     }
 
     @Test
-    @Disabled(
-        "qk-uhta: ItfValueSerializer.fromObject doesn't special-case ADR-015's " +
-            "{\"#unserializable\": \"...\"} shape, so it decodes to a Record with a literal " +
-            "\"#unserializable\" field instead of ItfValue.Unserializable",
-    )
     fun `ItfValueSerializer parses ADR-015 unserializable values`() {
         val parsed = Json.decodeFromString(ItfValueSerializer, """{"#unserializable": "Int"}""")
 
         assertEquals(ItfValue.Unserializable("Int"), parsed)
+        assertEquals(parsed, Json.decodeFromString(ItfValueSerializer, Json.encodeToString(ItfValueSerializer, parsed)))
     }
 }

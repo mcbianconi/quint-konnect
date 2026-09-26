@@ -24,6 +24,7 @@ import kotlinx.serialization.json.*
  * - `{"#tup": [...]}` → [ItfValue.Tup]
  * - `{"#set": [...]}` → [ItfValue.Set]
  * - `{"#map": [[k,v], ...]}` → [ItfValue.Map]
+ * - `{"#unserializable": "..."}` → [ItfValue.Unserializable] (ITF ADR-015)
  * - Other JSON objects (stripping `#meta`) → [ItfValue.Record]
  *
  * Serialization (write path) is the inverse of the above.
@@ -75,6 +76,9 @@ public object ItfValueSerializer : KSerializer<ItfValue> {
                 }
                 ItfValue.Map(entries)
             }
+            keys.size == 1 && "#unserializable" in obj -> {
+                ItfValue.Unserializable(obj["#unserializable"]!!.jsonPrimitive.content)
+            }
             else -> {
                 val fields = LinkedHashMap<String, ItfValue>()
                 for ((k, v) in obj) {
@@ -101,6 +105,6 @@ public object ItfValueSerializer : KSerializer<ItfValue> {
         is ItfValue.Record -> buildJsonObject {
             for ((k, v) in value.fields) put(k, toJsonElement(v))
         }
-        is ItfValue.Unserializable -> JsonPrimitive(value.value)
+        is ItfValue.Unserializable -> buildJsonObject { put("#unserializable", value.value) }
     }
 }
