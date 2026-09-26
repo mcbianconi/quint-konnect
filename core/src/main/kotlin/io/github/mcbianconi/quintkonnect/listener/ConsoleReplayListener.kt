@@ -7,6 +7,10 @@ import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import java.io.PrintStream
 
+// Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
+// `-Pquint.verbose` Gradle property, for PR vs nightly CI profiles. Override > QUINT_VERBOSE > 0.
+internal const val VERBOSE_PROPERTY: String = "quintkonnect.verbose"
+
 private const val BOLD = "\u001B[1m"
 private const val GREEN = "\u001B[32m"
 private const val RED = "\u001B[31m"
@@ -39,10 +43,19 @@ private fun defaultUseColor(): Boolean =
     resolveUseColor(System.getenv("NO_COLOR"), System.getenv("QUINT_COLOR"), System.console() != null)
 
 /**
+ * Verbosity for the no-arg [ConsoleReplayListener] constructor: `verboseProperty`
+ * (`quintkonnect.verbose`, the quintkonnect Gradle plugin's `-Pquint.verbose` override) wins when
+ * set and numeric, then `quintVerbose` (`QUINT_VERBOSE` env var), then `0`.
+ */
+internal fun resolveVerbosity(verboseProperty: String?, quintVerbose: String?): Int =
+    verboseProperty?.toIntOrNull() ?: quintVerbose?.toIntOrNull() ?: 0
+
+/**
  * The default [ReplayListener]: prints replay progress to [err] at [verbosity].
  *
- * The no-arg constructor honors `QUINT_VERBOSE` and prints to [System.err], read when this
- * listener is constructed, not at class init. Every public constructor also decides ANSI colour
+ * The no-arg constructor honors the `quintkonnect.verbose` system property (falling back to
+ * `QUINT_VERBOSE`) and prints to [System.err], read when this listener is constructed, not at
+ * class init. Every public constructor also decides ANSI colour
  * the same way: `QUINT_COLOR=always`/`QUINT_COLOR=never` force it on/off, `NO_COLOR`
  * (https://no-color.org) disables it when set to a non-empty value, and otherwise it's on only
  * when [System.console] is non-null (a real terminal).
@@ -58,7 +71,10 @@ public class ConsoleReplayListener(
         this.useColor = useColor
     }
 
-    public constructor() : this(System.getenv("QUINT_VERBOSE")?.toIntOrNull() ?: 0, System.err)
+    public constructor() : this(
+        resolveVerbosity(System.getProperty(VERBOSE_PROPERTY), System.getenv("QUINT_VERBOSE")),
+        System.err,
+    )
 
     private fun wrap(vararg codes: String, text: String): String =
         if (useColor) "${codes.joinToString("")}$text$RESET" else text

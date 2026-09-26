@@ -13,7 +13,7 @@ public data class RunConfig(
     override val seed: String = genSeed(),
 ) : GeneratorConfig {
 
-    override val nTraces: Int get() = maxSamples ?: DEFAULT_TRACES
+    override val nTraces: Int get() = maxSamplesOverride() ?: maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
         add(quintExecutable()); add("run")
@@ -27,6 +27,6 @@ public data class RunConfig(
         main?.let { add("--main"); add(it) }
         init?.let { add("--init"); add(it) }
         step?.let { add("--step"); add(it) }
-        maxSteps?.let { add("--max-steps"); add(it.toString()) }
+        (maxStepsOverride() ?: maxSteps)?.let { add("--max-steps"); add(it.toString()) }
     }
 }

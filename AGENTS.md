@@ -44,6 +44,12 @@ Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGenera
 `QUINT_VERBOSE=1`/`2`, `QUINT_SEED=<hex>` and `QUINT_COLOR=always|never` control logging,
 reproducibility and colours (see README.md's Environment variables section).
 
+A project applying the Gradle plugin can also override `@QuintRun`/`@QuintTest`'s `maxSamples`,
+`maxSteps` and `seed`, plus the console listener's verbosity, per invocation (no recompile) with
+`-Pquint.maxSamples=<int>`, `-Pquint.maxSteps=<int>`, `-Pquint.seed=<hex>` and
+`-Pquint.verbose=0|1|2` — see README.md's "Runtime overrides for PR vs nightly CI profiles"
+section for the full precedence and the `quintkonnect.*` system properties they map to.
+
 `annotations`, `itf`, `core`, `ksp` and `gradle-plugin` (not `example`) build with Kotlin's
 explicit API mode (`quintkonnect.library` convention plugin in `build-logic/`): every public
 declaration needs an explicit `public`/`internal`/`private` modifier, and each module

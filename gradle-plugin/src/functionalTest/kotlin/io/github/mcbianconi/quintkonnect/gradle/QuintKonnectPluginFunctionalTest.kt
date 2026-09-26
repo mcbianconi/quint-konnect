@@ -208,6 +208,94 @@ class QuintKonnectPluginFunctionalTest {
         assertTrue(result.output.contains("checksum verification"))
     }
 
+    @Test
+    fun `quint dot properties become quintkonnect system properties on Test tasks`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.register("printTestJvmArgs") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("testJvmArgs=" + test.jvmArgumentProviders.flatMap { it.asArguments() }.joinToString(","))
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner(
+            "printTestJvmArgs",
+            "-Pquint.maxSamples=500",
+            "-Pquint.maxSteps=30",
+            "-Pquint.seed=0xdeadbeef",
+            "-Pquint.verbose=2",
+        ).build()
+
+        assertTrue(result.output.contains("-Dquintkonnect.maxSamples=500"))
+        assertTrue(result.output.contains("-Dquintkonnect.maxSteps=30"))
+        assertTrue(result.output.contains("-Dquintkonnect.seed=0xdeadbeef"))
+        assertTrue(result.output.contains("-Dquintkonnect.verbose=2"))
+    }
+
+    @Test
+    fun `leaving the quint dot properties unset adds none of their system properties`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.register("printTestJvmArgs") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("testJvmArgs=" + test.jvmArgumentProviders.flatMap { it.asArguments() }.joinToString(","))
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printTestJvmArgs").build()
+
+        assertTrue(!result.output.contains("quintkonnect.maxSamples"))
+        assertTrue(!result.output.contains("quintkonnect.maxSteps"))
+        assertTrue(!result.output.contains("quintkonnect.seed"))
+        assertTrue(!result.output.contains("quintkonnect.verbose"))
+    }
+
+    @Test
+    fun `a non-numeric -Pquint-maxSamples fails the build at configuration`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("io.github.mcbianconi.quint-konnect")
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("checkQuint", "-Pquint.maxSamples=notanumber").buildAndFail()
+
+        assertTrue(result.output.contains("-Pquint.maxSamples must be an integer"))
+    }
+
+    @Test
+    fun `an out-of-range -Pquint-verbose fails the build`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("io.github.mcbianconi.quint-konnect")
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("checkQuint", "-Pquint.verbose=5").buildAndFail()
+
+        assertTrue(result.output.contains("-Pquint.verbose must be 0, 1 or 2"))
+    }
+
     private fun runner(vararg args: String): GradleRunner =
         GradleRunner.create()
             .withProjectDir(projectDir)

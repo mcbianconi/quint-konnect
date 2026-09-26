@@ -268,6 +268,30 @@ QUINT_VERBOSE=1 ./gradlew :example:test
 QUINT_SEED=0x1234 ./gradlew :example:test
 ```
 
+## Runtime overrides for PR vs nightly CI profiles
+
+`@QuintRun`/`@QuintTest`'s `maxSamples`, `maxSteps` and `seed` are `SOURCE`-retention annotation
+values, fixed at compile time; the Gradle plugin lets a build override them (and the console
+listener's verbosity) per invocation, without a recompile, through Gradle properties it maps onto
+Test-task system properties:
+
+| Gradle property | System property | Overrides |
+|---|---|---|
+| `-Pquint.maxSamples=<int>` | `quintkonnect.maxSamples` | `@QuintRun`/`@QuintTest`'s `maxSamples` (falls back to the annotation value, then `100`) |
+| `-Pquint.maxSteps=<int>` | `quintkonnect.maxSteps` | `@QuintRun`'s `maxSteps` (falls back to the annotation value, then quint's own default; `@QuintTest`/`quint test` has no `--max-steps`) |
+| `-Pquint.seed=<hex>` | `quintkonnect.seed` | The seed used when an annotation doesn't set one itself (falls back to `QUINT_SEED`, then a random seed); an explicit `@QuintRun(seed = ...)`/`@QuintTest(seed = ...)` still wins, since that literal is baked into KSP-generated code at compile time |
+| `-Pquint.verbose=0\|1\|2` | `quintkonnect.verbose` | `ConsoleReplayListener`'s verbosity (falls back to `QUINT_VERBOSE`, then `0`) |
+
+```bash
+./gradlew :example:test -Pquint.maxSamples=1000 -Pquint.verbose=1   # nightly profile
+./gradlew :example:test -Pquint.maxSamples=20                       # fast PR profile
+```
+
+Each Gradle property is a Test-task input (via a `CommandLineArgumentProvider`), so tests rerun
+when it changes instead of reporting a stale `UP-TO-DATE`. `-Pquint.maxSamples`/`-Pquint.maxSteps`
+must parse as integers and `-Pquint.verbose` must be `0`, `1` or `2`; an invalid value fails the
+build at configuration time with that requirement in the message.
+
 ## Modules
 
 | Module | Description |

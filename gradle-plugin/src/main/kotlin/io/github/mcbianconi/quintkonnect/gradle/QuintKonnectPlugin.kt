@@ -1,5 +1,6 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -60,6 +61,13 @@ public class QuintKonnectPlugin : Plugin<Project> {
             task.dependsOn(extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() })
         }
 
+        // Read once, at configuration time (config-cache safe: providers.gradleProperty), so a
+        // malformed -P value fails the build immediately instead of only once a Test task runs.
+        val maxSamplesOverride = intGradleProperty(project, MAX_SAMPLES_GRADLE_PROPERTY)
+        val maxStepsOverride = intGradleProperty(project, MAX_STEPS_GRADLE_PROPERTY)
+        val seedOverride = project.providers.gradleProperty(SEED_GRADLE_PROPERTY).orNull
+        val verboseOverride = verboseGradleProperty(project)
+
         // React to kotlin.jvm rather than applying it ourselves: build-logic/build.gradle.kts
         // documents why KSP and kotlin.jvm must resolve from the same classpath/classloader,
         // which only holds if kotlin.jvm is already applied.
@@ -91,6 +99,10 @@ public class QuintKonnectPlugin : Plugin<Project> {
                     QuintRuntimeArgumentProvider(
                         downloadQuint = extension.downloadQuint,
                         quintExecutablePath = quintExecutablePath(project, extension, downloadQuint),
+                        maxSamples = project.provider { maxSamplesOverride },
+                        maxSteps = project.provider { maxStepsOverride },
+                        seed = project.provider { seedOverride },
+                        verbose = project.provider { verboseOverride },
                     ),
                 )
             }
@@ -114,3 +126,16 @@ private fun quintExecutablePath(
             project.provider { "quint" }
         }
     }
+
+private fun intGradleProperty(project: Project, name: String): Int? {
+    val raw = project.providers.gradleProperty(name).orNull ?: return null
+    return raw.toIntOrNull() ?: throw GradleException("-P$name must be an integer, got \"$raw\".")
+}
+
+private fun verboseGradleProperty(project: Project): Int? {
+    val value = intGradleProperty(project, VERBOSE_GRADLE_PROPERTY) ?: return null
+    if (value !in 0..2) {
+        throw GradleException("-P$VERBOSE_GRADLE_PROPERTY must be 0, 1 or 2, got $value.")
+    }
+    return value
+}

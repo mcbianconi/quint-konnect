@@ -11,7 +11,7 @@ public data class TestConfig(
     override val seed: String = genSeed(),
 ) : GeneratorConfig {
 
-    override val nTraces: Int get() = maxSamples ?: DEFAULT_TRACES
+    override val nTraces: Int get() = maxSamplesOverride() ?: maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
         add(quintExecutable()); add("test")

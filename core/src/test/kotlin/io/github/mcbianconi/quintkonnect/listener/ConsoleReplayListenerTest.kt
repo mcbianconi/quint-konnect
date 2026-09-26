@@ -5,6 +5,7 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.nondet.NondetPicks
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -142,5 +143,21 @@ class ConsoleReplayListenerTest {
     fun `an unrecognized QUINT_COLOR value falls back to the console and NO_COLOR check`() {
         assertFalse(resolveUseColor(noColor = null, quintColor = "sometimes", hasConsole = false))
         assertTrue(resolveUseColor(noColor = null, quintColor = "sometimes", hasConsole = true))
+    }
+
+    @Test
+    fun `resolveVerbosity prefers the quintkonnect verbose property over QUINT_VERBOSE`() {
+        assertEquals(2, resolveVerbosity(verboseProperty = "2", quintVerbose = "1"))
+    }
+
+    @Test
+    fun `resolveVerbosity falls back to QUINT_VERBOSE then 0`() {
+        assertEquals(1, resolveVerbosity(verboseProperty = null, quintVerbose = "1"))
+        assertEquals(0, resolveVerbosity(verboseProperty = null, quintVerbose = null))
+    }
+
+    @Test
+    fun `resolveVerbosity ignores a non-numeric property and falls through`() {
+        assertEquals(1, resolveVerbosity(verboseProperty = "not-a-number", quintVerbose = "1"))
     }
 }

@@ -33,3 +33,13 @@ internal const val QUINT_EXECUTABLE_PROPERTY: String = "quintkonnect.quintExecut
 
 internal fun quintExecutable(quintExecutable: String? = System.getProperty(QUINT_EXECUTABLE_PROPERTY)): String =
     quintExecutable ?: "quint"
+
+// Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
+// `-Pquint.maxSamples`/`-Pquint.maxSteps` Gradle properties, for PR vs nightly CI profiles.
+// Override > the annotation's maxSamples/maxSteps value (the RunConfig/TestConfig field below) >
+// DEFAULT_TRACES/no `--max-steps` flag.
+internal const val MAX_SAMPLES_PROPERTY: String = "quintkonnect.maxSamples"
+internal const val MAX_STEPS_PROPERTY: String = "quintkonnect.maxSteps"
+
+internal fun maxSamplesOverride(value: String? = System.getProperty(MAX_SAMPLES_PROPERTY)): Int? = value?.toIntOrNull()
+internal fun maxStepsOverride(value: String? = System.getProperty(MAX_STEPS_PROPERTY)): Int? = value?.toIntOrNull()
