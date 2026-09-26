@@ -39,7 +39,12 @@ class Step(
 private fun extractFromMbtVars(state: LinkedHashMap<String, ItfValue>, statePath: List<String>): Step {
     val actionTaken = state.remove("mbt::actionTaken")
         ?.let { it as? ItfValue.Str }?.value
-        ?: error("Missing `mbt::actionTaken` variable in the trace")
+        ?: error(
+            "Missing `mbt::actionTaken` variable in the trace. If this trace came from " +
+                "`quint test` (which has no `--mbt`), model the action taken as a " +
+                "sum-type variable in the spec instead and set DriverConfig.nondetPath " +
+                "to it (see docs/decisions/quint-test-needs-nondet-path.md)."
+        )
 
     val nondetValue = state.remove("mbt::nondetPicks")
         ?: error("Missing `mbt::nondetPicks` variable in the trace")

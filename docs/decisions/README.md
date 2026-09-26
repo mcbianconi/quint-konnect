@@ -11,3 +11,4 @@ future work.
 - [Quint version pin](quint-version-pin.md) — CI pins quint 0.32.0; bump deliberately
 - [Parallel agent work](parallel-agent-work.md) — beads, disjoint files, one GitButler branch per agent, stacking allowed
 - [Ship it lands directly](ship-it-lands-directly.md) — "ship it" = `but land` onto main, push, watch CI, sync tbd
+- [quint test needs a nondet path](quint-test-needs-nondet-path.md) — `@QuintTest` replay requires the spec to model the action taken as a sum type and `nondetPath` to point at it
