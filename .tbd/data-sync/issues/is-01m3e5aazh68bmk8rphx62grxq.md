@@ -3,9 +3,9 @@ type: is
 id: is-01m3e5aazh68bmk8rphx62grxq
 title: Custom kotlinx Decoder over ItfValue
 kind: feature
-status: open
+status: closed
 priority: 2
-version: 3
+version: 5
 labels:
   - roadmap
 dependencies:
@@ -13,7 +13,11 @@ dependencies:
     target: is-01m3e5aepym9ckf6pk2jkpfty9
 parent_id: is-01m3e5a9sj92e7ptv02j419tm8
 created_at: 2026-09-26T06:09:24.465Z
-updated_at: 2026-09-26T06:49:24.936Z
+updated_at: 2026-09-26T13:50:12.439Z
+closed_at: 2026-09-26T13:50:12.439Z
+close_reason: Implemented ItfValueDecoder, a custom kotlinx Decoder/CompositeDecoder reading ItfValue directly, replacing the JSON-based normalizer. Landed on branch itf-decoder (commits 7cdb478, 0d03f86). itf:checkKotlinAbi passes unchanged; itf/core/example tests green.
+resolution: null
+duplicate_of: null
 ---
 Replace ItfValue -> JsonElement -> kotlinx with a kotlinx Decoder reading ItfValue directly. One decode path (no descriptor vs no-descriptor behavior split), errors named by Quint field path. Make toNormalizedJson internal.
 
