@@ -94,6 +94,11 @@ public class ConsoleReplayListener(
         trace(1, "[Step $stepIndex]\n$step\n")
     }
 
+    override fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {
+        error("[FAIL] trace ${traceIndex + 1}")
+        error("Reproduce this error with `QUINT_SEED=${config.seed}`\n")
+    }
+
     override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {
         if (failure == null) {
             success("[OK] $testName")

@@ -42,6 +42,14 @@ class ConsoleReplayListenerTest {
     }
 
     @Test
+    fun `onTraceFailed prints FAIL and the reproduce seed line naming the trace`() {
+        val output = capture { it.onTraceFailed(2, config, AssertionError("boom")) }
+
+        assertTrue(output.contains("[FAIL] trace 3"))
+        assertTrue(output.contains("Reproduce this error with `QUINT_SEED=12345`"))
+    }
+
+    @Test
     fun `prints the run header naming the test and trace count`() {
         val output = capture { it.onRunStarted("my test", config) }
 

@@ -49,6 +49,8 @@ class ReplayRunnerTest {
         val events = mutableListOf<String>()
         var stepFailure: Throwable? = null
         var runFailure: Throwable? = null
+        var traceFailure: Throwable? = null
+        val traceFailedSeeds = mutableListOf<String>()
 
         override fun onRunStarted(testName: String, config: GeneratorConfig) {
             events += "runStarted"
@@ -69,6 +71,12 @@ class ReplayRunnerTest {
 
         override fun onTraceFinished(traceIndex: Int) {
             events += "traceFinished:$traceIndex"
+        }
+
+        override fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {
+            events += "traceFailed:$traceIndex"
+            traceFailure = failure
+            traceFailedSeeds += config.seed
         }
 
         override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {
@@ -327,5 +335,135 @@ class ReplayRunnerTest {
         }
 
         assertEquals(listOf("runStarted"), listener.events)
+    }
+
+    @Test
+    fun `traceReplays returns one replay per trace with a 1-based display name and the seed`() {
+        val traces = traceWithAction("A") + traceWithAction("B")
+        val replays = runner(traces, config = fakeConfig).traceReplays({ FakeDriver() }, "per trace test")
+
+        assertEquals(2, replays.size)
+        assertEquals("trace 1 (seed 12345)", replays[0].displayName)
+        assertEquals("trace 2 (seed 12345)", replays[1].displayName)
+    }
+
+    @Test
+    fun `traceReplays generates traces once and calls the driver factory once per run`() {
+        var generateCalls = 0
+        val traces = traceWithAction("A") + traceWithAction("B")
+        val source = TraceSource { generateCalls++; traces }
+        var factoryCalls = 0
+        val driverFactory = { factoryCalls++; FakeDriver() }
+
+        val replays = ReplayRunner(fakeConfig, source, silentListener).traceReplays(driverFactory, "gen once")
+        assertEquals(1, generateCalls)
+        assertEquals(0, factoryCalls)
+
+        replays.forEach { it.run() }
+        assertEquals(1, generateCalls)
+        assertEquals(2, factoryCalls)
+    }
+
+    @Test
+    fun `each traceReplays run gets a fresh driver`() {
+        val traces = traceWithAction("A") + traceWithAction("B")
+        val createdDrivers = mutableListOf<FakeDriver>()
+        val driverFactory = { FakeDriver().also { createdDrivers.add(it) } }
+
+        runner(traces).traceReplays(driverFactory, "fresh driver test").forEach { it.run() }
+
+        assertEquals(2, createdDrivers.size)
+        assertNotSame(createdDrivers[0], createdDrivers[1])
+    }
+
+    @Test
+    fun `a failing trace does not stop other traces from running`() {
+        val trace1 = ItfTrace(states = listOf(ItfState(stateWithAction("A"))))
+        val trace2 = ItfTrace(states = listOf(ItfState(stateWithAction("B"))))
+        val traces = listOf(trace1, trace2)
+
+        val dispatched = mutableListOf<String>()
+        val driverFactory = {
+            FakeDriver { step ->
+                dispatched += step.actionTaken
+                if (step.actionTaken == "A") throw AssertionError("boom")
+            }
+        }
+
+        val replays = runner(traces).traceReplays(driverFactory, "independent traces")
+
+        assertThrows<AssertionError> { replays[0].run() }
+        replays[1].run()
+
+        assertEquals(listOf("A", "B"), dispatched)
+    }
+
+    @Test
+    fun `a failing trace fires onTraceFailed with the wrapped assertion and the config`() {
+        val traces = traceWithAction("TestAction")
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+
+        val replays = runner(traces, listener).traceReplays({ driver }, "failing trace test")
+        val thrown = assertThrows<AssertionError> { replays[0].run() }
+
+        assertSame(thrown, listener.traceFailure)
+        assertTrue(listener.events.contains("traceFailed:0"))
+        assertFalse(listener.events.any { it.startsWith("runFinished") })
+    }
+
+    @Test
+    fun `every failing trace fires its own onTraceFailed with the reproduce seed`() {
+        val traces = traceWithAction("A") + traceWithAction("B")
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+        val config = object : GeneratorConfig by fakeConfig {
+            override val seed = "cafe"
+        }
+
+        val replays = ReplayRunner(config, TraceSource { traces }, listener).traceReplays({ driver }, "both fail")
+
+        assertThrows<AssertionError> { replays[0].run() }
+        assertThrows<AssertionError> { replays[1].run() }
+
+        assertEquals(listOf("traceFailed:0", "traceFailed:1"), listener.events.filter { it.startsWith("traceFailed") })
+        assertEquals(listOf("cafe", "cafe"), listener.traceFailedSeeds)
+        assertFalse(listener.events.any { it.startsWith("runFinished") })
+    }
+
+    @Test
+    fun `traceReplays with zero traces returns a single replay that fails`() {
+        val listener = RecordingReplayListener()
+        val replays = ReplayRunner(fakeConfig, TraceSource { emptyList() }, listener)
+            .traceReplays({ FakeDriver() }, "empty test")
+
+        assertEquals(1, replays.size)
+
+        val thrown = assertThrows<IllegalStateException> { replays[0].run() }
+        assertTrue(thrown.message!!.contains("zero traces"))
+        assertTrue(listener.events.contains("runFinished:false"))
+        assertSame(thrown, listener.runFailure)
+    }
+
+    @Test
+    fun `traceReplays propagates a trace-generation failure without returning any replay`() {
+        val listener = RecordingReplayListener()
+        val failingSource = TraceSource { error("quint failed") }
+
+        assertThrows<IllegalStateException> {
+            ReplayRunner(fakeConfig, failingSource, listener).traceReplays({ FakeDriver() }, "gen failure")
+        }
+
+        assertEquals(listOf("runStarted"), listener.events)
+    }
+
+    @Test
+    fun `a passing trace does not fire onTraceFailed or onRunFinished`() {
+        val traces = traceWithAction("A")
+        val listener = RecordingReplayListener()
+
+        runner(traces, listener).traceReplays({ FakeDriver() }, "passing trace test").forEach { it.run() }
+
+        assertFalse(listener.events.any { it.startsWith("traceFailed") || it.startsWith("runFinished") })
     }
 }

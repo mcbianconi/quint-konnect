@@ -38,6 +38,22 @@ public interface ReplayListener {
     /** Trace [traceIndex] replayed to completion without failure. */
     public fun onTraceFinished(traceIndex: Int) {}
 
-    /** The run for [testName] finished; [failure] is `null` on success. */
+    /**
+     * Trace [traceIndex] failed, replayed on its own via [io.github.mcbianconi.quintkonnect.ReplayRunner.traceReplays]
+     * (e.g. as its own JUnit dynamic test). [failure] is usually the same [AssertionError]
+     * [onStepFailed] was already called with; it's the driver factory's own exception instead when
+     * constructing the driver itself failed, before any step ran. Unlike [onRunFinished], this
+     * fires per trace, so every failing trace reports how to reproduce it, not just the last one.
+     */
+    public fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {}
+
+    /**
+     * The run for [testName] finished; [failure] is `null` on success.
+     *
+     * Fired once for a whole [io.github.mcbianconi.quintkonnect.ReplayRunner.runTest] call. A
+     * [io.github.mcbianconi.quintkonnect.ReplayRunner.traceReplays] call fires it only for the
+     * single [io.github.mcbianconi.quintkonnect.TraceReplay] zero traces produces; per-trace
+     * failures go through [onTraceFailed] instead, and a passing trace fires neither.
+     */
     public fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {}
 }
