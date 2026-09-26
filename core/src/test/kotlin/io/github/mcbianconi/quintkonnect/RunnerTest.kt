@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.ByteArrayOutputStream
@@ -252,7 +251,6 @@ class RunnerTest {
     }
 
     @Test
-    @Disabled("see qk-9geu: Step.fromState mutates the shared trace state map, so replaying the same List<ItfTrace> twice fails")
     fun `replays the same traces more than once`() {
         val traces = traceWithAction("A")
         Runner.runTest({ FakeDriver() }, fakeConfig, "first run", traces)

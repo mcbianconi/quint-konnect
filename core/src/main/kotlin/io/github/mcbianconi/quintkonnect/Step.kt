@@ -27,12 +27,14 @@ class Step(
     }
 
     companion object {
-        fun fromState(state: LinkedHashMap<String, ItfValue>, config: DriverConfig): Step =
-            if (config.nondetPath.isEmpty()) {
-                extractFromMbtVars(state, config.statePath)
+        fun fromState(state: LinkedHashMap<String, ItfValue>, config: DriverConfig): Step {
+            val stateCopy = LinkedHashMap(state)
+            return if (config.nondetPath.isEmpty()) {
+                extractFromMbtVars(stateCopy, config.statePath)
             } else {
-                extractFromSumType(state, config.nondetPath, config.statePath)
+                extractFromSumType(stateCopy, config.nondetPath, config.statePath)
             }
+        }
     }
 }
 

@@ -78,4 +78,18 @@ class StepTest {
         val state = state("mbt::actionTaken" to ItfValue.Str("A"))
         assertThrows<IllegalStateException> { Step.fromState(state, DriverConfig()) }
     }
+
+    @Test
+    fun `does not mutate the input state map`() {
+        val state = state(
+            "mbt::actionTaken" to ItfValue.Str("TestAction"),
+            "mbt::nondetPicks" to emptyNondet,
+            "x" to ItfValue.Num(1),
+        )
+        val expected = LinkedHashMap(state)
+
+        Step.fromState(state, DriverConfig())
+
+        assertEquals(expected, state)
+    }
 }
