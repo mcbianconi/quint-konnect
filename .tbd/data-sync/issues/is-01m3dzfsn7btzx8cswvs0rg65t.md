@@ -5,7 +5,7 @@ title: "Phase 3: Developer experience"
 kind: epic
 status: open
 priority: 2
-version: 23
+version: 24
 labels:
   - roadmap
 dependencies: []
@@ -32,7 +32,8 @@ child_order_hints:
   - is-01m3e5ae7vcqt89dehgb65ep30
   - is-01m3e5aefjmq3t2e3ygzg5b4eg
   - is-01m3e5aepym9ckf6pk2jkpfty9
+  - is-01m3exj5ndsygnct8s6cdcwc5h
 created_at: 2026-09-26T04:27:31.878Z
-updated_at: 2026-09-26T06:09:28.285Z
+updated_at: 2026-09-26T13:13:06.989Z
 ---
 Compile-time validation, per-trace reporting, readable diffs, Gradle plugin, typed driver state.
