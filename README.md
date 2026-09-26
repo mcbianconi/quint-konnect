@@ -189,3 +189,9 @@ See [`example/`](./example) for a complete TicTacToe example:
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
 ./gradlew build                      # Build all modules
 ```
+
+## License
+
+Apache-2.0, see [LICENSE](./LICENSE). This is a port of
+[quint-connect](https://github.com/informalsystems/quint-connect) (Rust), also
+Apache-2.0.

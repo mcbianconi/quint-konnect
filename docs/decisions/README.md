@@ -5,6 +5,7 @@ One file per decision. Keep entries short: the decision, why, and how it should 
 future work.
 
 - [No Windows support](no-windows-support.md) — Windows isn't a target platform
+- [License](license.md) — Apache-2.0, copyright holder "Murillo Cesar Bianconi"
 - [ITF collection mapping](itf-collection-mapping.md) — `Set<T>` for sets, `Map<List<Long>, V>` for tuple-keyed maps
 - [ITF Option and BigInt mapping](itf-option-and-bigint.md) — `Option[T]` is `T?`, unwrapped only for nullable descriptors; oversized `int` is `BigInteger`
 - [Runner failure contract](runner-failure-contract.md) — step failures become `AssertionError` with location; seed always printed
