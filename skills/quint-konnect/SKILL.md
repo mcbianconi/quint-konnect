@@ -226,8 +226,9 @@ Debugging notes:
 - No Windows support.
 - No compile-time check that a `@QuintAction` name or nondet parameter name actually exists in
   the spec — a typo only surfaces when a trace is replayed.
-- No runtime override for annotation parameters beyond `QUINT_SEED`; everything else
-  (`spec`, `maxSamples`, `maxSteps`, ...) is fixed at compile time in the annotation.
+- `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity
+  can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin), except that a seed
+  fixed in the annotation still wins over `-Pquint.seed`.
 - A failing trace isn't saved anywhere, and there's no ready-made command to replay just that
   trace — reproduce with `QUINT_SEED` and rerun the whole test instead.
 - No way to replay a saved `.itf.json` trace without invoking `quint` again.

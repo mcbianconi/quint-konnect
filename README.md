@@ -311,6 +311,22 @@ See [`example/`](./example) for a complete TicTacToe example:
 - [`GameState.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/GameState.kt) — state comparison
 - [`tictactoe.qnt`](example/src/test/resources/tictactoe.qnt) — Quint specification
 
+More examples under [`example/src/test/kotlin/.../example/`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example):
+- `asyncstore/` — an async bank ledger (`Mutex`, simulated I/O `delay`) driven by `suspend` actions.
+- `sumtypes/` — a vending machine whose spec records the action in a sum-type variable and nests
+  its state under a record, replayed with `DriverConfig(statePath = …, nondetPath = …)`.
+- `projection/` — a warehouse checked by projection: `@QuintIgnore` on fields the implementation
+  doesn't track and `compareField` for a batched counter, plus a buggy variant the test expects
+  to fail.
+- `quinttest/`, `suspending/`, `partialstate/`, `escaping/`, `buggy/` — smaller fixtures for
+  `@QuintTest`, suspend actions, `@QuintIgnore`, escaped names and a negative test.
+
+## AI agents
+
+An agent skill lives at [`skills/quint-konnect/`](skills/quint-konnect/SKILL.md). Point a coding
+agent at it to wire quint-konnect into a Kotlin/Gradle project: Gradle/KSP setup, driver and
+`TypedState` mapping, and debugging with `QUINT_SEED`/`QUINT_VERBOSE`.
+
 ## Build & test
 
 ```bash
