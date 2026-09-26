@@ -12,7 +12,7 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 class RockPaperScissorsDriver : Driver {
     val game = RockPaperScissors()
 
-    override fun quintState(): State<*> = RpsGameState()
+    override fun quintState(): State<RockPaperScissorsDriver> = RpsGameState()
 
     @QuintAction("init")
     fun init() = game.init()

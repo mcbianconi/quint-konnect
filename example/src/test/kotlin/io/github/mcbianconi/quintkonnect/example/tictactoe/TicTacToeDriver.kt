@@ -12,7 +12,7 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 class TicTacToeDriver : Driver {
     val game = TicTacToe()
 
-    override fun quintState(): State<*> = TicTacToeState()
+    override fun quintState(): State<TicTacToeDriver> = TicTacToeState()
 
     @QuintAction("init")
     fun init() {

@@ -16,7 +16,7 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 class EscapingCounterDriver : Driver {
     var count = 0L
 
-    override fun quintState(): State<*> = EscapingCounterState()
+    override fun quintState(): State<EscapingCounterDriver> = EscapingCounterState()
 
     @QuintAction("init")
     fun init() {

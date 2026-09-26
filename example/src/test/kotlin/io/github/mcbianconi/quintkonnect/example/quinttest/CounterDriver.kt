@@ -16,7 +16,7 @@ class CounterDriver : Driver {
 
     override fun config(): DriverConfig = DriverConfig(nondetPath = listOf("lastAction"))
 
-    override fun quintState(): State<*> = CounterState()
+    override fun quintState(): State<CounterDriver> = CounterState()
 
     @QuintAction("Init")
     fun init() {

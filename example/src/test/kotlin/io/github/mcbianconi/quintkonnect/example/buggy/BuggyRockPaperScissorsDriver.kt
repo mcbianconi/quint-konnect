@@ -24,7 +24,7 @@ class BuggyRockPaperScissorsDriver : Driver {
         }
     }
 
-    override fun quintState(): State<*> = BuggyRpsGameState()
+    override fun quintState(): State<BuggyRockPaperScissorsDriver> = BuggyRpsGameState()
 }
 
 private fun MoveSer.toMove(): Move = when (this) {
