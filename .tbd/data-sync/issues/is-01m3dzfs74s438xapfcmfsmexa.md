@@ -5,7 +5,7 @@ title: "Phase 1: Correctness fixes"
 kind: epic
 status: open
 priority: 1
-version: 11
+version: 12
 labels:
   - roadmap
 dependencies: []
@@ -20,7 +20,8 @@ child_order_hints:
   - is-01m3dzg67n688k8p22qr3kqqz7
   - is-01m3dzg6evc1azdjkhz40hqenj
   - is-01m3e0m0ssyvzycnq141ag65sd
+  - is-01m3e1902edjpdzkxqh8kjvr7e
 created_at: 2026-09-26T04:27:31.428Z
-updated_at: 2026-09-26T04:47:18.841Z
+updated_at: 2026-09-26T04:58:46.222Z
 ---
 Fix bugs that hide failures or produce false failures in the runner, ITF normalization and code generation.
