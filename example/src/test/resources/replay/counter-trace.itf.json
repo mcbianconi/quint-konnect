@@ -1,0 +1,8 @@
+{
+  "vars": ["count", "lastAction"],
+  "states": [
+    { "count": 0, "lastAction": { "tag": "Init", "value": { "#tup": [] } } },
+    { "count": 1, "lastAction": { "tag": "Add", "value": { "n": 1 } } },
+    { "count": 3, "lastAction": { "tag": "Add", "value": { "n": 2 } } }
+  ]
+}

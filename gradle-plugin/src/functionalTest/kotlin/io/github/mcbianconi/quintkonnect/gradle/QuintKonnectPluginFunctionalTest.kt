@@ -267,6 +267,39 @@ class QuintKonnectPluginFunctionalTest {
     }
 
     @Test
+    fun `setting -Pquint-replay maps it to quintkonnect-replay and skips checkQuint`() {
+        val traceFile = File(projectDir, "saved.itf.json").apply { writeText("""{"states": []}""") }
+
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.register("printQuintKonnectDiagnostics") {
+                doLast {
+                    val testTask = tasks.named("test").get()
+                    val dependsOnCheckQuint = testTask.taskDependencies.getDependencies(testTask)
+                        .any { it.name == "checkQuint" }
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("dependsOnCheckQuint=${'$'}dependsOnCheckQuint")
+                    println("testJvmArgs=" + test.jvmArgumentProviders.flatMap { it.asArguments() }.joinToString(","))
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printQuintKonnectDiagnostics", "-Pquint.replay=${traceFile.name}").build()
+
+        assertTrue(result.output.contains("dependsOnCheckQuint=false"))
+        // Not asserting the exact absolute path: TestKit's project dir may not equal
+        // traceFile.absolutePath byte-for-byte (e.g. a macOS /var vs /private/var symlink).
+        assertTrue(result.output.contains("-Dquintkonnect.replay="))
+        assertTrue(result.output.contains(traceFile.name))
+    }
+
+    @Test
     fun `a non-numeric -Pquint-maxSamples fails the build at configuration`() {
         buildFile.writeText(
             """

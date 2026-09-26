@@ -1,9 +1,13 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.process.CommandLineArgumentProvider
 
 // Test.systemProperty()/systemProperties() aren't tracked as task inputs for up-to-date checking
@@ -18,6 +22,11 @@ internal class QuintRuntimeArgumentProvider(
     @get:Input @get:Optional val maxSteps: Provider<Int>,
     @get:Input @get:Optional val seed: Provider<String>,
     @get:Input @get:Optional val verbose: Provider<Int>,
+    @get:Input @get:Optional val replay: Provider<String>,
+    // Fingerprints the replay file/directory's content: `replay` above is only the path, so a Test
+    // task would otherwise stay UP-TO-DATE after the saved trace it points at changes.
+    @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val replayFiles: FileCollection,
+    @get:Input @get:Optional val parallelism: Provider<Int>,
 ) : CommandLineArgumentProvider {
 
     override fun asArguments(): Iterable<String> = buildList {
@@ -28,6 +37,8 @@ internal class QuintRuntimeArgumentProvider(
         maxSteps.orNull?.let { add("-D$MAX_STEPS_SYSTEM_PROPERTY=$it") }
         seed.orNull?.let { add("-D$SEED_SYSTEM_PROPERTY=$it") }
         verbose.orNull?.let { add("-D$VERBOSE_SYSTEM_PROPERTY=$it") }
+        replay.orNull?.let { add("-D$REPLAY_SYSTEM_PROPERTY=$it") }
+        parallelism.orNull?.let { add("-D$PARALLELISM_SYSTEM_PROPERTY=$it") }
     }
 }
 
@@ -49,3 +60,16 @@ internal const val MAX_SAMPLES_GRADLE_PROPERTY: String = "quint.maxSamples"
 internal const val MAX_STEPS_GRADLE_PROPERTY: String = "quint.maxSteps"
 internal const val SEED_GRADLE_PROPERTY: String = "quint.seed"
 internal const val VERBOSE_GRADLE_PROPERTY: String = "quint.verbose"
+
+// Mirrors REPLAY_PROPERTY (core/.../trace/TraceSource.kt): set from the `-Pquint.replay` Gradle
+// property below, resolved to an absolute path against the project directory. When set, Test
+// tasks skip checkQuint/downloadQuint (QuintKonnectPlugin.kt): replaying a saved trace needs no
+// quint installation.
+internal const val REPLAY_SYSTEM_PROPERTY: String = "quintkonnect.replay"
+internal const val REPLAY_GRADLE_PROPERTY: String = "quint.replay"
+
+// Mirrors PARALLELISM_PROPERTY (core/.../ReplayRunner.kt): set from the `-Pquint.parallelism`
+// Gradle property below. Only affects ReplayRunner.runTest's batch path; per-trace dynamic tests
+// (ReplayRunner.traceReplays) parallelize through JUnit's own dynamic test execution instead.
+internal const val PARALLELISM_SYSTEM_PROPERTY: String = "quintkonnect.parallelism"
+internal const val PARALLELISM_GRADLE_PROPERTY: String = "quint.parallelism"

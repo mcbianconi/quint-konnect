@@ -4,8 +4,8 @@ import io.github.mcbianconi.itf.ItfTrace
 import io.github.mcbianconi.quintkonnect.listener.ConsoleReplayListener
 import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
-import io.github.mcbianconi.quintkonnect.trace.TraceGenerator
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
+import io.github.mcbianconi.quintkonnect.trace.defaultTraceSource
 
 private val zeroTracesMessage =
     "Trace generation produced zero traces.\n" +
@@ -22,7 +22,7 @@ private val zeroTracesMessage =
  */
 public class ReplayRunner(
     private val generatorConfig: GeneratorConfig,
-    private val traceSource: TraceSource = TraceGenerator,
+    private val traceSource: TraceSource = defaultTraceSource(),
     private val listener: ReplayListener = ConsoleReplayListener(),
 ) {
 

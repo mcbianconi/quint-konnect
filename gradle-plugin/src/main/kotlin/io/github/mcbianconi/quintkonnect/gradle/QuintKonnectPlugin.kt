@@ -14,6 +14,11 @@ import java.io.File
 // is per-module, so this can't just reference core's constant).
 internal const val PROJECT_DIR_SYSTEM_PROPERTY: String = "quintkonnect.projectDir"
 
+// Mirrors FAILURES_DIR_PROPERTY in core/.../trace/FailureTraceWriter.kt: a failing trace is saved
+// under here by default (internal visibility is per-module, so this can't just reference core's
+// constant). Always set, like PROJECT_DIR_SYSTEM_PROPERTY, not a `-Pquint.*` override.
+internal const val FAILURES_DIR_SYSTEM_PROPERTY: String = "quintkonnect.failuresDir"
+
 internal const val KSP_PLUGIN_ID: String = "com.google.devtools.ksp"
 internal const val KOTLIN_JVM_PLUGIN_ID: String = "org.jetbrains.kotlin.jvm"
 
@@ -67,6 +72,13 @@ public class QuintKonnectPlugin : Plugin<Project> {
         val maxStepsOverride = intGradleProperty(project, MAX_STEPS_GRADLE_PROPERTY)
         val seedOverride = project.providers.gradleProperty(SEED_GRADLE_PROPERTY).orNull
         val verboseOverride = verboseGradleProperty(project)
+        // Resolved against the project directory here (not left to core), so the printed
+        // -Pquint.replay path in the plugin-set failure directory and the one the user typed
+        // agree regardless of the working directory `gradle` was invoked from.
+        val replayOverride = project.providers.gradleProperty(REPLAY_GRADLE_PROPERTY).orNull
+            ?.let { project.file(it).absolutePath }
+        val parallelismOverride = parallelismGradleProperty(project)
+        val replayFiles = replayOverride?.let { project.files(it) } ?: project.files()
 
         // React to kotlin.jvm rather than applying it ourselves: build-logic/build.gradle.kts
         // documents why KSP and kotlin.jvm must resolve from the same classpath/classloader,
@@ -88,13 +100,19 @@ public class QuintKonnectPlugin : Plugin<Project> {
             }
 
             val projectDir = project.projectDir.absolutePath
+            val failuresDir = project.layout.buildDirectory.dir("quint-konnect/failures")
             project.tasks.withType(Test::class.java).configureEach { test ->
-                test.dependsOn(checkQuint)
-                test.dependsOn(
-                    extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
-                )
+                // Replaying a saved trace needs no quint installation at all: skip checkQuint (and
+                // the download it can depend on) rather than fail a run that never invokes quint.
+                if (replayOverride == null) {
+                    test.dependsOn(checkQuint)
+                    test.dependsOn(
+                        extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
+                    )
+                }
                 test.useJUnitPlatform()
                 test.systemProperty(PROJECT_DIR_SYSTEM_PROPERTY, projectDir)
+                test.systemProperty(FAILURES_DIR_SYSTEM_PROPERTY, failuresDir.get().asFile.absolutePath)
                 test.jvmArgumentProviders.add(
                     QuintRuntimeArgumentProvider(
                         downloadQuint = extension.downloadQuint,
@@ -103,6 +121,9 @@ public class QuintKonnectPlugin : Plugin<Project> {
                         maxSteps = project.provider { maxStepsOverride },
                         seed = project.provider { seedOverride },
                         verbose = project.provider { verboseOverride },
+                        replay = project.provider { replayOverride },
+                        replayFiles = replayFiles,
+                        parallelism = project.provider { parallelismOverride },
                     ),
                 )
             }
@@ -136,6 +157,14 @@ private fun verboseGradleProperty(project: Project): Int? {
     val value = intGradleProperty(project, VERBOSE_GRADLE_PROPERTY) ?: return null
     if (value !in 0..2) {
         throw GradleException("-P$VERBOSE_GRADLE_PROPERTY must be 0, 1 or 2, got $value.")
+    }
+    return value
+}
+
+private fun parallelismGradleProperty(project: Project): Int? {
+    val value = intGradleProperty(project, PARALLELISM_GRADLE_PROPERTY) ?: return null
+    if (value < 1) {
+        throw GradleException("-P$PARALLELISM_GRADLE_PROPERTY must be at least 1, got $value.")
     }
     return value
 }
