@@ -33,6 +33,13 @@ sealed class ColorSer {
 @Serializable
 data class NullablePoint(val p: Point?)
 
+@Serializable
+@JsonClassDiscriminator("tag")
+sealed class MaybeSer {
+    @Serializable @SerialName("Some") data class Some(val value: Long) : MaybeSer()
+    @Serializable @SerialName("None") data object None : MaybeSer()
+}
+
 class ItfValueNormalizerTest {
 
     private fun point(x: Long, y: Long) =
@@ -221,5 +228,15 @@ class ItfValueNormalizerTest {
 
         assertEquals(JsonNull, none.toNormalizedJson(descriptor))
         assertEquals(null, QuintJson.decodeFromJsonElement(serializer<Long?>(), none.toNormalizedJson(descriptor)))
+    }
+
+    @Test
+    fun `non-nullable descriptor never unwraps a record tagged Some or None`() {
+        val descriptor = serializer<MaybeSer>().descriptor
+        val none = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("None")))
+        val some = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("Some"), "value" to ItfValue.Num(7)))
+
+        assertEquals(MaybeSer.None, QuintJson.decodeFromJsonElement<MaybeSer>(none.toNormalizedJson(descriptor)))
+        assertEquals(MaybeSer.Some(7), QuintJson.decodeFromJsonElement<MaybeSer>(some.toNormalizedJson(descriptor)))
     }
 }
