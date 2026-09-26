@@ -15,3 +15,4 @@ comment next to the code it governs is easier to keep in sync than a separate fi
 - [ITF Option and BigInt mapping](itf-option-and-bigint.md) — the MBT harness's unconditional `Option` unwrap vs. the descriptor-driven one
 - [quint test needs a nondet path](quint-test-needs-nondet-path.md) — `@QuintTest` replay requires the spec to model the action taken as a sum type and `nondetPath` to point at it
 - [Gradle plugin distribution](gradle-plugin-distribution.md) — `quint-konnect-gradle-plugin` publishes to Maven Central with its marker artifact, not the Gradle Plugin Portal
+- [Agent skill](agent-skill.md) — a user-facing skill at `skills/quint-konnect/`, separate from this repo's dev skills, defers spec authoring to quint-llm-kit
