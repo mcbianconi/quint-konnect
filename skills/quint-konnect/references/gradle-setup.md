@@ -64,6 +64,56 @@ quintKonnect {
 }
 ```
 
+The plugin does **not** configure `testLogging`. Gradle's own default hides two things on a
+failure: `exceptionFormat` defaults to `SHORT` (console shows only
+`java.lang.AssertionError at File.kt:19`, not the trace/step/action/diff message), and test
+stderr (where `QUINT_VERBOSE` output and the `Reproduce this error with QUINT_SEED=...` line go)
+is hidden entirely. Add this to see both in the console instead of digging through
+`build/test-results/test/*.xml`:
+
+```kotlin
+// build.gradle.kts — append anywhere; this uses the fully-qualified enum so it doesn't need an
+// import line added above `plugins { }` (Kotlin script only allows imports at the top of the file)
+tasks.test {
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
+}
+```
+
+## Consuming a local build (`publishToMavenLocal`)
+
+Before quint-konnect is on Maven Central, add `mavenLocal()` to **both** repository blocks in
+`settings.gradle.kts` — the plugin marker resolves via `pluginManagement`, the library artifacts
+via `dependencyResolutionManagement`:
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+}
+```
+
+Do not also add a `repositories { ... }` block to `build.gradle.kts` on top of this: a
+project-level `repositories` block makes Gradle ignore the ones declared in
+`dependencyResolutionManagement` (it warns "The project declares repositories, effectively
+ignoring the repositories you have declared in the settings"), which silently drops `mavenLocal()`
+and produces a "Could not find io.github.mcbianconi:..." resolution failure that looks unrelated
+to repositories at first glance. If the project already declares per-project repositories (i.e.
+`dependencyResolutionManagement` isn't used), add `mavenLocal()` to that existing block instead.
+
 ## Without the plugin (manual fallback)
 
 Use this when the plugin can't be applied yet (e.g. `pluginManagement` in this project can't add
@@ -71,6 +121,8 @@ Use this when the plugin can't be applied yet (e.g. `pluginManagement` in this p
 
 ```kotlin
 // build.gradle.kts
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.4.20"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
@@ -100,8 +152,10 @@ tasks.test {
     // `gradle test` and from an IDE run (matches PROJECT_DIR_PROPERTY in core's GeneratorConfig).
     systemProperty("quintkonnect.projectDir", project.projectDir.absolutePath)
     // Recommended: QUINT_VERBOSE/seed-reproduction output goes to stderr, and Gradle hides test
-    // stderr by default.
+    // stderr by default. exceptionFormat = FULL is also needed, or the console only shows
+    // "AssertionError at File.kt:N" with no trace/step/action/diff message.
     testLogging {
+        exceptionFormat = TestExceptionFormat.FULL
         showStandardStreams = true
     }
 }

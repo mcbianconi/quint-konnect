@@ -112,6 +112,8 @@ traces carry no `mbt::actionTaken`/`mbt::nondetPicks`. A `@QuintTest` spec must 
 the action taken as its own sum-type variable, and the driver must point `config()` at it:
 
 ```kotlin
+import io.github.mcbianconi.quintkonnect.DriverConfig
+
 @QuintTest(spec = "src/test/resources/quinttest/counter.qnt", test = "happyTest")
 class CounterDriver : Driver {
     var count = 0L
@@ -146,6 +148,10 @@ decoded from the ITF trace and compared field-by-field against the implementatio
 step.
 
 ```kotlin
+import io.github.mcbianconi.quintkonnect.TypedState
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
+
 @Serializable
 data class MySpecState(val count: Long)
 
@@ -159,9 +165,10 @@ A mismatch names the differing field, e.g. `cells.(1, 2): spec="X", impl="O"`; s
 regardless of order. See `references/types.md` for the full Quint-to-Kotlin type table
 (sum types, tuples, maps, `Option`, oversized integers).
 
-- Mark a field the implementation doesn't track with `@QuintIgnore` (from
-  `quint-konnect-annotations`) — it still has to decode, so give it a default (or make it
-  nullable) if the spec might omit it; a mismatch on it never fails the check.
+- Mark a field the implementation doesn't track with `@QuintIgnore`
+  (`io.github.mcbianconi.quintkonnect.annotations.QuintIgnore`) — it still has to decode, so
+  give it a default (or make it nullable) if the spec might omit it; a mismatch on it never
+  fails the check.
 - Override `TypedState.compareField(path, spec, impl)` for a field that needs its own
   comparison logic; return `null` to fall through to the default structural comparison.
 - If the driver doesn't return a real `State`, the default `quintState()` skips state checking
@@ -205,12 +212,21 @@ Debugging notes:
 - **Read the seed from the failing dynamic test's name** (or the `Reproduce this error with
   QUINT_SEED=0x...` line printed to stderr), then rerun with that `QUINT_SEED` plus
   `QUINT_VERBOSE=2` to see every step leading to the failure.
-- **Gradle hides test stderr by default.** `QUINT_VERBOSE` output and the seed-reproduction
-  line both go to stderr; without `testLogging { showStandardStreams = true }` (or an
-  equivalent IDE setting), you won't see them in the console — check
-  `build/test-results/test/*.xml` instead, or add that block.
+- **Gradle hides both the failure message and test stderr by default.** The console only prints
+  `java.lang.AssertionError at File.kt:19` — not the trace/step/action/diff text — because
+  Gradle's default `testLogging.exceptionFormat` is `SHORT`; `QUINT_VERBOSE` output and the
+  seed-reproduction line are separately hidden because they go to stderr. Fix both with
+  `testLogging { exceptionFormat = TestExceptionFormat.FULL; showStandardStreams = true }` (see
+  `references/gradle-setup.md`), or read `build/test-results/test/*.xml` /
+  `build/reports/tests/test/index.html`, which have the full text either way.
 - **A green `test` task is cached (`UP-TO-DATE`)** and won't regenerate traces on a rerun; use
   `./gradlew test --rerun` to force fresh random traces (irrelevant when `QUINT_SEED` is set).
+- **Reproducing needs the same `-Pquint.maxSamples`/`-Pquint.maxSteps` overrides used in the
+  failing run, not just `QUINT_SEED`.** The seed fixes the random choices, but a shorter/longer
+  run under a different `maxSteps` can miss the state that triggered the failure — the printed
+  `QUINT_SEED=...` line doesn't repeat those overrides for you. A bug that only shows up near a
+  spec's bounds (e.g. a clamped counter) may also need a higher `maxSamples`/`maxSteps` than the
+  annotation's default to be caught at all.
 - **Fix the implementation, not the spec**, unless the spec itself is wrong — the whole point
   of the exercise is checking the implementation against the spec, not the reverse.
 - An **anonymous action** (a spec action `quint` can't name, e.g. from an unnamed `any`/`all`
