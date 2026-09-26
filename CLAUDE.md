@@ -10,7 +10,7 @@ instead (a code comment, an error message) rather than in a separate file.
 | Quint type | Kotlin `@Serializable` type |
 |------------|----------------------------|
 | `int` | `Long` |
-| `int` (larger than `Long`) | `BigInteger`, with `@Serializable(with = BigIntegerSerializer::class)` |
+| `int` (larger than `Long`) | `BigInteger`, with `@Contextual` |
 | `bool` | `Boolean` |
 | `str` | `String` |
 | `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |

@@ -37,8 +37,7 @@ public sealed class ItfValue {
      * An arbitrary-precision integer encoded as `{"#bigint": "123"}`.
      *
      * [value] is the decimal string representation. [decode] this into a [Long] field when the
-     * value fits, otherwise into a `@Serializable(with = BigIntegerSerializer::class) val n:
-     * BigInteger` field.
+     * value fits, otherwise into a `val n: @Contextual BigInteger` field.
      */
     public data class BigInt(public val value: String) : ItfValue()
 

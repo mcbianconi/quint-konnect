@@ -11,7 +11,6 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.collections.List as KList
 
@@ -65,7 +64,7 @@ private fun ItfValue.asOrderedChildren(): KList<ItfValue>? = when (this) {
 internal class ItfValueDecoder(
     initialValue: ItfValue,
     private val path: String,
-    override val serializersModule: SerializersModule = EmptySerializersModule(),
+    override val serializersModule: SerializersModule = itfSerializersModule,
 ) : Decoder {
 
     private var value: ItfValue = initialValue

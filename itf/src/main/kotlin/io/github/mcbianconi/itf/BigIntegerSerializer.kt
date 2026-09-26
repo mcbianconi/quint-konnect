@@ -16,11 +16,11 @@ import java.math.BigInteger
  * [kotlinx.serialization] serializer for [BigInteger], for Quint `int` values that don't fit in a
  * [Long].
  *
- * Annotate the target field with `@Serializable(with = BigIntegerSerializer::class) val n:
- * BigInteger` to decode it; a plain `Long` field keeps working as before for values that fit.
- * Supports both [ItfValue.decode] (reading the [ItfValue.Num]/[ItfValue.BigInt] directly) and a
- * plain [kotlinx.serialization.json.Json] (reading the JSON element directly), since it's public
- * API that isn't restricted to ITF decoding.
+ * [ItfValue.decode] registers this serializer contextually, so `val n: @Contextual BigInteger`
+ * decodes it; `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger` also still
+ * works, and is required outside [ItfValue.decode] (e.g. a plain [kotlinx.serialization.json.Json]
+ * without this serializer registered in its own [kotlinx.serialization.modules.SerializersModule]).
+ * A plain `Long` field keeps working as before for values that fit.
  */
 public object BigIntegerSerializer : KSerializer<BigInteger> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)

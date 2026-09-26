@@ -2,6 +2,7 @@
 
 package io.github.mcbianconi.itf
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,6 +24,9 @@ private data class HugeCount(val n: @Serializable(with = BigIntegerSerializer::c
 
 @Serializable
 private data class SmallCount(val n: @Serializable(with = BigIntegerSerializer::class) BigInteger)
+
+@Serializable
+private data class ContextualHugeCount(val n: @Contextual BigInteger)
 
 @Serializable
 private data class NullableCount(val n: Long?)
@@ -126,6 +130,14 @@ class ItfValueDecodeTest {
         val value = ItfValue.Record(linkedMapOf("n" to ItfValue.BigInt("42")))
 
         assertEquals(HugeCount(BigInteger.valueOf(42)), value.decode<HugeCount>())
+    }
+
+    @Test
+    fun `decode a Contextual BigInteger field beyond Long range`() {
+        val huge = "123456789012345678901234567890"
+        val value = ItfValue.Record(linkedMapOf("n" to ItfValue.BigInt(huge)))
+
+        assertEquals(ContextualHugeCount(BigInteger(huge)), value.decode<ContextualHugeCount>())
     }
 
     @Test
