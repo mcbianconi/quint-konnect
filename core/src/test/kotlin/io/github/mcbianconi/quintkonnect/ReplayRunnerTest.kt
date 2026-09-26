@@ -3,7 +3,9 @@ package io.github.mcbianconi.quintkonnect
 import io.github.mcbianconi.itf.ItfState
 import io.github.mcbianconi.itf.ItfTrace
 import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import io.github.mcbianconi.quintkonnect.trace.TraceSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -11,10 +13,8 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 
-class RunnerTest {
+class ReplayRunnerTest {
 
     private val emptyNondet = ItfValue.Record(LinkedHashMap())
 
@@ -23,6 +23,14 @@ class RunnerTest {
         override val nTraces = 1
         override fun toCommand(tmpDir: java.nio.file.Path): List<String> = emptyList()
     }
+
+    private val silentListener = object : ReplayListener {}
+
+    private fun runner(
+        traces: List<ItfTrace>,
+        listener: ReplayListener = silentListener,
+        config: GeneratorConfig = fakeConfig,
+    ): ReplayRunner = ReplayRunner(config, TraceSource { traces }, listener)
 
     private fun stateWithAction(actionTaken: String, nondetPicks: ItfValue = emptyNondet): LinkedHashMap<String, ItfValue> =
         linkedMapOf(
@@ -37,28 +45,48 @@ class RunnerTest {
         override fun step(step: Step) = onStep(step)
     }
 
-    private fun captureStderr(block: () -> Unit): String {
-        val original = System.err
-        val buffer = ByteArrayOutputStream()
-        System.setErr(PrintStream(buffer))
-        try {
-            block()
-        } finally {
-            System.setErr(original)
+    private class RecordingReplayListener : ReplayListener {
+        val events = mutableListOf<String>()
+        var stepFailure: Throwable? = null
+        var runFailure: Throwable? = null
+
+        override fun onRunStarted(testName: String, config: GeneratorConfig) {
+            events += "runStarted"
         }
-        return buffer.toString()
+
+        override fun onTraceStarted(traceIndex: Int) {
+            events += "traceStarted:$traceIndex"
+        }
+
+        override fun onStep(traceIndex: Int, stepIndex: Int, step: Step) {
+            events += "step:$traceIndex:$stepIndex:${step.actionTaken}"
+        }
+
+        override fun onStepFailed(traceIndex: Int, stepIndex: Int, step: Step?, failure: Throwable) {
+            events += "stepFailed:$traceIndex:$stepIndex"
+            stepFailure = failure
+        }
+
+        override fun onTraceFinished(traceIndex: Int) {
+            events += "traceFinished:$traceIndex"
+        }
+
+        override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {
+            events += "runFinished:${failure == null}"
+            runFailure = failure
+        }
     }
 
     @Test
     fun `passes through when driver accepts every step`() {
         val traces = traceWithAction("TestAction")
-        Runner.runTest({ FakeDriver() }, fakeConfig, "ok test", traces)
+        runner(traces).runTest({ FakeDriver() }, "ok test")
     }
 
     @Test
     fun `zero traces fails`() {
         val thrown = assertThrows<IllegalStateException> {
-            Runner.runTest({ FakeDriver() }, fakeConfig, "empty test", emptyList())
+            runner(emptyList()).runTest({ FakeDriver() }, "empty test")
         }
         assertTrue(thrown.message!!.contains("zero traces"))
     }
@@ -73,7 +101,7 @@ class RunnerTest {
             FakeDriver().also { createdDrivers.add(it) }
         }
 
-        Runner.runTest(driverFactory, fakeConfig, "multi trace test", traces)
+        runner(traces).runTest(driverFactory, "multi trace test")
 
         assertEquals(2, factoryCalls)
         assertNotSame(createdDrivers[0], createdDrivers[1])
@@ -98,7 +126,7 @@ class RunnerTest {
             dispatched.add(Triple(step.actionTaken, step.nondetPicks.get("x"), step.nondetPicks.get("y")))
         }
 
-        Runner.runTest({ driver }, fakeConfig, "ordered test", traces)
+        runner(traces).runTest({ driver }, "ordered test")
 
         assertEquals(
             listOf(
@@ -117,7 +145,7 @@ class RunnerTest {
         val driver = FakeDriver { stepDispatched = true }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest({ driver }, fakeConfig, "anon test", traces)
+            runner(traces).runTest({ driver }, "anon test")
         }
 
         assertFalse(stepDispatched)
@@ -134,7 +162,7 @@ class RunnerTest {
         val driver = FakeDriver { throw original }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest({ driver }, fakeConfig, "failing test", traces)
+            runner(traces).runTest({ driver }, "failing test")
         }
 
         assertTrue(thrown.message!!.contains("trace 1"))
@@ -150,25 +178,11 @@ class RunnerTest {
         val driver = FakeDriver { throw AssertionError("boom") }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest({ driver }, fakeConfig, "failing test", traces)
+            runner(traces).runTest({ driver }, "failing test")
         }
 
         assertTrue(thrown.message!!.contains("Nondet picks"))
         assertTrue(thrown.message!!.contains("x: 7"))
-    }
-
-    @Test
-    fun `prints the reproduce seed message on an assertion failure`() {
-        val traces = traceWithAction("TestAction")
-        val driver = FakeDriver { throw AssertionError("boom") }
-
-        val output = captureStderr {
-            assertThrows<AssertionError> {
-                Runner.runTest({ driver }, fakeConfig, "failing test", traces)
-            }
-        }
-
-        assertTrue(output.contains("Reproduce this error with `QUINT_SEED=12345`"))
     }
 
     @Test
@@ -178,7 +192,7 @@ class RunnerTest {
         val driver = FakeDriver { throw original }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest({ driver }, fakeConfig, "failing test", traces)
+            runner(traces).runTest({ driver }, "failing test")
         }
 
         assertSame(original, thrown.cause)
@@ -206,7 +220,7 @@ class RunnerTest {
         }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest(driverFactory, fakeConfig, "multi trace failing test", traces)
+            runner(traces).runTest(driverFactory, "multi trace failing test")
         }
 
         assertTrue(thrown.message!!.contains("trace 2"))
@@ -229,7 +243,7 @@ class RunnerTest {
         }
 
         val thrown = assertThrows<AssertionError> {
-            Runner.runTest({ driver }, fakeConfig, "mismatch test", traces)
+            runner(traces).runTest({ driver }, "mismatch test")
         }
 
         assertTrue(thrown.message!!.contains("trace 1"))
@@ -247,13 +261,71 @@ class RunnerTest {
             override fun quintState(): State<*> = State.disabled<Driver>()
         }
 
-        Runner.runTest({ driver }, fakeConfig, "disabled test", traces)
+        runner(traces).runTest({ driver }, "disabled test")
     }
 
     @Test
     fun `replays the same traces more than once`() {
         val traces = traceWithAction("A")
-        Runner.runTest({ FakeDriver() }, fakeConfig, "first run", traces)
-        Runner.runTest({ FakeDriver() }, fakeConfig, "second run", traces)
+        runner(traces).runTest({ FakeDriver() }, "first run")
+        runner(traces).runTest({ FakeDriver() }, "second run")
+    }
+
+    @Test
+    fun `fires events in order for a passing run`() {
+        val traces = traceWithAction("A") + traceWithAction("B")
+        val listener = RecordingReplayListener()
+
+        runner(traces, listener).runTest({ FakeDriver() }, "ordered events")
+
+        assertEquals(
+            listOf(
+                "runStarted",
+                "traceStarted:0",
+                "step:0:0:A",
+                "traceFinished:0",
+                "traceStarted:1",
+                "step:1:0:B",
+                "traceFinished:1",
+                "runFinished:true",
+            ),
+            listener.events,
+        )
+    }
+
+    @Test
+    fun `fires a step-failed event before throwing the AssertionError`() {
+        val traces = traceWithAction("TestAction")
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+
+        val thrown = assertThrows<AssertionError> {
+            runner(traces, listener).runTest({ driver }, "failing test")
+        }
+
+        assertEquals(
+            listOf(
+                "runStarted",
+                "traceStarted:0",
+                "step:0:0:TestAction",
+                "stepFailed:0:0",
+                "runFinished:false",
+            ),
+            listener.events,
+        )
+        assertSame(thrown, listener.stepFailure)
+        assertSame(thrown, listener.runFailure)
+    }
+
+    @Test
+    fun `propagates a trace-generation failure without a run-finished event`() {
+        val listener = RecordingReplayListener()
+        val failingSource = TraceSource { error("quint failed") }
+
+        assertThrows<IllegalStateException> {
+            ReplayRunner(fakeConfig, failingSource, listener).runTest({ FakeDriver() }, "gen failure")
+        }
+
+        assertEquals(listOf("runStarted"), listener.events)
     }
 }

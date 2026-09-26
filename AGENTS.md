@@ -76,9 +76,11 @@ Five modules, in dependency order:
   dependency, so it stays on a driver's compile classpath without pulling in `core`.
 - `itf` — ITF parsing and value normalization (`ItfValue`, `ItfTrace`/`parseTrace`,
   `ItfValueSerializer`, `ItfValue.decode`). JSON normalization is internal to the module.
-- `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`), step
-  extraction (`Step.kt`), nondet pick decoding (`nondet/`), state comparison
-  (`State.kt`), and the replay loop (`Runner.kt`).
+- `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`, behind the
+  injectable `TraceSource`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`),
+  state comparison (`State.kt`), and the replay loop (`ReplayRunner`, observed by a
+  `ReplayListener`; `listener/ConsoleReplayListener` is the default). `Runner` is the
+  facade generated tests call, delegating to a fresh `ReplayRunner`.
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
   class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
   (`ksp/generators/`).
@@ -86,13 +88,17 @@ Five modules, in dependency order:
   tests expect to fail, a `@QuintTest` counter, and a fixture for escaped names.
 
 Data flow: a Quint spec is run through the `quint` CLI (`quint run --mbt` or
-`quint test`) to produce ITF trace files; `TraceGenerator` invokes the CLI and parses the
-output into `ItfTrace`/`ItfValue`; `Runner` replays each trace step against the driver
-(generated `generatedStep()` dispatches to the right `@QuintAction` method, decoding
-nondet picks into method parameters) and, when the driver provides a `TypedState`,
-compares implementation state against the spec's state (`State.check`) after each step.
-A step or state mismatch surfaces as an `AssertionError` naming the trace, step, action
-and nondet picks (see `Runner.kt`).
+`quint test`) to produce ITF trace files; the default `TraceSource` (`TraceGenerator`)
+invokes the CLI and parses the output into `ItfTrace`/`ItfValue`; `ReplayRunner` replays
+each trace step against the driver (generated `generatedStep()` dispatches to the right
+`@QuintAction` method, decoding nondet picks into method parameters) and, when the driver
+provides a `TypedState`, compares implementation state against the spec's state
+(`State.check`) after each step. A step or state mismatch surfaces as an `AssertionError`
+naming the trace, step, action and nondet picks (see `ReplayRunner.kt`), and every
+`ReplayListener` (the console one included) is notified of the failure before it's thrown.
+Construct a `ReplayRunner` directly to plug in a custom `TraceSource` or `ReplayListener`;
+`Runner.runTest` stays the entry point generated code calls, delegating to a default
+`ReplayRunner`.
 
 `@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
 `mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).
