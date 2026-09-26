@@ -2,6 +2,9 @@ public abstract interface annotation class io/github/mcbianconi/quintkonnect/ann
 	public abstract fun name ()Ljava/lang/String;
 }
 
+public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintIgnore : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintRun : java/lang/annotation/Annotation {
 	public abstract fun init ()Ljava/lang/String;
 	public abstract fun main ()Ljava/lang/String;
