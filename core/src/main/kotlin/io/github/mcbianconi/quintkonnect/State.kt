@@ -21,6 +21,15 @@ public abstract class TypedState<D : Driver, S : Any>(
 
     public abstract fun extractFromDriver(driver: D): S
 
+    /**
+     * Overrides the default comparison for the field at [path] (dot/bracket-joined the way this
+     * class's diff messages name it, e.g. `"count"`, `"cells.(1, 2)"`, `"items[0]"`, or `"<root>"`
+     * for the whole state), given both sides' rendered value at that path. Returning `null` (the
+     * default) falls through to the default structural comparison; returning `true`/`false` treats
+     * the field, and anything nested under it, as equal/unequal without comparing it further.
+     */
+    public open fun compareField(path: String, spec: String, impl: String): Boolean? = null
+
     override fun check(driver: D, specValue: ItfValue) {
         val specState = try {
             specValue.decode(serializer)
@@ -29,13 +38,18 @@ public abstract class TypedState<D : Driver, S : Any>(
         }
         val driverState = extractFromDriver(driver)
 
-        if (specState != driverState) {
+        // buildFieldDiff drives the mismatch verdict: it's the only comparison that can honour
+        // @QuintIgnore and compareField. Falls back to equals() only if it throws (which it
+        // shouldn't for any serializer this module supports) - that fallback can't honour either.
+        val fieldDiff = try {
+            buildFieldDiff(serializer, specState, driverState, ::compareField)
+        } catch (e: Exception) {
+            null
+        }
+        val mismatched = if (fieldDiff != null) fieldDiff.isNotEmpty() else specState != driverState
+
+        if (mismatched) {
             val fullValues = fullValueDiff(specState.toString(), driverState.toString())
-            val fieldDiff = try {
-                buildFieldDiff(serializer, specState, driverState)
-            } catch (e: Exception) {
-                null
-            }
             val diff = if (fieldDiff.isNullOrEmpty()) fullValues else fieldDiff.joinToString("\n")
             throw IllegalStateException(
                 "State invariant failed:\n$diff",

@@ -3,6 +3,7 @@
 package io.github.mcbianconi.quintkonnect
 
 import io.github.mcbianconi.itf.BigIntegerSerializer
+import io.github.mcbianconi.quintkonnect.annotations.QuintIgnore
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
@@ -51,13 +52,30 @@ internal fun <T> buildDiffTree(serializer: KSerializer<T>, value: T): DiffValue 
 }
 
 /**
+ * Overrides the default comparison at a given field path, given both sides' rendered [DiffValue]
+ * (see [DiffValue.render]): `null` falls through to the default structural comparison, `true`/`false`
+ * treats the whole subtree at that path as equal/unequal without recursing further. See
+ * [TypedState.compareField].
+ */
+internal typealias FieldComparator = (path: String, spec: String, impl: String) -> Boolean?
+
+private val noopComparator: FieldComparator = { _, _, _ -> null }
+
+/**
  * Builds a field-level diff between [spec] and [impl] (both decoded/extracted via [serializer]) as
  * `path: spec=..., impl=...` lines, reporting missing/extra keys or elements for collections and
- * maps instead of a value mismatch.
+ * maps instead of a value mismatch. Fields whose [SerialDescriptor] element is annotated
+ * `@QuintIgnore` never appear in the tree walked here (see [ClassTreeEncoder.place]), so they never
+ * take part in the diff. [compareField] can override the comparison at any path.
  */
-internal fun <S> buildFieldDiff(serializer: KSerializer<S>, spec: S, impl: S): List<String> {
+internal fun <S> buildFieldDiff(
+    serializer: KSerializer<S>,
+    spec: S,
+    impl: S,
+    compareField: FieldComparator = noopComparator,
+): List<String> {
     val out = mutableListOf<String>()
-    diffValues("", buildDiffTree(serializer, spec), buildDiffTree(serializer, impl), out)
+    diffValues("", buildDiffTree(serializer, spec), buildDiffTree(serializer, impl), compareField, out)
     return out
 }
 
@@ -65,7 +83,19 @@ private fun String.field(name: String): String = if (isEmpty()) name else "$this
 private fun String.index(i: Int): String = "$this[$i]"
 private fun String.orRoot(): String = ifEmpty { "<root>" }
 
-private fun diffValues(path: String, spec: DiffValue, impl: DiffValue, out: MutableList<String>) {
+private fun diffValues(
+    path: String,
+    spec: DiffValue,
+    impl: DiffValue,
+    compareField: FieldComparator,
+    out: MutableList<String>,
+) {
+    val override = compareField(path, spec.render(), impl.render())
+    if (override != null) {
+        if (!override) out += "${path.orRoot()}: spec=${spec.render()}, impl=${impl.render()}"
+        return
+    }
+
     when {
         spec is DiffValue.Leaf && impl is DiffValue.Leaf -> {
             if (spec.text != impl.text) out += "${path.orRoot()}: spec=${spec.text}, impl=${impl.text}"
@@ -77,7 +107,7 @@ private fun diffValues(path: String, spec: DiffValue, impl: DiffValue, out: Muta
                 if (implChild == null) {
                     out += "${path.field(name)}: missing in impl (spec=${specChild.render()})"
                 } else {
-                    diffValues(path.field(name), specChild, implChild, out)
+                    diffValues(path.field(name), specChild, implChild, compareField, out)
                 }
             }
             for (name in impl.fields.keys - spec.fields.keys) {
@@ -93,7 +123,7 @@ private fun diffValues(path: String, spec: DiffValue, impl: DiffValue, out: Muta
                 when {
                     s == null -> out += "${path.index(i)}: extra in impl (impl=${d!!.render()})"
                     d == null -> out += "${path.index(i)}: missing in impl (spec=${s.render()})"
-                    else -> diffValues(path.index(i), s, d, out)
+                    else -> diffValues(path.index(i), s, d, compareField, out)
                 }
             }
         }
@@ -113,7 +143,7 @@ private fun diffValues(path: String, spec: DiffValue, impl: DiffValue, out: Muta
                 if (implChild == null) {
                     out += "${path.field(key)}: missing in impl (spec=${specChild.render()})"
                 } else {
-                    diffValues(path.field(key), specChild, implChild, out)
+                    diffValues(path.field(key), specChild, implChild, compareField, out)
                 }
             }
             for (key in implEntries.keys - specEntries.keys) {
@@ -237,6 +267,8 @@ private abstract class TreeCompositeEncoder(
     final override fun endStructure(descriptor: SerialDescriptor) = onResult(build())
 }
 
+/** Fields whose element is annotated `@QuintIgnore` never make it into [fields], so they never take
+ *  part in a [TypedState] comparison or diff. */
 private class ClassTreeEncoder(
     serializersModule: SerializersModule,
     onResult: (DiffValue) -> Unit,
@@ -244,6 +276,7 @@ private class ClassTreeEncoder(
     private val fields = LinkedHashMap<String, DiffValue>()
 
     override fun place(descriptor: SerialDescriptor, index: Int, value: DiffValue) {
+        if (descriptor.getElementAnnotations(index).any { it is QuintIgnore }) return
         fields[descriptor.getElementName(index)] = value
     }
 
