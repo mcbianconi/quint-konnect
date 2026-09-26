@@ -1,7 +1,7 @@
 package io.github.mcbianconi.quintkonnect
 
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.display
+import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.quintkonnect.nondet.NondetPicks
 
 class Step(

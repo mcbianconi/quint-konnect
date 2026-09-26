@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.itf
+package io.github.mcbianconi.itf
 
 fun ItfValue.display(): String = when (this) {
     is ItfValue.Bool   -> value.toString()

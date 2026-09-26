@@ -1,11 +1,7 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package io.github.mcbianconi.quintkonnect
+package io.github.mcbianconi.itf
 
-import io.github.mcbianconi.quintkonnect.itf.BigIntegerSerializer
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.QuintJson
-import io.github.mcbianconi.quintkonnect.itf.toNormalizedJson
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

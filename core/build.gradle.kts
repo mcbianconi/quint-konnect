@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     api(project(":annotations"))
+    api(project(":itf"))
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit5.api)

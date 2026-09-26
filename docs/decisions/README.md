@@ -10,6 +10,7 @@ comment next to the code it governs is easier to keep in sync than a separate fi
 
 - [No Windows support](no-windows-support.md) — Windows isn't a target platform
 - [License](license.md) — Apache-2.0, copyright holder "Murillo Cesar Bianconi"
+- [ITF module](itf-module.md) — why ITF parsing/normalization is its own `:itf` module instead of living in `core`
 - [ITF collection mapping](itf-collection-mapping.md) — `Set<T>` for sets, `Map<List<Long>, V>` for tuple-keyed maps, and why not the more obvious `List<T>`/`Pair`
 - [ITF Option and BigInt mapping](itf-option-and-bigint.md) — the MBT harness's unconditional `Option` unwrap vs. the descriptor-driven one
 - [quint test needs a nondet path](quint-test-needs-nondet-path.md) — `@QuintTest` replay requires the spec to model the action taken as a sum type and `nondetPath` to point at it

@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.itf
+package io.github.mcbianconi.itf
 
 import kotlin.collections.List as KList
 

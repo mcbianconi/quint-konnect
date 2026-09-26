@@ -27,6 +27,7 @@ comment on that line in `.github/workflows/ci.yml`).
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
+./gradlew :itf:test                  # Run ITF parsing/normalization unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
@@ -39,13 +40,15 @@ README.md's Environment variables section).
 
 ## Architecture Overview
 
-Four modules, in dependency order:
+Five modules, in dependency order:
 
 - `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
   dependency, so it stays on a driver's compile classpath without pulling in `core`.
-- `core` — the runtime: ITF parsing (`itf/`), `quint` CLI invocation and trace generation
-  (`trace/`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`), state
-  comparison (`State.kt`), and the replay loop (`Runner.kt`).
+- `itf` — ITF parsing and value normalization (`ItfValue`, `ItfTrace`/`parseTrace`,
+  `ItfValueSerializer`, `toNormalizedJson`).
+- `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`), step
+  extraction (`Step.kt`), nondet pick decoding (`nondet/`), state comparison
+  (`State.kt`), and the replay loop (`Runner.kt`).
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
   class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
   (`ksp/generators/`).

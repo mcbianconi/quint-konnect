@@ -1,8 +1,8 @@
 package io.github.mcbianconi.quintkonnect
 
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.QuintJson
-import io.github.mcbianconi.quintkonnect.itf.toNormalizedJson
+import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.itf.QuintJson
+import io.github.mcbianconi.itf.toNormalizedJson
 import kotlinx.serialization.KSerializer
 
 interface State<D : Driver> {

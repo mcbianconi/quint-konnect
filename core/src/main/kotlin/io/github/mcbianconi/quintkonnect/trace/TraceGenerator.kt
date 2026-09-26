@@ -1,7 +1,7 @@
 package io.github.mcbianconi.quintkonnect.trace
 
-import io.github.mcbianconi.quintkonnect.itf.ItfTrace
-import io.github.mcbianconi.quintkonnect.itf.parseTrace
+import io.github.mcbianconi.itf.ItfTrace
+import io.github.mcbianconi.itf.parseTrace
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit

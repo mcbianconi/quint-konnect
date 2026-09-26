@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class, SealedSerializationApi::class)
 
-package io.github.mcbianconi.quintkonnect.itf
+package io.github.mcbianconi.itf
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SealedSerializationApi

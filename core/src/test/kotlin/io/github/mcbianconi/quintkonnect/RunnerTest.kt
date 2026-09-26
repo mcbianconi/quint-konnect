@@ -1,8 +1,8 @@
 package io.github.mcbianconi.quintkonnect
 
-import io.github.mcbianconi.quintkonnect.itf.ItfState
-import io.github.mcbianconi.quintkonnect.itf.ItfTrace
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
+import io.github.mcbianconi.itf.ItfState
+import io.github.mcbianconi.itf.ItfTrace
+import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

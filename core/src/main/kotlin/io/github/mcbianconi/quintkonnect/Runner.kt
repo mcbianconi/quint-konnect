@@ -1,8 +1,8 @@
 package io.github.mcbianconi.quintkonnect
 
-import io.github.mcbianconi.quintkonnect.itf.ItfTrace
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.display
+import io.github.mcbianconi.itf.ItfTrace
+import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.quintkonnect.logger.Logger
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import io.github.mcbianconi.quintkonnect.trace.TraceGenerator

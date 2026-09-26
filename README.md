@@ -189,7 +189,8 @@ QUINT_SEED=0x1234 ./gradlew :example:test
 | Module | Description |
 |---|---|
 | `annotations` | Annotation declarations only. No runtime dependency. |
-| `core` | Runtime: ITF parsing, trace generation, step extraction, state comparison, runner. |
+| `itf` | ITF parsing and value normalization (`ItfValue`, `ItfTrace`). |
+| `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
 | `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes. |
 | `example` | TicTacToe end-to-end example. |
 
@@ -205,6 +206,7 @@ See [`example/`](./example) for a complete TicTacToe example:
 
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
+./gradlew :itf:test                  # Run ITF parsing/normalization unit tests
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)

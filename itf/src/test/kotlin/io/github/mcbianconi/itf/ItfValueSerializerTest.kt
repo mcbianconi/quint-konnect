@@ -1,7 +1,5 @@
-package io.github.mcbianconi.quintkonnect
+package io.github.mcbianconi.itf
 
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.ItfValueSerializer
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

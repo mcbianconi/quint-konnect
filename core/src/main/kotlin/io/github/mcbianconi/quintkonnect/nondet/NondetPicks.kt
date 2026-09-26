@@ -1,10 +1,10 @@
 package io.github.mcbianconi.quintkonnect.nondet
 
-import io.github.mcbianconi.quintkonnect.itf.ItfValue
-import io.github.mcbianconi.quintkonnect.itf.QuintJson
-import io.github.mcbianconi.quintkonnect.itf.display
-import io.github.mcbianconi.quintkonnect.itf.intoOption
-import io.github.mcbianconi.quintkonnect.itf.toNormalizedJson
+import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.itf.QuintJson
+import io.github.mcbianconi.itf.display
+import io.github.mcbianconi.itf.intoOption
+import io.github.mcbianconi.itf.toNormalizedJson
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 

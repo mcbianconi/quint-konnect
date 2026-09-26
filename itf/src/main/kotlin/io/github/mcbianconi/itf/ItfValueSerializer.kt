@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.itf
+package io.github.mcbianconi.itf
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
