@@ -14,7 +14,10 @@ orthogonal to the descriptor-driven `Option[T]` unwrap `ItfValue.decode` does fo
 pick's own value (see its KDoc).
 
 **How to apply:** Don't add a blanket `.intoOption()` call anywhere else in the
-normalizer; the harness-level unwrap in `fromRecord` is the only unconditional one, and
-every other layer must gate on the target descriptor being nullable. Don't reach for
+decoder; the harness-level unwrap in `fromRecord` is the only unconditional one. Every
+other layer must gate on the target position being nullable — `ItfValueDecoder.decodeNotNullMark()`
+does the `intoOption()`-based unwrap, and kotlinx.serialization only ever calls
+`decodeNotNullMark()` for a genuinely nullable target, so the gating falls out of the
+decoder protocol rather than an explicit `descriptor.isNullable` check. Don't reach for
 `BigDecimal` for oversized Quint `int`s (`BigIntegerSerializer`) — Quint integers are
 never fractional.
