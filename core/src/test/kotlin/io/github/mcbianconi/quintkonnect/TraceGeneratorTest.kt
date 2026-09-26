@@ -6,7 +6,6 @@ import io.github.mcbianconi.quintkonnect.trace.TraceGenerator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
@@ -108,10 +107,6 @@ class TraceGeneratorTest {
     }
 
     @Test
-    @Disabled(
-        "see qk-4jym: RunConfig's out-itf pattern run_{seq}.itf.json isn't zero-padded, so " +
-            "TraceGenerator's sort-by-file-name puts run_10+ before run_2..run_9"
-    )
     fun `traces stay in numeric sequence order past 9 samples`() {
         val config = object : GeneratorConfig {
             override val seed = "test-seed"

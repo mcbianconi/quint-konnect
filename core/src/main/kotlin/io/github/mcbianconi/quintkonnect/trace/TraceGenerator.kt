@@ -36,10 +36,16 @@ object TraceGenerator {
         }
     }
 
+    private val sequenceNumberRegex = Regex("\\d+")
+
     private fun readTraces(tmpDir: Path): List<ItfTrace> =
         tmpDir.toFile()
             .listFiles()
-            ?.sortedBy { it.name }
+            ?.sortedWith(compareBy({ sequenceNumber(it.name) }, { it.name }))
             ?.map { file -> parseTrace(file.readText()) }
             ?: emptyList()
+
+    // quint's --out-itf {seq} placeholder isn't zero-padded
+    private fun sequenceNumber(fileName: String): Long? =
+        sequenceNumberRegex.find(fileName)?.value?.toLongOrNull()
 }
