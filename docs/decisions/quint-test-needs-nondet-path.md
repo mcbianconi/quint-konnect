@@ -29,5 +29,5 @@ every spec used with `@QuintTest` needs its own action-tracking sum-type variabl
 the driver must set `nondetPath` to it. Keep README.md/AGENTS.md's `@QuintTest`
 documentation pointing this out instead of describing it as broken. If a future `quint`
 release adds `--mbt` to `test` (check `quint test --help` when bumping the version pin
-per `docs/decisions/quint-version-pin.md`), `TestConfig.toCommand` can add it and drop
-this requirement.
+in `.github/workflows/ci.yml`), `TestConfig.toCommand` can add it and drop this
+requirement.
