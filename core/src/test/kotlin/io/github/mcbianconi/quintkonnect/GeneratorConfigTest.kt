@@ -11,9 +11,11 @@ import io.github.mcbianconi.quintkonnect.trace.genSeed
 import io.github.mcbianconi.quintkonnect.trace.maxSamplesOverride
 import io.github.mcbianconi.quintkonnect.trace.maxStepsOverride
 import io.github.mcbianconi.quintkonnect.trace.quintExecutable
+import io.github.mcbianconi.quintkonnect.trace.resolveSeed
 import io.github.mcbianconi.quintkonnect.trace.resolveSpec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
 
@@ -139,5 +141,53 @@ class GeneratorConfigTest {
         withSystemProperty(SEED_PROPERTY, "0xoverride") {
             assertEquals("0xoverride", genSeed())
         }
+    }
+
+    @Test
+    fun `genSeed with an annotation seed returns the override even when the annotation seed is non-blank`() {
+        withSystemProperty(SEED_PROPERTY, "0xoverride") {
+            assertEquals("0xoverride", genSeed("cafe"))
+        }
+    }
+
+    @Test
+    fun `genSeed with an annotation seed returns the non-blank annotation seed when no override is set`() {
+        assertEquals("cafe", genSeed("cafe"))
+    }
+
+    @Test
+    fun `genSeed with a blank annotation seed falls back to genSeed's own precedence`() {
+        withSystemProperty(SEED_PROPERTY, "0xoverride") {
+            assertEquals("0xoverride", genSeed(""))
+        }
+    }
+
+    @Test
+    fun `resolveSeed prefers the override over a non-blank annotation seed and QUINT_SEED`() {
+        assertEquals(
+            "0xoverride",
+            resolveSeed(annotationSeed = "cafe", override = "0xoverride", envSeed = "0xenv"),
+        )
+    }
+
+    @Test
+    fun `resolveSeed prefers a non-blank annotation seed over QUINT_SEED when there is no override`() {
+        assertEquals(
+            "cafe",
+            resolveSeed(annotationSeed = "cafe", override = null, envSeed = "0xenv"),
+        )
+    }
+
+    @Test
+    fun `resolveSeed falls back to QUINT_SEED when the annotation seed is blank`() {
+        assertEquals(
+            "0xenv",
+            resolveSeed(annotationSeed = "", override = null, envSeed = "0xenv"),
+        )
+    }
+
+    @Test
+    fun `resolveSeed falls back to a random seed when nothing else is set`() {
+        assertTrue(resolveSeed(annotationSeed = "", override = null, envSeed = null).startsWith("0x"))
     }
 }

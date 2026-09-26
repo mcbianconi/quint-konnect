@@ -279,7 +279,7 @@ Test-task system properties:
 |---|---|---|
 | `-Pquint.maxSamples=<int>` | `quintkonnect.maxSamples` | `@QuintRun`/`@QuintTest`'s `maxSamples` (falls back to the annotation value, then `100`) |
 | `-Pquint.maxSteps=<int>` | `quintkonnect.maxSteps` | `@QuintRun`'s `maxSteps` (falls back to the annotation value, then quint's own default; `@QuintTest`/`quint test` has no `--max-steps`) |
-| `-Pquint.seed=<hex>` | `quintkonnect.seed` | The seed used when an annotation doesn't set one itself (falls back to `QUINT_SEED`, then a random seed); an explicit `@QuintRun(seed = ...)`/`@QuintTest(seed = ...)` still wins, since that literal is baked into KSP-generated code at compile time |
+| `-Pquint.seed=<hex>` | `quintkonnect.seed` | The seed used, in order: this override, a non-blank `@QuintRun(seed = ...)`/`@QuintTest(seed = ...)`, `QUINT_SEED`, then a random seed |
 | `-Pquint.verbose=0\|1\|2` | `quintkonnect.verbose` | `ConsoleReplayListener`'s verbosity (falls back to `QUINT_VERBOSE`, then `0`) |
 
 ```bash

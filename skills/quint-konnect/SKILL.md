@@ -182,7 +182,7 @@ Environment variables:
 
 | Variable | Values | Effect |
 |---|---|---|
-| `QUINT_SEED` | hex, e.g. `0xdeadbeef` | Fixes the seed for reproduction. Only takes effect if the driver's `@QuintRun`/`@QuintTest` doesn't set its own `seed = "..."` — an explicit annotation seed always wins. |
+| `QUINT_SEED` | hex, e.g. `0xdeadbeef` | Fixes the seed for reproduction. Used when neither `-Pquint.seed` nor the annotation's `seed = "..."` is set (precedence: `-Pquint.seed` > annotation seed > `QUINT_SEED` > random). |
 | `QUINT_VERBOSE` | `1`, `2` | `1` logs each trace/step; `2` also dumps raw ITF state. Goes to stderr. |
 | `QUINT_COLOR` | `always`, `never` | Forces ANSI colour on/off. |
 | `NO_COLOR` | any non-empty value | Disables colour (https://no-color.org). |
@@ -227,8 +227,7 @@ Debugging notes:
 - No compile-time check that a `@QuintAction` name or nondet parameter name actually exists in
   the spec — a typo only surfaces when a trace is replayed.
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity
-  can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin), except that a seed
-  fixed in the annotation still wins over `-Pquint.seed`.
+  can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin).
 - A failing trace isn't saved anywhere, and there's no ready-made command to replay just that
   trace — reproduce with `QUINT_SEED` and rerun the whole test instead.
 - No way to replay a saved `.itf.json` trace without invoking `quint` again.

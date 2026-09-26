@@ -46,7 +46,7 @@ internal class QuintRunTestGenerator(
             .add("%T(\n", runConfigClassName)
             .indent()
             .add("spec = %S,\n", spec)
-            .add("seed = %L,\n", if (seed != null) CodeBlock.of("%S", seed) else CodeBlock.of("%M()", genSeedMember))
+            .add("seed = %M(%S),\n", genSeedMember, seed.orEmpty())
         main?.let { configBlock.add("main = %S,\n", it) }
         init?.let { configBlock.add("init = %S,\n", it) }
         step?.let { configBlock.add("step = %S,\n", it) }

@@ -45,7 +45,7 @@ internal class QuintTestTestGenerator(
             .indent()
             .add("spec = %S,\n", spec)
             .add("test = %S,\n", test)
-            .add("seed = %L,\n", if (seed != null) CodeBlock.of("%S", seed) else CodeBlock.of("%M()", genSeedMember))
+            .add("seed = %M(%S),\n", genSeedMember, seed.orEmpty())
         main?.let { configBlock.add("main = %S,\n", it) }
         maxSamples?.let { configBlock.add("maxSamples = %L,\n", it) }
         configBlock.unindent().add(")")

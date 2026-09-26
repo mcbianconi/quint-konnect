@@ -153,6 +153,7 @@ public final class io/github/mcbianconi/quintkonnect/trace/RunConfig : io/github
 
 public final class io/github/mcbianconi/quintkonnect/trace/SeedKt {
 	public static final fun genSeed ()Ljava/lang/String;
+	public static final fun genSeed (Ljava/lang/String;)Ljava/lang/String;
 }
 
 public final class io/github/mcbianconi/quintkonnect/trace/TestConfig : io/github/mcbianconi/quintkonnect/trace/GeneratorConfig {
