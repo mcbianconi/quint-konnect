@@ -1,8 +1,9 @@
 package io.github.mcbianconi.quintkonnect.ksp.generators
 
-import com.google.devtools.ksp.getDeclaredFunctions
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.ClassName
@@ -26,25 +27,37 @@ internal class StepMethodGenerator(
     private val decodeMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decode")
     private val decodeOrNullMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decodeOrNull")
 
+    // A function and the @QuintAction annotation that applies to it, which may live on an
+    // overridee further up the class hierarchy (see `findQuintAction`).
+    private class ActionMember(val function: KSFunctionDeclaration, val annotation: KSAnnotation) {
+        val actionName: String by lazy {
+            val nameArg = annotation.arguments.firstOrNull { it.name?.asString() == "name" }
+            (nameArg?.value as? String)?.takeIf { it.isNotBlank() } ?: function.simpleName.asString()
+        }
+    }
+
     fun generate(clazz: KSClassDeclaration) {
         val packageName = clazz.packageName.asString()
         val className = clazz.simpleName.asString()
         val outputName = "${className}Steps"
-        val annotatedFns = clazz.getDeclaredFunctions()
-            .filter { it.annotations.any { a -> a.shortName.asString() == "QuintAction" } }
+        val actions = clazz.getAllFunctions()
+            .mapNotNull { fn -> fn.findQuintAction()?.let { ActionMember(fn, it) } }
             .toList()
 
-        if (annotatedFns.isEmpty()) return
+        if (actions.isEmpty()) return
 
-        if (rejectDuplicateActionNames(annotatedFns)) return
+        val hasNonPublic = rejectNonPublicActions(actions)
+        val hasDuplicate = rejectDuplicateActionNames(actions)
+        if (hasNonPublic || hasDuplicate) return
 
         val classTypeParams = clazz.typeParameters.toTypeParameterResolver()
 
         val whenBlock = CodeBlock.builder().beginControlFlow("when (step.actionTaken)")
-        for (fn in annotatedFns) {
+        for (action in actions) {
+            val fn = action.function
             val fnTypeParams = fn.typeParameters.toTypeParameterResolver(parent = classTypeParams)
 
-            whenBlock.beginControlFlow("%S ->", fn.actionName())
+            whenBlock.beginControlFlow("%S ->", action.actionName)
             for (param in fn.parameters) {
                 val paramName = param.name!!.asString()
                 val resolvedType = param.type.resolve()
@@ -78,27 +91,55 @@ internal class StepMethodGenerator(
         logger.info("Generated $packageName.$outputName for $className")
     }
 
+    // Kotlin doesn't repeat an annotation on an override unless the source re-states it, but the
+    // action still applies: `getAllFunctions()` returns only the overriding declaration, so without
+    // this walk an overridden @QuintAction function would silently stop being an action. Each step
+    // of the walk is the closest overridee (`findOverridee()`), so a multi-level override chain
+    // (base -> mid -> derived) is followed all the way to whichever declaration carries the
+    // annotation.
+    private fun KSFunctionDeclaration.findQuintAction(): KSAnnotation? {
+        var current: KSFunctionDeclaration? = this
+        val seen = mutableSetOf<KSFunctionDeclaration>()
+        while (current != null && seen.add(current)) {
+            val found = current.annotations.firstOrNull { it.shortName.asString() == "QuintAction" }
+            if (found != null) return found
+            current = current.findOverridee() as? KSFunctionDeclaration
+        }
+        return null
+    }
+
+    // qk-9lsz: a @QuintAction function must be callable from the generated dispatcher file, which
+    // is a different file from the driver's (and, for an inherited action, a different package).
+    private fun rejectNonPublicActions(actions: List<ActionMember>): Boolean {
+        var hasNonPublic = false
+        for (action in actions) {
+            if (!action.function.isPublic()) {
+                hasNonPublic = true
+                logger.error(
+                    "@QuintAction function \"${action.function.simpleName.asString()}\" must be public. " +
+                        "The generated dispatcher calls it from a separate file.",
+                    action.function,
+                )
+            }
+        }
+        return hasNonPublic
+    }
+
     // qk-nqry: Kotlin's `when` doesn't reject duplicate branch labels, so without this check the
     // first branch would silently shadow the second at runtime.
-    private fun rejectDuplicateActionNames(annotatedFns: List<KSFunctionDeclaration>): Boolean {
+    private fun rejectDuplicateActionNames(actions: List<ActionMember>): Boolean {
         var hasDuplicate = false
-        for ((actionName, fns) in annotatedFns.groupBy { it.actionName() }) {
-            if (fns.size > 1) {
+        for ((actionName, group) in actions.groupBy { it.actionName }) {
+            if (group.size > 1) {
                 hasDuplicate = true
-                val functionNames = fns.joinToString(", ") { it.simpleName.asString() }
+                val functionNames = group.joinToString(", ") { it.function.simpleName.asString() }
                 logger.error(
                     "Duplicate @QuintAction name \"$actionName\" on functions: $functionNames. " +
                         "Each action name must be unique within a driver class.",
-                    fns[1],
+                    group[1].function,
                 )
             }
         }
         return hasDuplicate
-    }
-
-    private fun KSFunctionDeclaration.actionName(): String {
-        val actionAnnotation = annotations.first { it.shortName.asString() == "QuintAction" }
-        val nameArg = actionAnnotation.arguments.firstOrNull { it.name?.asString() == "name" }
-        return (nameArg?.value as? String)?.takeIf { it.isNotBlank() } ?: simpleName.asString()
     }
 }

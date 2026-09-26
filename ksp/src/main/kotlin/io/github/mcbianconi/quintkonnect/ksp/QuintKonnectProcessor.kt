@@ -18,6 +18,7 @@ internal class QuintKonnectProcessor(
         resolver.getSymbolsWithAnnotation(quintRunFqn)
             .filterIsInstance<KSClassDeclaration>()
             .forEach { clazz ->
+                if (validateNoArgConstructor(clazz, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz)
                 QuintRunTestGenerator(codeGenerator, logger).generate(clazz)
             }
@@ -25,6 +26,7 @@ internal class QuintKonnectProcessor(
         resolver.getSymbolsWithAnnotation(quintTestFqn)
             .filterIsInstance<KSClassDeclaration>()
             .forEach { clazz ->
+                if (validateNoArgConstructor(clazz, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz)
                 QuintTestTestGenerator(codeGenerator, logger).generate(clazz)
             }
