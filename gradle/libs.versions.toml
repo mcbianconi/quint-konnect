@@ -11,6 +11,8 @@ kotlinx-serial    = "1.11.0"
 # latest stable 5.x (6.x tracked separately, see qk-pbk2):
 # https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/maven-metadata.xml
 junit5            = "5.14.4"
+# latest stable: https://repo1.maven.org/maven2/com/vanniktech/gradle-maven-publish-plugin/maven-metadata.xml
+vanniktech-publish = "0.37.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serial" }
@@ -22,3 +24,4 @@ junit5-engine              = { module = "org.junit.jupiter:junit-jupiter-engine"
 kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm",                  version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin" }
 ksp                  = { id = "com.google.devtools.ksp",                    version.ref = "ksp" }
+vanniktech-publish   = { id = "com.vanniktech.maven.publish.base",         version.ref = "vanniktech-publish" }

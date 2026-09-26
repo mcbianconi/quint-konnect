@@ -1,0 +1,55 @@
+# GitHub Actions workflow syntax reference:
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+#
+# Publishes annotations/itf/core/ksp to Maven Central via the vanniktech
+# gradle-maven-publish-plugin (quintkonnect.publish convention plugin, build-logic/).
+# Triggered by pushing a version tag; bump the version in
+# build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts to match before tagging
+# (see AGENTS.md's Releasing section).
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          # Active LTS schedule: https://github.com/nodejs/Release#release-schedule
+          node-version: "24"
+
+      - name: Install quint
+        # Pinned: RunConfig.kt/TestConfig.kt build CLI flags (--mbt, --n-traces, --out-itf,
+        # --match) against this version's `quint run --help`/`quint test --help`. Bump
+        # deliberately and recheck those flags when moving this pin.
+        run: npm install -g @informalsystems/quint@0.32.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Publish to Maven Central
+        # Env names are the vanniktech plugin's ORG_GRADLE_PROJECT_* convention:
+        # https://vanniktech.github.io/gradle-maven-publish-plugin/central/#configure-credentials-via-environment-variables
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew publishAndReleaseToMavenCentral

@@ -49,6 +49,24 @@ Reified inline functions (`NondetPicks.decode`/`decodeOrNull`, `ItfValue.decode(
 appear in the ABI dump, so `checkKotlinAbi` doesn't guard their signatures; review those
 by hand.
 
+## Releasing
+
+`annotations`, `itf`, `core` and `ksp` publish to Maven Central under `io.github.mcbianconi`
+(`quintkonnect.publish` convention plugin in `build-logic/`, the vanniktech
+gradle-maven-publish-plugin); `example` is not published. `.github/workflows/release.yml`
+triggers on pushing a tag matching `v*` and runs `./gradlew publishAndReleaseToMavenCentral`.
+
+To release: bump `version` in
+`build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts`, commit, then push a tag
+`v<that version>` (e.g. `v0.1.0`). The tag only triggers the workflow — it always publishes
+whatever version is currently set in that file, so pushing a tag without bumping the
+version re-uploads the existing version and Central rejects it as a duplicate. Keep the
+tag name matching the version anyway, for a readable history.
+
+To test locally without publishing anywhere remote: `./gradlew publishToMavenLocal`.
+Signing is skipped unless `signingInMemoryKey` is set as a Gradle property, so this works
+without keys; check `~/.m2/repository/io/github/mcbianconi/` for the result.
+
 ## Architecture Overview
 
 Five modules, in dependency order:

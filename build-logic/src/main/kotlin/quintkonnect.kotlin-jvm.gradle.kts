@@ -2,7 +2,9 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-group   = "io.github.mcbianconi.quintkonnect"
+// io.github.mcbianconi is the verified namespace on central.sonatype.com (qk-j02b):
+// https://central.sonatype.org/register/namespace/
+group   = "io.github.mcbianconi"
 version = "0.1.0"
 
 kotlin {

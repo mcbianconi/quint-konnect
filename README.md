@@ -19,12 +19,19 @@ Quint Spec → [quint CLI] → ITF trace files → quint-konnect → your Kotlin
 
 ### 1. Add dependencies
 
+Published on Maven Central under `io.github.mcbianconi`. `quint-konnect-core`'s API
+brings in `quint-konnect-annotations` and `itf-kotlin` transitively, so only `core` and
+`ksp` need to be declared directly.
+
 ```kotlin
 // build.gradle.kts
+plugins {
+    alias(libs.plugins.ksp)
+}
+
 dependencies {
-    implementation(project(":core"))
-    kspTest(project(":ksp"))
-    testImplementation(project(":core"))
+    kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")
+    testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)

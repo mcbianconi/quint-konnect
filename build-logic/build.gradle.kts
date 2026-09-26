@@ -15,6 +15,10 @@ dependencies {
     // the Kotlin Gradle plugin from this same classpath/classloader as kotlin.jvm above, or
     // applying it fails with "Could not generate a decorated class for type KspGradleSubplugin".
     implementation(plugin(libs.plugins.ksp))
+    // the publish plugin reacts to the org.jetbrains.kotlin.jvm plugin (Kotlin source sets,
+    // sources jar), so it must resolve the Kotlin Gradle plugin from this same
+    // classpath/classloader as kotlin.jvm above too.
+    implementation(plugin(libs.plugins.vanniktech.publish))
 }
 
 fun DependencyHandlerScope.plugin(plugin: Provider<PluginDependency>) =

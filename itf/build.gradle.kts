@@ -1,6 +1,15 @@
 plugins {
     id("quintkonnect.library")
+    id("quintkonnect.publish")
     alias(libs.plugins.kotlin.serialization)
+}
+
+mavenPublishing {
+    coordinates(artifactId = "itf-kotlin")
+    pom {
+        name.set("itf-kotlin")
+        description.set("ITF trace parsing and value normalization for quint-konnect.")
+    }
 }
 
 dependencies {
