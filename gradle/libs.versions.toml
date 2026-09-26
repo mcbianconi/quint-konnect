@@ -1,9 +1,16 @@
 # https://docs.gradle.org/current/userguide/version_catalogs.html
 [versions]
-kotlin            = "2.1.21"
-ksp               = "2.1.21-2.0.1"
-kotlinx-serial    = "1.8.1"
-junit5            = "5.12.2"
+# latest stable: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml
+kotlin            = "2.4.20"
+# KSP versions independently of Kotlin since 2.3.x; check Kotlin compatibility in release notes
+# (https://github.com/google/ksp/releases) and the latest version at
+# https://repo1.maven.org/maven2/com/google/devtools/ksp/symbol-processing-gradle-plugin/maven-metadata.xml
+ksp               = "2.3.12"
+# latest stable: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/maven-metadata.xml
+kotlinx-serial    = "1.11.0"
+# latest stable 5.x (6.x tracked separately, see qk-pbk2):
+# https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/maven-metadata.xml
+junit5            = "5.14.4"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serial" }
