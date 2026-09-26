@@ -22,18 +22,50 @@ actions rather than telling them to run commands.
 
 ## Build & Test
 
-_Add your build and test commands here_
+Requires JDK 21 and `quint` in `PATH` (CI pins `@informalsystems/quint@0.32.0`, see
+`docs/decisions/quint-version-pin.md`).
 
 ```bash
-# Example:
-# npm install
-# npm test
+./gradlew :annotations:build         # Build annotation declarations
+./gradlew :core:test                 # Run core unit tests (no quint CLI required)
+./gradlew :ksp:build                 # Build KSP processor
+./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
+./gradlew build                      # Build all modules
 ```
+
+Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGeneratorTest`.
+`QUINT_VERBOSE=1`/`2` and `QUINT_SEED=<hex>` control logging and reproducibility (see
+README.md's Environment variables section).
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+Four modules, in dependency order:
+
+- `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
+  dependency, so it stays on a driver's compile classpath without pulling in `core`.
+- `core` — the runtime: ITF parsing (`itf/`), `quint` CLI invocation and trace generation
+  (`trace/`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`), state
+  comparison (`State.kt`), and the replay loop (`Runner.kt`).
+- `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
+  class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
+  (`ksp/generators/`).
+- `example` — end-to-end examples: TicTacToe, rock-paper-scissors, a buggy driver the
+  tests expect to fail, a `@QuintTest` counter, and a fixture for escaped names.
+
+Data flow: a Quint spec is run through the `quint` CLI (`quint run --mbt` or
+`quint test`) to produce ITF trace files; `TraceGenerator` invokes the CLI and parses the
+output into `ItfTrace`/`ItfValue`; `Runner` replays each trace step against the driver
+(generated `generatedStep()` dispatches to the right `@QuintAction` method, decoding
+nondet picks into method parameters) and, when the driver provides a `TypedState`,
+compares implementation state against the spec's state (`State.check`) after each step.
+A step or state mismatch surfaces as an `AssertionError` naming the trace, step, action
+and nondet picks (`docs/decisions/runner-failure-contract.md`).
+
+`@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
+`mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+See `CLAUDE.md` for the Quint-to-Kotlin type mapping table and `docs/decisions/` for
+standing project decisions (license, platform support, ITF collection/Option/BigInt
+mapping, runner failure contract, quint version pin, parallel agent work, ship-it).
