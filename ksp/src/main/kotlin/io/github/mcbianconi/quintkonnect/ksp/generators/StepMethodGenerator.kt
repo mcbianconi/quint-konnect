@@ -36,6 +36,8 @@ internal class StepMethodGenerator(
 
         if (annotatedFns.isEmpty()) return
 
+        if (rejectDuplicateActionNames(annotatedFns)) return
+
         val classTypeParams = clazz.typeParameters.toTypeParameterResolver()
 
         val whenBlock = CodeBlock.builder().beginControlFlow("when (step.actionTaken)")
@@ -74,6 +76,24 @@ internal class StepMethodGenerator(
         fileSpec.writeTo(codeGenerator, aggregating = false)
 
         logger.info("Generated $packageName.$outputName for $className")
+    }
+
+    // qk-nqry: Kotlin's `when` doesn't reject duplicate branch labels, so without this check the
+    // first branch would silently shadow the second at runtime.
+    private fun rejectDuplicateActionNames(annotatedFns: List<KSFunctionDeclaration>): Boolean {
+        var hasDuplicate = false
+        for ((actionName, fns) in annotatedFns.groupBy { it.actionName() }) {
+            if (fns.size > 1) {
+                hasDuplicate = true
+                val functionNames = fns.joinToString(", ") { it.simpleName.asString() }
+                logger.error(
+                    "Duplicate @QuintAction name \"$actionName\" on functions: $functionNames. " +
+                        "Each action name must be unique within a driver class.",
+                    fns[1],
+                )
+            }
+        }
+        return hasDuplicate
     }
 
     private fun KSFunctionDeclaration.actionName(): String {
