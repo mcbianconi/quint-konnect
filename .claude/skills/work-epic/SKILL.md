@@ -44,6 +44,10 @@ background. Each brief contains:
   from another branch), create its branch stacked before the first commit:
   `but branch new <branch> --above <dependency-branch>` (a plain `but commit -b` is
   refused when the changes touch files committed on that branch);
+- when several agents change the public API of the same module, they don't commit that module's
+  ABI dump (`<module>/api/*.api`); the coordinator runs `updateKotlinAbi` once in review and
+  amends each hunk into the owning commit (concurrent regeneration rewrites the file under
+  other agents);
 - after each commit, check `but status` shows no leftover changes to files it committed,
   and compare them with the commit (`git show <sha>:<path>`);
 - close each bead after its commit (`tbd close <id> --reason "..."`); add a
