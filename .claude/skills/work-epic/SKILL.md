@@ -7,8 +7,8 @@ disable-model-invocation: true
 
 # Work an epic
 
-Epic: `$ARGUMENTS`. Follow `docs/decisions/parallel-agent-work.md`. Agents run on Sonnet
-(`model: sonnet`), never Haiku.
+Epic: `$ARGUMENTS`. Agents run on Sonnet (`model: sonnet`), never Haiku — a Haiku agent
+once reported a clean fix (qk-0vs7) that needed a rewrite.
 
 ## 1. Plan (no edits yet)
 
@@ -41,7 +41,9 @@ background. Each brief contains:
   stages when beads share a file), with the Co-Authored-By trailer; never commit without
   IDs, never push, never `tbd sync`, never touch other agents' changes;
 - close each bead after its commit (`tbd close <id> --reason "..."`); add a
-  `docs/decisions/` entry only for a standing decision;
+  `docs/decisions/` entry only for a standing decision that isn't already visible in
+  code, tests, or other docs — otherwise put it there instead (see
+  `docs/decisions/README.md`);
 - a final report: beads closed, commits, test results, design summary, and a **Problems**
   section (tool failures, doc gaps, GitButler/tbd/Gradle MCP quirks, conflicts, guessed
   decisions).

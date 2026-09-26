@@ -1,8 +1,9 @@
 ## Project Decisions
 
 See `docs/decisions/` for standing project decisions and constraints (e.g. platform
-support). Check it for context, and add a new entry there for any similar decision
-going forward.
+support). Check it for context. Add a new entry there only when the decision isn't
+already derivable from the code, tests, KDoc, or other docs — if it is, put it there
+instead (a code comment, an error message) rather than in a separate file.
 
 ## Representing Quint Types in Kotlin
 

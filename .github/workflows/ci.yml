@@ -24,6 +24,9 @@ jobs:
           node-version: "20"
 
       - name: Install quint
+        # Pinned: RunConfig.kt/TestConfig.kt build CLI flags (--mbt, --n-traces, --out-itf,
+        # --match) against this version's `quint run --help`/`quint test --help`. Bump
+        # deliberately and recheck those flags when moving this pin.
         run: npm install -g @informalsystems/quint@0.32.0
 
       - name: Set up Gradle

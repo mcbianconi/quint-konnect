@@ -62,7 +62,7 @@ object Runner {
 
                         Logger.trace(2, "Extracting state from:\n${step.state.display()}\n")
                         state.check(driver, step.state)
-                    } catch (e: Throwable) {
+                    } catch (e: Throwable) { // Throwable, not Exception: JUnit/kotlin.test failures are AssertionError
                         val location = "trace ${traceIdx + 1}, step $stepIdx" +
                             (step?.let { ", action '${it.actionTaken}'" } ?: "")
                         val nondets = step?.nondetPicks?.takeIf { !it.isEmpty() }

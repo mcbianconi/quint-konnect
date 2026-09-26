@@ -16,8 +16,8 @@ authorize landing another agent's in-progress branch; ask about those.
    branch. Ask if the placement is ambiguous; never land half-committed work.
 3. Check every commit has the `Co-Authored-By` trailer when an agent wrote it
    (`git log -1 --format=%B <sha>`); fix with `but reword <id> -m "..."`.
-4. Branches that depend on each other must be stacked (`but move <child> --above <parent>`),
-   see `docs/decisions/parallel-agent-work.md`.
+4. Branches that depend on each other must be stacked (`but move <child> --above <parent>`)
+   rather than merged in a fixed order — the project owner approved stacking for this.
 
 ## 2. Verify before landing
 
