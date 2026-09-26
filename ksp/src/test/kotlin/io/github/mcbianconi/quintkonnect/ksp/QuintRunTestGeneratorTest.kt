@@ -146,6 +146,60 @@ class QuintRunTestGeneratorTest {
     }
 
     @Test
+    fun `passes annotation invariants into the generated RunConfig`() {
+        val invariantsResult = compileWithProcessor(
+            kotlinSource(
+                "InvariantsDriver.kt",
+                """
+                package run3
+
+                import io.github.mcbianconi.quintkonnect.Driver
+                import io.github.mcbianconi.quintkonnect.Step
+                import io.github.mcbianconi.quintkonnect.annotations.QuintRun
+
+                @QuintRun(spec = "unused.qnt", invariants = ["safe", "alwaysTrue"])
+                class InvariantsDriver : Driver {
+                    override fun step(step: Step) {}
+                }
+                """.trimIndent(),
+            ),
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, invariantsResult.exitCode, invariantsResult.messages)
+
+        val testClass = invariantsResult.classLoader.loadClass("run3.InvariantsDriverQuintRunTest")
+        val instance = testClass.getDeclaredConstructor().newInstance()
+        val tracesMethod = testClass.getDeclaredMethod("traces")
+
+        val argsFile = Files.createTempFile("quint-args", ".txt")
+        val fakeQuint = writeFakeQuintExecutable(argsFile)
+        withSystemProperty(QUINT_EXECUTABLE_PROPERTY, fakeQuint.absolutePath) {
+            tracesMethod.invoke(instance)
+        }
+
+        val args = Files.readAllLines(argsFile)
+        val invariantIndices = args.withIndex().filter { (_, a) -> a == "--invariants" }.map { it.index }
+        val invariantValues = invariantIndices.map { args[it + 1] }
+        assertEquals(listOf("safe", "alwaysTrue"), invariantValues)
+    }
+
+    @Test
+    fun `does not pass invariants when the annotation omits them`() {
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
+
+        val testClass = result.classLoader.loadClass("run1.RunDriverQuintRunTest")
+        val instance = testClass.getDeclaredConstructor().newInstance()
+        val tracesMethod = testClass.getDeclaredMethod("traces")
+
+        val argsFile = Files.createTempFile("quint-args", ".txt")
+        val fakeQuint = writeFakeQuintExecutable(argsFile)
+        withSystemProperty(QUINT_EXECUTABLE_PROPERTY, fakeQuint.absolutePath) {
+            tracesMethod.invoke(instance)
+        }
+
+        assertTrue(Files.readAllLines(argsFile).none { it == "--invariants" })
+    }
+
+    @Test
     fun `-Pquint_seed override wins over the baked annotation seed at runtime`() {
         check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
 

@@ -107,6 +107,79 @@ class TraceGeneratorTest {
     }
 
     @Test
+    fun `names a single violated invariant and the seed without needing the stdout breakdown`() {
+        val script = "echo 'error: Invariant violated' >&2; exit 1"
+        val config = SimpleTestConfig(script, invariants = listOf("safe"))
+
+        val exception = assertThrows(IllegalStateException::class.java) {
+            TraceGenerator.generate(config)
+        }
+
+        assertTrue(exception.message?.contains("Quint invariant violated: safe") == true)
+        assertTrue(exception.message?.contains("seed test-seed") == true)
+    }
+
+    @Test
+    fun `names only the invariants quint reports as violated when several were checked`() {
+        val script = "echo '  ❌ bar' ; echo 'error: Invariant violated' >&2; exit 1"
+        val config = SimpleTestConfig(script, invariants = listOf("foo", "bar"))
+
+        val exception = assertThrows(IllegalStateException::class.java) {
+            TraceGenerator.generate(config)
+        }
+
+        assertEquals("Quint invariant violated: bar (seed test-seed)", exception.message)
+    }
+
+    @Test
+    fun `falls back to naming every configured invariant when quint's breakdown can't be parsed`() {
+        val script = "echo 'error: Invariant violated' >&2; exit 1"
+        val config = SimpleTestConfig(script, invariants = listOf("foo", "bar"))
+
+        val exception = assertThrows(IllegalStateException::class.java) {
+            TraceGenerator.generate(config)
+        }
+
+        assertTrue(exception.message?.contains("Quint invariant violated: foo, bar") == true)
+    }
+
+    @Test
+    fun `attaches the violating trace quint wrote before exiting`() {
+        val config = object : GeneratorConfig {
+            override val seed = "test-seed"
+            override val nTraces = 0
+            override val invariants = listOf("safe")
+            override fun toCommand(tmpDir: Path): List<String> {
+                val itfFile = tmpDir.resolve("run_0.itf.json")
+                val script = "echo '{\"states\": [{\"mbt::actionTaken\": \"init\", \"n\": 5}]}' > '$itfFile'\n" +
+                    "echo 'error: Invariant violated' >&2\nexit 1"
+                return listOf("sh", "-c", script)
+            }
+        }
+
+        val exception = assertThrows(IllegalStateException::class.java) {
+            TraceGenerator.generate(config)
+        }
+
+        assertTrue(exception.message?.contains("Violating trace:") == true)
+        assertTrue(exception.message?.contains("mbt::actionTaken: \"init\"") == true)
+        assertTrue(exception.message?.contains("n: 5") == true)
+    }
+
+    @Test
+    fun `a non-invariant failure keeps the generic non-zero exit code message`() {
+        val script = "echo 'Some other quint error' >&2; exit 1"
+        val config = SimpleTestConfig(script, invariants = listOf("safe"))
+
+        val exception = assertThrows(IllegalStateException::class.java) {
+            TraceGenerator.generate(config)
+        }
+
+        assertTrue(exception.message?.contains("non-zero exit code") == true)
+        assertTrue(exception.message?.contains("Some other quint error") == true)
+    }
+
+    @Test
     fun `traces stay in numeric sequence order past 9 samples`() {
         val config = object : GeneratorConfig {
             override val seed = "test-seed"
@@ -128,6 +201,7 @@ class TraceGeneratorTest {
     private class SimpleTestConfig(
         private val script: String,
         override val timeout: Duration = Duration.INFINITE,
+        override val invariants: List<String> = emptyList(),
     ) : GeneratorConfig {
         override val seed: String = "test-seed"
         override val nTraces: Int = 0

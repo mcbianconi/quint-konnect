@@ -10,4 +10,5 @@ public annotation class QuintRun(
     public val maxSamples: Int = -1,
     public val maxSteps: Int = -1,
     public val seed: String = "",
+    public val invariants: Array<String> = [],
 )

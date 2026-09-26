@@ -41,6 +41,8 @@ internal class QuintRunTestGenerator(
         val maxSamples = (args["maxSamples"] as? Int)?.takeIf { it >= 0 }
         val maxSteps = (args["maxSteps"] as? Int)?.takeIf { it >= 0 }
         val seed = (args["seed"] as? String)?.takeIf { it.isNotBlank() }
+        @Suppress("UNCHECKED_CAST")
+        val invariants = (args["invariants"] as? List<String>).orEmpty().filter { it.isNotBlank() }
 
         val configBlock = CodeBlock.builder()
             .add("%T(\n", runConfigClassName)
@@ -52,6 +54,15 @@ internal class QuintRunTestGenerator(
         step?.let { configBlock.add("step = %S,\n", it) }
         maxSamples?.let { configBlock.add("maxSamples = %L,\n", it) }
         maxSteps?.let { configBlock.add("maxSteps = %L,\n", it) }
+        if (invariants.isNotEmpty()) {
+            val invariantsBlock = CodeBlock.builder().add("listOf(")
+            invariants.forEachIndexed { i, invariant ->
+                if (i > 0) invariantsBlock.add(", ")
+                invariantsBlock.add("%S", invariant)
+            }
+            invariantsBlock.add(")")
+            configBlock.add("invariants = %L,\n", invariantsBlock.build())
+        }
         configBlock.unindent().add(")")
 
         val tracesBody = CodeBlock.builder()

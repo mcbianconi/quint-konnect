@@ -57,6 +57,53 @@ class RunConfigTest {
     }
 
     @Test
+    fun `RunConfig with invariants`() {
+        val config = RunConfig(spec = "foo.qnt", seed = "42", invariants = listOf("safe", "alwaysTrue"))
+        assertEquals(
+            listOf(
+                "quint", "run", "foo.qnt",
+                "--seed", "42",
+                "--max-samples", "100",
+                "--n-traces", "100",
+                "--out-itf", "tmpdir/run_{seq}.itf.json",
+                "--mbt",
+                "--invariants", "safe",
+                "--invariants", "alwaysTrue",
+                "--verbosity", "1",
+            ),
+            config.toCommand(tmpDir),
+        )
+    }
+
+    @Test
+    fun `RunConfig defaults invariants to empty`() {
+        val config = RunConfig(spec = "foo.qnt", seed = "42")
+        assertEquals(emptyList<String>(), config.invariants)
+    }
+
+    @Test
+    fun `RunConfig's pre-invariants constructor is still available`() {
+        val config = RunConfig("foo.qnt", "MyModule", "myInit", "myStep", 50, 20, "42")
+        assertEquals(emptyList<String>(), config.invariants)
+        assertEquals(
+            listOf(
+                "quint", "run", "foo.qnt",
+                "--seed", "42",
+                "--max-samples", "50",
+                "--n-traces", "50",
+                "--out-itf", "tmpdir/run_{seq}.itf.json",
+                "--mbt",
+                "--verbosity", "0",
+                "--main", "MyModule",
+                "--init", "myInit",
+                "--step", "myStep",
+                "--max-steps", "20",
+            ),
+            config.toCommand(tmpDir),
+        )
+    }
+
+    @Test
     fun `TestConfig basic command`() {
         val config = TestConfig(spec = "foo.qnt", test = "happyTest", seed = "42")
         assertEquals(
