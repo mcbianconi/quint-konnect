@@ -1,6 +1,6 @@
 package io.github.mcbianconi.itf
 
-fun ItfValue.display(): String = when (this) {
+public fun ItfValue.display(): String = when (this) {
     is ItfValue.Bool   -> value.toString()
     is ItfValue.Num    -> value.toString()
     is ItfValue.Str    -> "\"$value\""

@@ -4,9 +4,9 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.quintkonnect.nondet.NondetPicks
 
-class Step(
-    val actionTaken: String,
-    val nondetPicks: NondetPicks,
+public class Step internal constructor(
+    public val actionTaken: String,
+    public val nondetPicks: NondetPicks,
     internal val state: ItfValue,
 ) {
     override fun toString(): String {
@@ -26,7 +26,7 @@ class Step(
         return "Action taken: $action\nNondet picks:$nondets\nNext state:$stateStr"
     }
 
-    companion object {
+    internal companion object {
         fun fromState(state: LinkedHashMap<String, ItfValue>, config: DriverConfig): Step {
             val stateCopy = LinkedHashMap(state)
             return if (config.nondetPath.isEmpty()) {

@@ -7,7 +7,7 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-object TraceGenerator {
+internal object TraceGenerator {
 
     fun generate(config: GeneratorConfig): List<ItfTrace> {
         val tmpDir = Files.createTempDirectory("quint-konnect-")

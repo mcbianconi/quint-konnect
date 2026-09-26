@@ -5,7 +5,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 
-class QuintRunTestGenerator(
+internal class QuintRunTestGenerator(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
 ) {

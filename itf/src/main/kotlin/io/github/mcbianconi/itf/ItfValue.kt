@@ -23,15 +23,15 @@ import kotlin.collections.List as KList
  * Use [ItfValueSerializer] to deserialize ITF JSON into [ItfValue]. Use [decode] to decode an
  * [ItfValue] into a standard `@Serializable` type.
  */
-sealed class ItfValue {
+public sealed class ItfValue {
     /** A boolean value. */
-    data class Bool(val value: Boolean) : ItfValue()
+    public data class Bool(public val value: Boolean) : ItfValue()
 
     /** A 64-bit integer. Quint `int` values that fit in a [Long] are encoded as plain JSON numbers. */
-    data class Num(val value: Long) : ItfValue()
+    public data class Num(public val value: Long) : ItfValue()
 
     /** A string value. */
-    data class Str(val value: String) : ItfValue()
+    public data class Str(public val value: String) : ItfValue()
 
     /**
      * An arbitrary-precision integer encoded as `{"#bigint": "123"}`.
@@ -40,10 +40,10 @@ sealed class ItfValue {
      * value fits, otherwise into a `@Serializable(with = BigIntegerSerializer::class) val n:
      * BigInteger` field.
      */
-    data class BigInt(val value: String) : ItfValue()
+    public data class BigInt(public val value: String) : ItfValue()
 
     /** A Quint `List[T]`, encoded as a plain JSON array `[...]`. */
-    data class List(val values: KList<ItfValue>) : ItfValue()
+    public data class List(public val values: KList<ItfValue>) : ItfValue()
 
     /**
      * A Quint tuple, encoded as `{"#tup": [...]}`.
@@ -51,7 +51,7 @@ sealed class ItfValue {
      * Tuple element `._1` is at index 0, `._2` at index 1, etc. [decode] a field of this type into
      * a [kotlin.collections.List].
      */
-    data class Tup(val values: KList<ItfValue>) : ItfValue()
+    public data class Tup(public val values: KList<ItfValue>) : ItfValue()
 
     /**
      * A Quint `Set[T]`, encoded as `{"#set": [...]}`.
@@ -62,7 +62,7 @@ sealed class ItfValue {
      * state comparison for correct implementations that happen to enumerate elements differently.
      * [decode] a field of this type into `Set<T>` directly.
      */
-    data class Set(val values: KList<ItfValue>) : ItfValue()
+    public data class Set(public val values: KList<ItfValue>) : ItfValue()
 
     /**
      * A Quint map (`T -> V`), encoded as `{"#map": [[k, v], ...]}`.
@@ -72,7 +72,7 @@ sealed class ItfValue {
      * sum-type key, decode into `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record/sum keys,
      * `R` a `@Serializable` type) instead.
      */
-    data class Map(val entries: KList<Pair<ItfValue, ItfValue>>) : ItfValue()
+    public data class Map(public val entries: KList<Pair<ItfValue, ItfValue>>) : ItfValue()
 
     /**
      * A Quint record or sum-type variant, encoded as a plain JSON object `{"field": ...}`.
@@ -82,14 +82,14 @@ sealed class ItfValue {
      *
      * The `#meta` key, if present in the raw JSON, is stripped during parsing.
      */
-    data class Record(val fields: LinkedHashMap<String, ItfValue>) : ItfValue()
+    public data class Record(public val fields: LinkedHashMap<String, ItfValue>) : ItfValue()
 
     /**
      * A value that could not be serialized by the Quint CLI, represented as a raw string.
      *
      * This is a fallback variant; encountering it usually indicates an unsupported Quint type.
      */
-    data class Unserializable(val value: String) : ItfValue()
+    public data class Unserializable(public val value: String) : ItfValue()
 }
 
 /**
@@ -100,7 +100,7 @@ sealed class ItfValue {
  * - `{tag: "None"}` → returns `null`
  * - Any other value → returns `this` unchanged (not an Option)
  */
-fun ItfValue.intoOption(): ItfValue? = when {
+public fun ItfValue.intoOption(): ItfValue? = when {
     this is ItfValue.Record -> {
         val tag = fields["tag"]
         when {

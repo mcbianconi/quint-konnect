@@ -30,7 +30,7 @@ import kotlinx.serialization.json.*
  *
  * @see [Kotlinx serialization guide](https://kotlinlang.org/docs/serialization-guide.html)
  */
-object ItfValueSerializer : KSerializer<ItfValue> {
+public object ItfValueSerializer : KSerializer<ItfValue> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ItfValue")
 
     override fun serialize(encoder: Encoder, value: ItfValue) {
@@ -43,7 +43,7 @@ object ItfValueSerializer : KSerializer<ItfValue> {
         return fromJsonElement(jsonDecoder.decodeJsonElement())
     }
 
-    fun fromJsonElement(element: JsonElement): ItfValue = when (element) {
+    public fun fromJsonElement(element: JsonElement): ItfValue = when (element) {
         is JsonPrimitive -> fromPrimitive(element)
         is JsonArray    -> ItfValue.List(element.map { fromJsonElement(it) })
         is JsonObject   -> fromObject(element)
@@ -85,7 +85,7 @@ object ItfValueSerializer : KSerializer<ItfValue> {
         }
     }
 
-    fun toJsonElement(value: ItfValue): JsonElement = when (value) {
+    public fun toJsonElement(value: ItfValue): JsonElement = when (value) {
         is ItfValue.Bool  -> JsonPrimitive(value.value)
         is ItfValue.Num   -> JsonPrimitive(value.value)
         is ItfValue.Str   -> JsonPrimitive(value.value)

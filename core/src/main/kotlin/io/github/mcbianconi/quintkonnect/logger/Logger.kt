@@ -15,7 +15,7 @@ private const val DIM    = "\u001B[2m"
 private const val WHITE  = "\u001B[97m"
 private const val RESET  = "\u001B[0m"
 
-object Logger {
+internal object Logger {
     fun title(msg: String) = System.err.println("$BOLD== $msg$RESET")
 
     fun info(msg: String) = System.err.println(indent(msg))

@@ -1,0 +1,22 @@
+public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintAction : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintRun : java/lang/annotation/Annotation {
+	public abstract fun init ()Ljava/lang/String;
+	public abstract fun main ()Ljava/lang/String;
+	public abstract fun maxSamples ()I
+	public abstract fun maxSteps ()I
+	public abstract fun seed ()Ljava/lang/String;
+	public abstract fun spec ()Ljava/lang/String;
+	public abstract fun step ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintTest : java/lang/annotation/Annotation {
+	public abstract fun main ()Ljava/lang/String;
+	public abstract fun maxSamples ()I
+	public abstract fun seed ()Ljava/lang/String;
+	public abstract fun spec ()Ljava/lang/String;
+	public abstract fun test ()Ljava/lang/String;
+}
+

@@ -1,9 +1,9 @@
 package io.github.mcbianconi.quintkonnect
 
-interface Driver {
-    fun step(step: Step)
+public interface Driver {
+    public fun step(step: Step)
 
-    fun config(): DriverConfig = DriverConfig()
+    public fun config(): DriverConfig = DriverConfig()
 
-    fun quintState(): State<*> = State.disabled<Driver>()
+    public fun quintState(): State<*> = State.disabled<Driver>()
 }

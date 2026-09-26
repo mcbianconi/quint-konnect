@@ -5,16 +5,16 @@ import io.github.mcbianconi.itf.decode
 import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.itf.intoOption
 
-class NondetPicks(private val picks: LinkedHashMap<String, ItfValue>) {
+public class NondetPicks internal constructor(private val picks: LinkedHashMap<String, ItfValue>) {
 
-    fun get(name: String): ItfValue? = picks[name]
+    public fun get(name: String): ItfValue? = picks[name]
 
-    fun isEmpty(): Boolean = picks.isEmpty()
+    public fun isEmpty(): Boolean = picks.isEmpty()
 
     override fun toString(): String =
         picks.entries.joinToString("\n") { (k, v) -> "+ $k: ${v.display()}" }
 
-    companion object {
+    internal companion object {
         fun empty(): NondetPicks = NondetPicks(LinkedHashMap())
 
         fun fromItfValue(value: ItfValue): NondetPicks {
@@ -35,12 +35,12 @@ class NondetPicks(private val picks: LinkedHashMap<String, ItfValue>) {
     }
 }
 
-inline fun <reified T> NondetPicks.decode(name: String): T {
+public inline fun <reified T> NondetPicks.decode(name: String): T {
     val itfValue = get(name) ?: error("Missing required nondet pick '$name'")
     return itfValue.decode<T>()
 }
 
-inline fun <reified T> NondetPicks.decodeOrNull(name: String): T? {
+public inline fun <reified T> NondetPicks.decodeOrNull(name: String): T? {
     val itfValue = get(name) ?: return null
     return itfValue.decode<T>()
 }

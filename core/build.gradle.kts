@@ -1,5 +1,5 @@
 plugins {
-    id("quintkonnect.kotlin-jvm")
+    id("quintkonnect.library")
     alias(libs.plugins.kotlin.serialization)
 }
 

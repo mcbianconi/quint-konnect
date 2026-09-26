@@ -4,11 +4,11 @@ import java.nio.file.Path
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-const val DEFAULT_TRACES = 100
+public const val DEFAULT_TRACES: Int = 100
 
-interface GeneratorConfig {
-    val seed: String
-    val nTraces: Int
-    val timeout: Duration get() = 10.minutes
-    fun toCommand(tmpDir: Path): List<String>
+public interface GeneratorConfig {
+    public val seed: String
+    public val nTraces: Int
+    public val timeout: Duration get() = 10.minutes
+    public fun toCommand(tmpDir: Path): List<String>
 }

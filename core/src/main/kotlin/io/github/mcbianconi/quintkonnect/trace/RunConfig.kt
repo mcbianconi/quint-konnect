@@ -3,13 +3,13 @@ package io.github.mcbianconi.quintkonnect.trace
 import java.nio.file.Path
 
 // https://quint-lang.org/docs/cli#quint-run
-data class RunConfig(
-    val spec: String,
-    val main: String? = null,
-    val init: String? = null,
-    val step: String? = null,
-    val maxSamples: Int? = null,
-    val maxSteps: Int? = null,
+public data class RunConfig(
+    public val spec: String,
+    public val main: String? = null,
+    public val init: String? = null,
+    public val step: String? = null,
+    public val maxSamples: Int? = null,
+    public val maxSteps: Int? = null,
     override val seed: String = genSeed(),
 ) : GeneratorConfig {
 

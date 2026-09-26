@@ -20,7 +20,7 @@ import java.math.BigInteger
  * target field with `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger` to
  * decode it; a plain `Long` field keeps working as before for values that fit.
  */
-object BigIntegerSerializer : KSerializer<BigInteger> {
+public object BigIntegerSerializer : KSerializer<BigInteger> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: BigInteger) {

@@ -6,7 +6,7 @@ import io.github.mcbianconi.quintkonnect.ksp.generators.QuintRunTestGenerator
 import io.github.mcbianconi.quintkonnect.ksp.generators.QuintTestTestGenerator
 import io.github.mcbianconi.quintkonnect.ksp.generators.StepMethodGenerator
 
-class QuintKonnectProcessor(
+internal class QuintKonnectProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
 ) : SymbolProcessor {

@@ -7,9 +7,9 @@ import io.github.mcbianconi.quintkonnect.logger.Logger
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import io.github.mcbianconi.quintkonnect.trace.TraceGenerator
 
-object Runner {
+public object Runner {
 
-    fun <D : Driver> runTest(
+    public fun <D : Driver> runTest(
         driverFactory: () -> D,
         generatorConfig: GeneratorConfig,
         testName: String,

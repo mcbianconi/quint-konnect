@@ -4,21 +4,21 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.itf.decode
 import kotlinx.serialization.KSerializer
 
-interface State<D : Driver> {
-    fun check(driver: D, specValue: ItfValue)
+public interface State<D : Driver> {
+    public fun check(driver: D, specValue: ItfValue)
 
-    companion object {
-        fun <D : Driver> disabled(): State<D> = object : State<D> {
+    public companion object {
+        public fun <D : Driver> disabled(): State<D> = object : State<D> {
             override fun check(driver: D, specValue: ItfValue) {}
         }
     }
 }
 
-abstract class TypedState<D : Driver, S : Any>(
+public abstract class TypedState<D : Driver, S : Any>(
     private val serializer: KSerializer<S>,
 ) : State<D> {
 
-    abstract fun extractFromDriver(driver: D): S
+    public abstract fun extractFromDriver(driver: D): S
 
     override fun check(driver: D, specValue: ItfValue) {
         val specState = specValue.decode(serializer)

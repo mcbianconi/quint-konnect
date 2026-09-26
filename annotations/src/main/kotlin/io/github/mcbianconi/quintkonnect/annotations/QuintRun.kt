@@ -2,12 +2,12 @@ package io.github.mcbianconi.quintkonnect.annotations
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class QuintRun(
-    val spec: String,
-    val main: String = "",
-    val init: String = "",
-    val step: String = "",
-    val maxSamples: Int = -1,
-    val maxSteps: Int = -1,
-    val seed: String = "",
+public annotation class QuintRun(
+    public val spec: String,
+    public val main: String = "",
+    public val init: String = "",
+    public val step: String = "",
+    public val maxSamples: Int = -1,
+    public val maxSteps: Int = -1,
+    public val seed: String = "",
 )

@@ -6,7 +6,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 
-class StepMethodGenerator(
+internal class StepMethodGenerator(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
 ) {

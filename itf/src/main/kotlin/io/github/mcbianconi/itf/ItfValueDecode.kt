@@ -17,8 +17,8 @@ import kotlinx.serialization.serializer
  * for `Option`, matching `itf-rs`'s `itf::de::Option` on the Rust side; it only applies to a
  * nullable target, so a user sum type with `Some`/`None` variants decodes as-is.
  */
-fun <T> ItfValue.decode(deserializer: DeserializationStrategy<T>): T =
+public fun <T> ItfValue.decode(deserializer: DeserializationStrategy<T>): T =
     ItfJson.decodeFromJsonElement(deserializer, toNormalizedJson(deserializer.descriptor))
 
 /** Reified overload of [decode] that resolves [T]'s serializer automatically. */
-inline fun <reified T> ItfValue.decode(): T = decode(serializer())
+public inline fun <reified T> ItfValue.decode(): T = decode(serializer())

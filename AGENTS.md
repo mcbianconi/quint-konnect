@@ -38,6 +38,17 @@ Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGenera
 `QUINT_VERBOSE=1`/`2` and `QUINT_SEED=<hex>` control logging and reproducibility (see
 README.md's Environment variables section).
 
+`annotations`, `itf`, `core` and `ksp` (not `example`) build with Kotlin's explicit API
+mode (`quintkonnect.library` convention plugin in `build-logic/`): every public
+declaration needs an explicit `public`/`internal`/`private` modifier, and each module
+keeps a reference ABI dump at `<module>/api/<module>.api`, checked by `checkKotlinAbi`
+(runs as part of `check`/`build`). After a deliberate public API change in one of those
+modules, regenerate its dump with `./gradlew :<module>:updateKotlinAbi` (or
+`./gradlew updateKotlinAbi` for all of them) and commit the updated `.api` file.
+Reified inline functions (`NondetPicks.decode`/`decodeOrNull`, `ItfValue.decode()`) don't
+appear in the ABI dump, so `checkKotlinAbi` doesn't guard their signatures; review those
+by hand.
+
 ## Architecture Overview
 
 Five modules, in dependency order:

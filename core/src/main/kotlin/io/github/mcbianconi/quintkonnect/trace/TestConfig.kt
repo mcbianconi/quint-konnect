@@ -3,11 +3,11 @@ package io.github.mcbianconi.quintkonnect.trace
 import java.nio.file.Path
 
 // https://quint-lang.org/docs/cli#quint-test
-data class TestConfig(
-    val spec: String,
-    val test: String,
-    val main: String? = null,
-    val maxSamples: Int? = null,
+public data class TestConfig(
+    public val spec: String,
+    public val test: String,
+    public val main: String? = null,
+    public val maxSamples: Int? = null,
     override val seed: String = genSeed(),
 ) : GeneratorConfig {
 

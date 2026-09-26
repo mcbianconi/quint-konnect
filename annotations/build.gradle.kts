@@ -1,3 +1,3 @@
 plugins {
-    id("quintkonnect.kotlin-jvm")
+    id("quintkonnect.library")
 }
