@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
@@ -28,6 +29,9 @@ sealed class ColorSer {
     @Serializable @SerialName("Red") data object Red : ColorSer()
     @Serializable @SerialName("Blue") data object Blue : ColorSer()
 }
+
+@Serializable
+data class NullablePoint(val p: Point?)
 
 class ItfValueNormalizerTest {
 
@@ -197,5 +201,25 @@ class ItfValueNormalizerTest {
         val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
 
         assertEquals(JsonObject(emptyMap()), json)
+    }
+
+    @Test
+    fun `nullable field nested in a record decodes Some as the unwrapped value`() {
+        val descriptor = serializer<NullablePoint>().descriptor
+        val state = ItfValue.Record(
+            linkedMapOf("p" to ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("Some"), "value" to point(1, 2))))
+        )
+
+        val decoded = QuintJson.decodeFromJsonElement(serializer<NullablePoint>(), state.toNormalizedJson(descriptor))
+        assertEquals(NullablePoint(Point(1, 2)), decoded)
+    }
+
+    @Test
+    fun `nullable field decodes None as null`() {
+        val descriptor = serializer<Long?>().descriptor
+        val none = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("None")))
+
+        assertEquals(JsonNull, none.toNormalizedJson(descriptor))
+        assertEquals(null, QuintJson.decodeFromJsonElement(serializer<Long?>(), none.toNormalizedJson(descriptor)))
     }
 }

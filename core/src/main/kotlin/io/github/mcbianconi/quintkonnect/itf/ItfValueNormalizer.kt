@@ -1,8 +1,9 @@
-@file:OptIn(ExperimentalSerializationApi::class)
+@file:OptIn(ExperimentalSerializationApi::class, SealedSerializationApi::class)
 
 package io.github.mcbianconi.quintkonnect.itf
 
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SealedSerializationApi
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
@@ -41,19 +42,25 @@ val QuintJson = Json {
  *   works exactly as before. Otherwise → a flat [JsonArray] `[k1, v1, k2, v2, ...]`, so
  *   `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record keys, `R` a `@Serializable` data
  *   class) deserialize via [QuintJson]'s `allowStructuredMapKeys`.
+ * - A record whose target [descriptor] is nullable is treated as a Quint `Option[T]`:
+ *   `{tag: "None"}` → `null`, `{tag: "Some", value: v}` → `v` normalized against the non-null
+ *   descriptor. A record whose target descriptor isn't nullable is never unwrapped this way, so a
+ *   user sum type with `Some`/`None` variants decodes as-is.
  * - All other variants → their natural JSON equivalent
  *
  * [descriptor], when given, is the [SerialDescriptor] of the Kotlin type this value is being
- * normalized for. It lets an empty [ItfValue.Map] pick the right JSON shape: an empty map can't
+ * normalized for. It lets an empty [ItfValue.Map] pick the right JSON shape (an empty map can't
  * tell a primitive-keyed map from a tuple/record-keyed one from its entries alone, since it has
- * none. Passing `null` (the default) reproduces the pre-descriptor-aware behavior: primitive-key
- * detection falls back to inspecting the actual keys, so an empty complex-keyed map normalizes to
- * `{}` and only decodes into a primitive-keyed map.
+ * none) and lets a `null`-able Kotlin field unwrap a Quint `Option[T]`. Passing `null` (the
+ * default) reproduces the pre-descriptor-aware behavior: primitive-key detection falls back to
+ * inspecting the actual keys, an empty complex-keyed map normalizes to `{}` (and so only decodes
+ * into a primitive-keyed map), and no field is treated as an `Option`.
  *
  * Descriptor propagation follows the target shape: element 0 of a `LIST`-kind descriptor for
  * [ItfValue.List]/[ItfValue.Tup]/[ItfValue.Set] elements, elements 0/1 of a `MAP`-kind descriptor
  * for map keys/values, and the named element of a `CLASS`/`OBJECT`-kind descriptor for record
- * fields.
+ * fields. It doesn't descend into a sealed class's variants, so a field nested inside a Quint sum
+ * type variant's payload normalizes as if no descriptor were given.
  */
 fun ItfValue.toNormalizedJson(descriptor: SerialDescriptor? = null): JsonElement = when (this) {
     is ItfValue.Bool   -> JsonPrimitive(value)
@@ -64,9 +71,24 @@ fun ItfValue.toNormalizedJson(descriptor: SerialDescriptor? = null): JsonElement
     is ItfValue.Tup    -> JsonArray(values.map { it.toNormalizedJson(descriptor?.collectionElementDescriptor()) })
     is ItfValue.Set    -> JsonArray(values.map { it.toNormalizedJson(descriptor?.collectionElementDescriptor()) })
     is ItfValue.Map    -> entries.toNormalizedMapJson(descriptor)
-    is ItfValue.Record -> JsonObject(fields.mapValues { (name, v) -> v.toNormalizedJson(descriptor?.fieldDescriptor(name)) })
+    is ItfValue.Record -> toNormalizedRecordJson(descriptor)
     is ItfValue.Unserializable -> JsonPrimitive(value)
 }
+
+private fun ItfValue.Record.toNormalizedRecordJson(descriptor: SerialDescriptor?): JsonElement {
+    if (descriptor != null && descriptor.isNullable) {
+        val nonNullDescriptor = descriptor.asNonNullable()
+        return when (val unwrapped = intoOption()) {
+            null -> JsonNull
+            this -> normalizeFields(nonNullDescriptor)
+            else -> unwrapped.toNormalizedJson(nonNullDescriptor)
+        }
+    }
+    return normalizeFields(descriptor)
+}
+
+private fun ItfValue.Record.normalizeFields(descriptor: SerialDescriptor?): JsonElement =
+    JsonObject(fields.mapValues { (name, v) -> v.toNormalizedJson(descriptor?.fieldDescriptor(name)) })
 
 private fun List<Pair<ItfValue, ItfValue>>.toNormalizedMapJson(descriptor: SerialDescriptor?): JsonElement {
     val mapDescriptor = descriptor?.takeIf { it.kind == StructureKind.MAP }
@@ -102,4 +124,11 @@ private fun SerialDescriptor.fieldDescriptor(name: String): SerialDescriptor? {
     if (kind != StructureKind.CLASS && kind != StructureKind.OBJECT) return null
     val index = getElementIndex(name)
     return if (index == CompositeDecoder.UNKNOWN_NAME) null else getElementDescriptor(index)
+}
+
+private fun SerialDescriptor.asNonNullable(): SerialDescriptor {
+    val original = this
+    return object : SerialDescriptor by original {
+        override val isNullable: Boolean get() = false
+    }
 }

@@ -6,6 +6,7 @@ import io.github.mcbianconi.quintkonnect.itf.display
 import io.github.mcbianconi.quintkonnect.itf.intoOption
 import io.github.mcbianconi.quintkonnect.itf.toNormalizedJson
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.serializer
 
 class NondetPicks(private val picks: LinkedHashMap<String, ItfValue>) {
 
@@ -39,10 +40,12 @@ class NondetPicks(private val picks: LinkedHashMap<String, ItfValue>) {
 
 inline fun <reified T> NondetPicks.decode(name: String): T {
     val itfValue = get(name) ?: error("Missing required nondet pick '$name'")
-    return QuintJson.decodeFromJsonElement(itfValue.toNormalizedJson())
+    val serializer = serializer<T>()
+    return QuintJson.decodeFromJsonElement(serializer, itfValue.toNormalizedJson(serializer.descriptor))
 }
 
 inline fun <reified T> NondetPicks.decodeOrNull(name: String): T? {
     val itfValue = get(name) ?: return null
-    return QuintJson.decodeFromJsonElement(itfValue.toNormalizedJson())
+    val serializer = serializer<T>()
+    return QuintJson.decodeFromJsonElement(serializer, itfValue.toNormalizedJson(serializer.descriptor))
 }
