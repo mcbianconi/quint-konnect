@@ -25,17 +25,26 @@ public abstract class TypedState<D : Driver, S : Any>(
         val driverState = extractFromDriver(driver)
 
         if (specState != driverState) {
-            val diff = buildDiff(specState.toString(), driverState.toString())
-            error("State invariant failed:\n$diff")
+            val fullValues = fullValueDiff(specState.toString(), driverState.toString())
+            val fieldDiff = try {
+                buildFieldDiff(serializer, specState, driverState)
+            } catch (e: Exception) {
+                null
+            }
+            val diff = if (fieldDiff.isNullOrEmpty()) fullValues else fieldDiff.joinToString("\n")
+            throw IllegalStateException(
+                "State invariant failed:\n$diff",
+                IllegalStateException("Full values:\n$fullValues"),
+            )
         }
     }
+}
 
-    private fun buildDiff(spec: String, impl: String): String {
-        val sb = StringBuilder()
-        sb.appendLine("--- specification")
-        sb.appendLine("+++ implementation")
-        spec.lines().forEach { sb.appendLine("-$it") }
-        impl.lines().forEach { sb.appendLine("+$it") }
-        return sb.toString()
-    }
+private fun fullValueDiff(spec: String, impl: String): String {
+    val sb = StringBuilder()
+    sb.appendLine("--- specification")
+    sb.appendLine("+++ implementation")
+    spec.lines().forEach { sb.appendLine("-$it") }
+    impl.lines().forEach { sb.appendLine("+$it") }
+    return sb.toString()
 }
