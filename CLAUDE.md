@@ -24,7 +24,7 @@ instead (a code comment, an error message) rather than in a separate file.
 
 For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
 
-`Map<List<Long>, V>` / `Map<R, V>` and `Option[T]` fields only decode correctly (including when
-empty/`None`) through `State`/`NondetPicks.decode`, which pass the field's `SerialDescriptor` into
-the normalizer. See `docs/decisions/itf-collection-mapping.md` and
-`docs/decisions/itf-option-and-bigint.md`.
+`Map<List<Long>, V>` / `Map<R, V>` and `Option[T]` fields decode correctly (including when
+empty/`None`) through `ItfValue.decode`, `State`, or `NondetPicks.decode`, which all pass the
+target type's `SerialDescriptor` into the normalizer. See `docs/decisions/itf-collection-mapping.md`
+and `docs/decisions/itf-option-and-bigint.md`.

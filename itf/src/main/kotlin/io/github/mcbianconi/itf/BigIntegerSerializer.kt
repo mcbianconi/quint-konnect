@@ -16,9 +16,9 @@ import java.math.BigInteger
  * [kotlinx.serialization] serializer for [BigInteger], for Quint `int` values that don't fit in a
  * [Long].
  *
- * [toNormalizedJson] normalizes such a value to an unquoted JSON number. Annotate the target field
- * with `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger` to decode it; a plain
- * `Long` field keeps working as before for values that fit.
+ * [decode] normalizes such a value to an unquoted JSON number before deserializing it. Annotate the
+ * target field with `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger` to
+ * decode it; a plain `Long` field keeps working as before for values that fit.
  */
 object BigIntegerSerializer : KSerializer<BigInteger> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)

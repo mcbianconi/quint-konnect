@@ -45,7 +45,7 @@ Five modules, in dependency order:
 - `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
   dependency, so it stays on a driver's compile classpath without pulling in `core`.
 - `itf` — ITF parsing and value normalization (`ItfValue`, `ItfTrace`/`parseTrace`,
-  `ItfValueSerializer`, `toNormalizedJson`).
+  `ItfValueSerializer`, `ItfValue.decode`). JSON normalization is internal to the module.
 - `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`), step
   extraction (`Step.kt`), nondet pick decoding (`nondet/`), state comparison
   (`State.kt`), and the replay loop (`Runner.kt`).

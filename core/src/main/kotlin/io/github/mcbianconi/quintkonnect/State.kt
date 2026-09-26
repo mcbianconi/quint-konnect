@@ -1,8 +1,7 @@
 package io.github.mcbianconi.quintkonnect
 
 import io.github.mcbianconi.itf.ItfValue
-import io.github.mcbianconi.itf.QuintJson
-import io.github.mcbianconi.itf.toNormalizedJson
+import io.github.mcbianconi.itf.decode
 import kotlinx.serialization.KSerializer
 
 interface State<D : Driver> {
@@ -22,7 +21,7 @@ abstract class TypedState<D : Driver, S : Any>(
     abstract fun extractFromDriver(driver: D): S
 
     override fun check(driver: D, specValue: ItfValue) {
-        val specState = QuintJson.decodeFromJsonElement(serializer, specValue.toNormalizedJson(serializer.descriptor))
+        val specState = specValue.decode(serializer)
         val driverState = extractFromDriver(driver)
 
         if (specState != driverState) {

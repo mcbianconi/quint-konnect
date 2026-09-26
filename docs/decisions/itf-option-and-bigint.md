@@ -10,7 +10,7 @@ date: 2026-09-26
 "was this nondet variable picked this step", one level, independent of the pick's own
 type. That harness-level wrapping is unambiguous — a user pick type that itself uses
 `Some`/`None` would appear one level deeper, under the harness's `value` field — and is
-orthogonal to the descriptor-driven `Option[T]` unwrap `toNormalizedJson` does for a
+orthogonal to the descriptor-driven `Option[T]` unwrap `ItfValue.decode` does for a
 pick's own value (see its KDoc).
 
 **How to apply:** Don't add a blanket `.intoOption()` call anywhere else in the

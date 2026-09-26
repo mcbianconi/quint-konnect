@@ -20,9 +20,8 @@ import kotlin.collections.List as KList
  * | `{"#map": [[k, v], ...]}`       | [Map]               |
  * | `{"field": ...}`                | [Record]            |
  *
- * Use [ItfValueSerializer] to deserialize ITF JSON into [ItfValue]. Use [toNormalizedJson] to convert
- * an [ItfValue] into a plain [kotlinx.serialization.json.JsonElement] suitable for standard
- * `@Serializable` data classes.
+ * Use [ItfValueSerializer] to deserialize ITF JSON into [ItfValue]. Use [decode] to decode an
+ * [ItfValue] into a standard `@Serializable` type.
  */
 sealed class ItfValue {
     /** A boolean value. */
@@ -37,10 +36,9 @@ sealed class ItfValue {
     /**
      * An arbitrary-precision integer encoded as `{"#bigint": "123"}`.
      *
-     * [value] is the decimal string representation. [toNormalizedJson] converts this to a
-     * [kotlinx.serialization.json.JsonPrimitive] backed by [Long] when the value fits, otherwise
-     * [java.math.BigInteger]; decode a field of this type with
-     * `@Serializable(with = BigIntegerSerializer::class) val n: BigInteger`.
+     * [value] is the decimal string representation. [decode] this into a [Long] field when the
+     * value fits, otherwise into a `@Serializable(with = BigIntegerSerializer::class) val n:
+     * BigInteger` field.
      */
     data class BigInt(val value: String) : ItfValue()
 
@@ -50,9 +48,8 @@ sealed class ItfValue {
     /**
      * A Quint tuple, encoded as `{"#tup": [...]}`.
      *
-     * Tuple element `._1` is at index 0, `._2` at index 1, etc. [toNormalizedJson] converts this
-     * to a plain JSON array so that `@Serializable` Kotlin [kotlin.collections.List] types can
-     * deserialize it directly.
+     * Tuple element `._1` is at index 0, `._2` at index 1, etc. [decode] a field of this type into
+     * a [kotlin.collections.List].
      */
     data class Tup(val values: KList<ItfValue>) : ItfValue()
 
@@ -63,20 +60,17 @@ sealed class ItfValue {
      * [kotlin.collections.Set] in your `@Serializable` state class, not a
      * [kotlin.collections.List]; ITF gives no element order to preserve, and a `List` would fail
      * state comparison for correct implementations that happen to enumerate elements differently.
-     * [toNormalizedJson] converts this to a plain JSON array, which kotlinx.serialization decodes
-     * into `Set<T>` directly.
+     * [decode] a field of this type into `Set<T>` directly.
      */
     data class Set(val values: KList<ItfValue>) : ItfValue()
 
     /**
      * A Quint map (`T -> V`), encoded as `{"#map": [[k, v], ...]}`.
      *
-     * [toNormalizedJson] converts this to a JSON object with string keys when the key type is
-     * primitive (`int`, `str`, `bool`) or an enum, enabling `Map<Long, V>` / `Map<String, V>` /
-     * `Map<Boolean, V>` deserialization. For a tuple, record or sum-type key, it instead converts
-     * to a flat `[k1, v1, k2, v2, ...]` JSON array, decoded via `QuintJson`'s
-     * `allowStructuredMapKeys` into `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record/sum
-     * keys, `R` a `@Serializable` type).
+     * [decode] a field of this type into `Map<Long, V>` / `Map<String, V>` / `Map<Boolean, V>`
+     * when the key type is primitive (`int`, `str`, `bool`) or an enum. For a tuple, record or
+     * sum-type key, decode into `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record/sum keys,
+     * `R` a `@Serializable` type) instead.
      */
     data class Map(val entries: KList<Pair<ItfValue, ItfValue>>) : ItfValue()
 

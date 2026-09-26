@@ -51,8 +51,8 @@ class ItfValueNormalizerTest {
         val setA = ItfValue.Set(listOf(ItfValue.Num(1), ItfValue.Num(2), ItfValue.Num(3)))
         val setB = ItfValue.Set(listOf(ItfValue.Num(3), ItfValue.Num(1), ItfValue.Num(2)))
 
-        val decodedA = QuintJson.decodeFromJsonElement<Set<Long>>(setA.toNormalizedJson())
-        val decodedB = QuintJson.decodeFromJsonElement<Set<Long>>(setB.toNormalizedJson())
+        val decodedA = ItfJson.decodeFromJsonElement<Set<Long>>(setA.toNormalizedJson())
+        val decodedB = ItfJson.decodeFromJsonElement<Set<Long>>(setB.toNormalizedJson())
 
         assertEquals(setOf(1L, 2L, 3L), decodedA)
         assertEquals(decodedA, decodedB)
@@ -63,8 +63,8 @@ class ItfValueNormalizerTest {
         val setA = ItfValue.Set(listOf(point(1, 2), point(3, 4)))
         val setB = ItfValue.Set(listOf(point(3, 4), point(1, 2)))
 
-        val decodedA = QuintJson.decodeFromJsonElement<Set<Point>>(setA.toNormalizedJson())
-        val decodedB = QuintJson.decodeFromJsonElement<Set<Point>>(setB.toNormalizedJson())
+        val decodedA = ItfJson.decodeFromJsonElement<Set<Point>>(setA.toNormalizedJson())
+        val decodedB = ItfJson.decodeFromJsonElement<Set<Point>>(setB.toNormalizedJson())
 
         assertEquals(setOf(Point(1, 2), Point(3, 4)), decodedA)
         assertEquals(decodedA, decodedB)
@@ -75,8 +75,8 @@ class ItfValueNormalizerTest {
         val setA = ItfValue.Set(listOf(unitVariant("Red"), unitVariant("Blue")))
         val setB = ItfValue.Set(listOf(unitVariant("Blue"), unitVariant("Red")))
 
-        val decodedA = QuintJson.decodeFromJsonElement<Set<ColorSer>>(setA.toNormalizedJson())
-        val decodedB = QuintJson.decodeFromJsonElement<Set<ColorSer>>(setB.toNormalizedJson())
+        val decodedA = ItfJson.decodeFromJsonElement<Set<ColorSer>>(setA.toNormalizedJson())
+        val decodedB = ItfJson.decodeFromJsonElement<Set<ColorSer>>(setB.toNormalizedJson())
 
         assertEquals(setOf(ColorSer.Red, ColorSer.Blue), decodedA)
         assertEquals(decodedA, decodedB)
@@ -88,7 +88,7 @@ class ItfValueNormalizerTest {
 
         val json = map.toNormalizedJson()
         assertTrue(json is JsonObject)
-        assertEquals(mapOf("a" to 1L), QuintJson.decodeFromJsonElement<Map<String, Long>>(json))
+        assertEquals(mapOf("a" to 1L), ItfJson.decodeFromJsonElement<Map<String, Long>>(json))
     }
 
     @Test
@@ -97,7 +97,7 @@ class ItfValueNormalizerTest {
 
         val json = map.toNormalizedJson()
         assertTrue(json is JsonObject)
-        assertEquals(mapOf(1L to "x"), QuintJson.decodeFromJsonElement<Map<Long, String>>(json))
+        assertEquals(mapOf(1L to "x"), ItfJson.decodeFromJsonElement<Map<Long, String>>(json))
     }
 
     @Test
@@ -106,7 +106,7 @@ class ItfValueNormalizerTest {
 
         val json = map.toNormalizedJson()
         assertTrue(json is JsonObject)
-        assertEquals(mapOf(true to 1L), QuintJson.decodeFromJsonElement<Map<Boolean, Long>>(json))
+        assertEquals(mapOf(true to 1L), ItfJson.decodeFromJsonElement<Map<Boolean, Long>>(json))
     }
 
     @Test
@@ -121,7 +121,7 @@ class ItfValueNormalizerTest {
         val json = map.toNormalizedJson()
         assertTrue(json is JsonArray)
 
-        val decoded = QuintJson.decodeFromJsonElement<Map<List<Long>, String>>(json)
+        val decoded = ItfJson.decodeFromJsonElement<Map<List<Long>, String>>(json)
         assertEquals(mapOf(listOf(1L, 2L) to "a", listOf(3L, 4L) to "b"), decoded)
     }
 
@@ -131,7 +131,7 @@ class ItfValueNormalizerTest {
         val json = map.toNormalizedJson()
 
         assertThrows<SerializationException> {
-            QuintJson.decodeFromJsonElement<Map<Pair<Long, Long>, String>>(json)
+            ItfJson.decodeFromJsonElement<Map<Pair<Long, Long>, String>>(json)
         }
     }
 
@@ -147,7 +147,7 @@ class ItfValueNormalizerTest {
         val json = map.toNormalizedJson()
         assertTrue(json is JsonArray)
 
-        val decoded = QuintJson.decodeFromJsonElement<Map<Point, String>>(json)
+        val decoded = ItfJson.decodeFromJsonElement<Map<Point, String>>(json)
         assertEquals(mapOf(Point(1, 2) to "near", Point(3, 4) to "far"), decoded)
     }
 
@@ -163,7 +163,7 @@ class ItfValueNormalizerTest {
         val json = map.toNormalizedJson()
         assertTrue(json is JsonArray)
 
-        val decoded = QuintJson.decodeFromJsonElement<Map<ColorSer, Long>>(json)
+        val decoded = ItfJson.decodeFromJsonElement<Map<ColorSer, Long>>(json)
         assertEquals(mapOf(ColorSer.Red to 1L, ColorSer.Blue to 2L), decoded)
     }
 
@@ -176,9 +176,9 @@ class ItfValueNormalizerTest {
         val json = ItfValue.Map(emptyList()).toNormalizedJson()
 
         assertEquals(JsonObject(emptyMap()), json)
-        assertEquals(emptyMap<Long, String>(), QuintJson.decodeFromJsonElement<Map<Long, String>>(json))
+        assertEquals(emptyMap<Long, String>(), ItfJson.decodeFromJsonElement<Map<Long, String>>(json))
         assertThrows<SerializationException> {
-            QuintJson.decodeFromJsonElement<Map<List<Long>, String>>(json)
+            ItfJson.decodeFromJsonElement<Map<List<Long>, String>>(json)
         }
     }
 
@@ -188,7 +188,7 @@ class ItfValueNormalizerTest {
         val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
 
         assertTrue(json is JsonArray)
-        assertEquals(emptyMap<List<Long>, String>(), QuintJson.decodeFromJsonElement<Map<List<Long>, String>>(json))
+        assertEquals(emptyMap<List<Long>, String>(), ItfJson.decodeFromJsonElement<Map<List<Long>, String>>(json))
     }
 
     @Test
@@ -197,7 +197,7 @@ class ItfValueNormalizerTest {
         val json = ItfValue.Map(emptyList()).toNormalizedJson(descriptor)
 
         assertTrue(json is JsonArray)
-        assertEquals(emptyMap<Point, String>(), QuintJson.decodeFromJsonElement<Map<Point, String>>(json))
+        assertEquals(emptyMap<Point, String>(), ItfJson.decodeFromJsonElement<Map<Point, String>>(json))
     }
 
     @Test
@@ -215,7 +215,7 @@ class ItfValueNormalizerTest {
             linkedMapOf("p" to ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("Some"), "value" to point(1, 2))))
         )
 
-        val decoded = QuintJson.decodeFromJsonElement(serializer<NullablePoint>(), state.toNormalizedJson(descriptor))
+        val decoded = ItfJson.decodeFromJsonElement(serializer<NullablePoint>(), state.toNormalizedJson(descriptor))
         assertEquals(NullablePoint(Point(1, 2)), decoded)
     }
 
@@ -225,7 +225,7 @@ class ItfValueNormalizerTest {
         val none = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("None")))
 
         assertEquals(JsonNull, none.toNormalizedJson(descriptor))
-        assertEquals(null, QuintJson.decodeFromJsonElement(serializer<Long?>(), none.toNormalizedJson(descriptor)))
+        assertEquals(null, ItfJson.decodeFromJsonElement(serializer<Long?>(), none.toNormalizedJson(descriptor)))
     }
 
     @Test
@@ -234,8 +234,8 @@ class ItfValueNormalizerTest {
         val none = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("None")))
         val some = ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("Some"), "value" to ItfValue.Num(7)))
 
-        assertEquals(MaybeSer.None, QuintJson.decodeFromJsonElement<MaybeSer>(none.toNormalizedJson(descriptor)))
-        assertEquals(MaybeSer.Some(7), QuintJson.decodeFromJsonElement<MaybeSer>(some.toNormalizedJson(descriptor)))
+        assertEquals(MaybeSer.None, ItfJson.decodeFromJsonElement<MaybeSer>(none.toNormalizedJson(descriptor)))
+        assertEquals(MaybeSer.Some(7), ItfJson.decodeFromJsonElement<MaybeSer>(some.toNormalizedJson(descriptor)))
     }
 
     @Test
@@ -243,12 +243,12 @@ class ItfValueNormalizerTest {
         val huge = "123456789012345678901234567890"
         val json = ItfValue.BigInt(huge).toNormalizedJson()
 
-        assertEquals(BigInteger(huge), QuintJson.decodeFromJsonElement(BigIntegerSerializer, json))
+        assertEquals(BigInteger(huge), ItfJson.decodeFromJsonElement(BigIntegerSerializer, json))
     }
 
     @Test
     fun `bigint that fits Long still normalizes to a Long primitive`() {
         val json = ItfValue.BigInt("42").toNormalizedJson()
-        assertEquals(42L, QuintJson.decodeFromJsonElement<Long>(json))
+        assertEquals(42L, ItfJson.decodeFromJsonElement<Long>(json))
     }
 }

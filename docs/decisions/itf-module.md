@@ -4,7 +4,7 @@ date: 2026-09-26
 ---
 
 ITF parsing and normalization (`ItfValue`, `ItfTrace`/`parseTrace`, `ItfValueSerializer`,
-`toNormalizedJson`, `BigIntegerSerializer`) lives in its own Gradle module `:itf`, package
+`ItfValue.decode`, `BigIntegerSerializer`) lives in its own Gradle module `:itf`, package
 `io.github.mcbianconi.itf`, artifact `io.github.mcbianconi:itf-kotlin` (same repo, version and
 release as quint-konnect). `core` depends on it with `api(project(":itf"))` since `ItfValue` is
 part of core's public API (`State.check`, `NondetPicks.get`, `Step.state`).

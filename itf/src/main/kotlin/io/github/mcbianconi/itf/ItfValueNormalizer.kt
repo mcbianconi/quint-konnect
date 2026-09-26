@@ -22,14 +22,14 @@ import kotlinx.serialization.json.*
  * tuple- or record-keyed type as a flat `[k1, v1, k2, v2, ...]` [JsonArray] (see below), which
  * kotlinx.serialization only decodes into `Map<K, V>` when this flag is set.
  */
-val QuintJson = Json {
+internal val ItfJson = Json {
     ignoreUnknownKeys = true
     allowStructuredMapKeys = true
 }
 
 /**
  * Converts this [ItfValue] to a plain [JsonElement] that standard `@Serializable` data classes
- * can deserialize via kotlinx.serialization.
+ * can deserialize via kotlinx.serialization. Internal: use [decode] instead.
  *
  * The ITF encoding uses `#`-prefixed type tags that kotlinx.serialization doesn't understand
  * directly. This function strips those tags and produces idiomatic JSON:
@@ -42,7 +42,7 @@ val QuintJson = Json {
  *   `bool`) or an enum, so `Map<Long, V>` / `Map<String, V>` / `Map<Boolean, V>` deserialization
  *   works exactly as before. Otherwise → a flat [JsonArray] `[k1, v1, k2, v2, ...]`, so
  *   `Map<List<Long>, V>` (tuple keys) or `Map<R, V>` (record keys, `R` a `@Serializable` data
- *   class) deserialize via [QuintJson]'s `allowStructuredMapKeys`.
+ *   class) deserialize via [ItfJson]'s `allowStructuredMapKeys`.
  * - A record whose target [descriptor] is nullable is treated as a Quint `Option[T]`:
  *   `{tag: "None"}` → `null`, `{tag: "Some", value: v}` → `v` normalized against the non-null
  *   descriptor. A record whose target descriptor isn't nullable is never unwrapped this way, so a
@@ -63,7 +63,7 @@ val QuintJson = Json {
  * fields. It doesn't descend into a sealed class's variants, so a field nested inside a Quint sum
  * type variant's payload normalizes as if no descriptor were given.
  */
-fun ItfValue.toNormalizedJson(descriptor: SerialDescriptor? = null): JsonElement = when (this) {
+internal fun ItfValue.toNormalizedJson(descriptor: SerialDescriptor? = null): JsonElement = when (this) {
     is ItfValue.Bool   -> JsonPrimitive(value)
     is ItfValue.Num    -> JsonPrimitive(value)
     is ItfValue.Str    -> JsonPrimitive(value)

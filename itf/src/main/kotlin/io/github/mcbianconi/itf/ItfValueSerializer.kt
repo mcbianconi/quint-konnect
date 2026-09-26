@@ -14,7 +14,7 @@ import kotlinx.serialization.json.*
  * cannot represent natively. Pass this serializer when decoding raw ITF JSON:
  *
  * ```kotlin
- * val value = QuintJson.decodeFromString(ItfValueSerializer, jsonString)
+ * val value = Json.decodeFromString(ItfValueSerializer, jsonString)
  * ```
  *
  * The mapping between JSON and [ItfValue] variants:

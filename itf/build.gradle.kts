@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    // ItfValue's public API exposes Json/JsonElement/KSerializer (QuintJson, toNormalizedJson,
+    // The public API exposes kotlinx.serialization types (ItfValue.decode(DeserializationStrategy),
     // ItfValueSerializer, BigIntegerSerializer), so consumers need it on their compile classpath too.
     // https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_separation
     api(libs.kotlinx.serialization.json)

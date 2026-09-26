@@ -144,10 +144,9 @@ and [the decision record](./docs/decisions/quint-test-needs-nondet-path.md).
 
 For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file.
 
-A `Map<List<Long>, V>` / `Map<R, V>` field and an `Option[T]` field both decode correctly even when
-empty/`None`, as long as they go through `State`/`NondetPicks.decode` (which pass the field's
-`SerialDescriptor` to the normalizer); decoding an `ItfValue` directly with `toNormalizedJson()`
-(no descriptor) keeps the old behavior.
+A `Map<List<Long>, V>` / `Map<R, V>` field and an `Option[T]` field (`T?` in Kotlin) all decode
+correctly, including when empty/`None`, through `ItfValue.decode`, `State`, or `NondetPicks.decode`
+— they pass the target type's `SerialDescriptor` into the normalizer automatically.
 
 ## ITF (Informal Trace Format)
 

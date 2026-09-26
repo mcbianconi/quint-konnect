@@ -21,7 +21,7 @@ A spec verified this end to end: a `type Action = Init | Add({ n: int })` variab
 alongside the real state in every action, with `config() = DriverConfig(nondetPath =
 listOf("lastAction"))` on the driver, replays correctly via `@QuintTest` (see
 `example/src/test/resources/quinttest/counter.qnt` and
-`example/.../quinttest/CounterDriver.kt`). `ignoreUnknownKeys` on `QuintJson` means the
+`example/.../quinttest/CounterDriver.kt`). `ignoreUnknownKeys` on the internal `ItfJson` means the
 leftover `lastAction` field in state doesn't break `TypedState` comparison.
 
 **How to apply:** Don't treat `@QuintTest`'s default config as usable out of the box;
