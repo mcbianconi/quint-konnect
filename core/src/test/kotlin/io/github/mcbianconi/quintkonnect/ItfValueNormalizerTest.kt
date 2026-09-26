@@ -2,6 +2,7 @@
 
 package io.github.mcbianconi.quintkonnect
 
+import io.github.mcbianconi.quintkonnect.itf.BigIntegerSerializer
 import io.github.mcbianconi.quintkonnect.itf.ItfValue
 import io.github.mcbianconi.quintkonnect.itf.QuintJson
 import io.github.mcbianconi.quintkonnect.itf.toNormalizedJson
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigInteger
 
 @Serializable
 data class Point(val x: Long, val y: Long)
@@ -238,5 +240,19 @@ class ItfValueNormalizerTest {
 
         assertEquals(MaybeSer.None, QuintJson.decodeFromJsonElement<MaybeSer>(none.toNormalizedJson(descriptor)))
         assertEquals(MaybeSer.Some(7), QuintJson.decodeFromJsonElement<MaybeSer>(some.toNormalizedJson(descriptor)))
+    }
+
+    @Test
+    fun `bigint beyond Long normalizes to an unquoted JSON number and decodes via BigIntegerSerializer`() {
+        val huge = "123456789012345678901234567890"
+        val json = ItfValue.BigInt(huge).toNormalizedJson()
+
+        assertEquals(BigInteger(huge), QuintJson.decodeFromJsonElement(BigIntegerSerializer, json))
+    }
+
+    @Test
+    fun `bigint that fits Long still normalizes to a Long primitive`() {
+        val json = ItfValue.BigInt("42").toNormalizedJson()
+        assertEquals(42L, QuintJson.decodeFromJsonElement<Long>(json))
     }
 }

@@ -36,7 +36,8 @@ val QuintJson = Json {
  *
  * - [ItfValue.Tup] → [JsonArray] (map to `List<T>` in your state class; index 0 = `._1`, etc.)
  * - [ItfValue.Set] → [JsonArray] (map to `Set<T>` in your state class)
- * - [ItfValue.BigInt] → [JsonPrimitive] backed by [Long] if it fits, otherwise [java.math.BigDecimal]
+ * - [ItfValue.BigInt] → [JsonPrimitive] backed by [Long] if it fits, otherwise [java.math.BigInteger]
+ *   (decode with [BigIntegerSerializer])
  * - [ItfValue.Map] → [JsonObject] with string keys when the key type is primitive (`int`, `str`,
  *   `bool`) or an enum, so `Map<Long, V>` / `Map<String, V>` / `Map<Boolean, V>` deserialization
  *   works exactly as before. Otherwise → a flat [JsonArray] `[k1, v1, k2, v2, ...]`, so
@@ -66,7 +67,7 @@ fun ItfValue.toNormalizedJson(descriptor: SerialDescriptor? = null): JsonElement
     is ItfValue.Bool   -> JsonPrimitive(value)
     is ItfValue.Num    -> JsonPrimitive(value)
     is ItfValue.Str    -> JsonPrimitive(value)
-    is ItfValue.BigInt -> JsonPrimitive(value.toLongOrNull() ?: value.toBigDecimal())
+    is ItfValue.BigInt -> JsonPrimitive(value.toLongOrNull() ?: value.toBigInteger())
     is ItfValue.List   -> JsonArray(values.map { it.toNormalizedJson(descriptor?.collectionElementDescriptor()) })
     is ItfValue.Tup    -> JsonArray(values.map { it.toNormalizedJson(descriptor?.collectionElementDescriptor()) })
     is ItfValue.Set    -> JsonArray(values.map { it.toNormalizedJson(descriptor?.collectionElementDescriptor()) })

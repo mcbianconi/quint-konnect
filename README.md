@@ -109,6 +109,7 @@ The framework deserializes the spec state from the ITF trace and compares it wit
 | Quint type | Kotlin `@Serializable` type |
 |---|---|
 | `int` | `Long` |
+| `int` (larger than `Long`) | `BigInteger`, with `@Serializable(with = BigIntegerSerializer::class)` |
 | `bool` | `Boolean` |
 | `str` | `String` |
 | `(int, int)` tuple | `List<Long>` (index 0 = `._1`, index 1 = `._2`) |
