@@ -5,12 +5,16 @@ title: Property-based tests for ITF decoding
 kind: task
 status: open
 priority: 3
-version: 1
+version: 3
 labels:
   - roadmap
 dependencies: []
 parent_id: is-01m3dzfsn7btzx8cswvs0rg65t
 created_at: 2026-09-26T06:09:28.285Z
-updated_at: 2026-09-26T06:09:28.285Z
+updated_at: 2026-09-26T06:49:38.854Z
 ---
-Round-trip property tests for ItfValue encode/decode and the normalizer/decoder using generated ItfValues.
+Round-trip property tests for ItfValue encode/decode and the kotlinx Decoder from qk-ze9b, using generated ItfValues.
+
+## Notes
+
+Targets the :itf module after qk-km9v.

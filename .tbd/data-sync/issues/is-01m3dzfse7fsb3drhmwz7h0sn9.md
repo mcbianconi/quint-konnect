@@ -5,7 +5,7 @@ title: "Phase 2: First usable release (0.1.0)"
 kind: epic
 status: open
 priority: 1
-version: 17
+version: 19
 labels:
   - roadmap
 dependencies: []
@@ -26,7 +26,9 @@ child_order_hints:
   - is-01m3e5ac50k1ks6sbctrx4q56t
   - is-01m3e63g8rhpv0grhqg8n1zga7
   - is-01m3e63ghv54r0w00v0qvjq9h6
+  - is-01m3e7dfmwx3g40p4shw07ke7b
+  - is-01m3e7dfwyvcdbqdj15rrb4ta2
 created_at: 2026-09-26T04:27:31.654Z
-updated_at: 2026-09-26T06:23:09.370Z
+updated_at: 2026-09-26T06:46:04.958Z
 ---
 Make the library consumable outside this repo: build cleanup, license, Maven Central publishing, CI, tests.
