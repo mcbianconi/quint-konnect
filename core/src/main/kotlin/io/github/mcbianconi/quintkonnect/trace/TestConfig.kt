@@ -15,7 +15,7 @@ public data class TestConfig(
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
         add("quint"); add("test")
-        add(spec)
+        add(resolveSpec(spec))
         add("--seed"); add(seed)
         add("--match"); add("^${escapeRegex(test)}$")
         add("--max-samples"); add(nTraces.toString())

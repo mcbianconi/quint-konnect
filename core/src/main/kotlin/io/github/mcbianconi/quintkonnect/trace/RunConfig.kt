@@ -17,7 +17,7 @@ public data class RunConfig(
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
         add("quint"); add("run")
-        add(spec)
+        add(resolveSpec(spec))
         add("--seed"); add(seed)
         add("--max-samples"); add(nTraces.toString())
         add("--n-traces"); add(nTraces.toString())
