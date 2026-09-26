@@ -45,6 +45,10 @@ public final class io/github/mcbianconi/quintkonnect/State$Companion {
 	public final fun disabled ()Lio/github/mcbianconi/quintkonnect/State;
 }
 
+public final class io/github/mcbianconi/quintkonnect/StateKt {
+	public static final fun prefixDecodeError (Ljava/lang/String;Lkotlinx/serialization/SerializationException;)Lkotlinx/serialization/SerializationException;
+}
+
 public final class io/github/mcbianconi/quintkonnect/Step {
 	public final fun getActionTaken ()Ljava/lang/String;
 	public final fun getNondetPicks ()Lio/github/mcbianconi/quintkonnect/nondet/NondetPicks;

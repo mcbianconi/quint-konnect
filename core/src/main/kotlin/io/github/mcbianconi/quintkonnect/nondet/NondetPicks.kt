@@ -4,6 +4,8 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.itf.decode
 import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.itf.intoOption
+import io.github.mcbianconi.quintkonnect.prefixDecodeError
+import kotlinx.serialization.SerializationException
 
 public class NondetPicks internal constructor(private val picks: LinkedHashMap<String, ItfValue>) {
 
@@ -37,10 +39,18 @@ public class NondetPicks internal constructor(private val picks: LinkedHashMap<S
 
 public inline fun <reified T> NondetPicks.decode(name: String): T {
     val itfValue = get(name) ?: error("Missing required nondet pick '$name'")
-    return itfValue.decode<T>()
+    return try {
+        itfValue.decode<T>()
+    } catch (e: SerializationException) {
+        throw prefixDecodeError("picks.$name", e)
+    }
 }
 
 public inline fun <reified T> NondetPicks.decodeOrNull(name: String): T? {
     val itfValue = get(name) ?: return null
-    return itfValue.decode<T>()
+    return try {
+        itfValue.decode<T>()
+    } catch (e: SerializationException) {
+        throw prefixDecodeError("picks.$name", e)
+    }
 }

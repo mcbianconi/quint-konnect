@@ -5,7 +5,9 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonClassDiscriminator
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -223,6 +225,30 @@ class TypedStateTest {
                 "n: spec=123456789012345678901234567890, impl=999999999999999999999999999999",
             ),
         )
+    }
+
+    @Test
+    fun `check prefixes a root-level decode error with state`() {
+        val state = CounterState(Counter(count = 1, label = "a"))
+
+        val thrown = assertThrows<SerializationException> {
+            state.check(FakeDriver(), ItfValue.Str("not a record"))
+        }
+
+        assertTrue(thrown.message!!.startsWith("state: expected a record"))
+    }
+
+    @Test
+    fun `check prefixes a nested decode error with state and keeps the original cause`() {
+        val state = CounterState(Counter(count = 1, label = "a"))
+
+        val thrown = assertThrows<SerializationException> {
+            state.check(FakeDriver(), specRecord(ItfValue.Str("not a number"), "a"))
+        }
+
+        assertTrue(thrown.message!!.startsWith("state.count: expected an int"))
+        assertTrue(thrown.cause is SerializationException)
+        assertEquals("count: expected an int, got a string (\"not a number\")", thrown.cause!!.message)
     }
 
     @Test

@@ -4,6 +4,7 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.quintkonnect.nondet.NondetPicks
 import io.github.mcbianconi.quintkonnect.nondet.decode
 import io.github.mcbianconi.quintkonnect.nondet.decodeOrNull
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -78,5 +79,44 @@ class NondetPicksTest {
             ItfValue.Record(linkedMapOf("holder" to ItfValue.Record(linkedMapOf("inner" to innerSome))))
         )
         assertEquals(NondetHolder(5L), picks.decode<NondetHolder>("holder"))
+    }
+
+    @Test
+    fun `decode prefixes a root-level decode error with picks-name`() {
+        val picks = NondetPicks.fromItfValue(
+            ItfValue.Record(linkedMapOf("n" to ItfValue.Str("not a number")))
+        )
+
+        val thrown = assertThrows<SerializationException> { picks.decode<Long>("n") }
+
+        assertTrue(thrown.message!!.startsWith("picks.n: expected an int"))
+    }
+
+    @Test
+    fun `decode prefixes a nested decode error with picks-name and keeps the original cause`() {
+        val picks = NondetPicks.fromItfValue(
+            ItfValue.Record(
+                linkedMapOf(
+                    "holder" to ItfValue.Record(linkedMapOf("inner" to ItfValue.Str("not a number"))),
+                ),
+            )
+        )
+
+        val thrown = assertThrows<SerializationException> { picks.decode<NondetHolder>("holder") }
+
+        assertTrue(thrown.message!!.startsWith("picks.holder.inner: expected an int"))
+        assertTrue(thrown.cause is SerializationException)
+        assertEquals("inner: expected an int, got a string (\"not a number\")", thrown.cause!!.message)
+    }
+
+    @Test
+    fun `decodeOrNull prefixes a decode error with picks-name`() {
+        val picks = NondetPicks.fromItfValue(
+            ItfValue.Record(linkedMapOf("n" to ItfValue.Str("not a number")))
+        )
+
+        val thrown = assertThrows<SerializationException> { picks.decodeOrNull<Long>("n") }
+
+        assertTrue(thrown.message!!.startsWith("picks.n: expected an int"))
     }
 }
