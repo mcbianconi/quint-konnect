@@ -22,6 +22,10 @@ Kotlin type through `ItfValue.decode`. Use this table for spec state classes
 For sum types, add `@file:OptIn(ExperimentalSerializationApi::class)` at the top of the file, and
 give each variant a `@SerialName` matching its Quint constructor name.
 
+With `readSpecIr` on, KSP generates these types from the spec following this table (see the main
+SKILL.md's state-check section). A generated sum type has no `@JsonClassDiscriminator`; the ITF
+decoder always reads `tag`.
+
 ## Why `Set<T>` and `Map<List<Long>, V>`, not `List<T>`/`Pair`
 
 ITF gives no element order for sets, so `List<T>` makes state comparison fail for correct

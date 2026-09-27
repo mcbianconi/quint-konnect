@@ -32,7 +32,8 @@ public abstract class QuintKonnectExtension {
     // Opt-in: true makes every KSP task depend on `quintIr` and passes its output to the
     // processor, which then reports a @QuintAction name/parameter not found in the spec, a
     // parameter type that clearly doesn't match its nondet's, and a spec action reachable at
-    // runtime with no @QuintAction covering it (qk-75ad) -- but also means compiling tests needs
-    // quint. false (the default) skips all of that, unchanged from before qk-75ad.
+    // runtime with no @QuintAction covering it (qk-75ad), and generates `<Module>Spec` with
+    // @Serializable mirrors of the spec's types and state (qk-ixox) -- but also means compiling
+    // tests needs quint. false (the default) skips all of that, unchanged from before qk-75ad.
     public abstract val readSpecIr: Property<Boolean>
 }

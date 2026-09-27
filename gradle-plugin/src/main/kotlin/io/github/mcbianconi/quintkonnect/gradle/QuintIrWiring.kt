@@ -3,12 +3,14 @@ package io.github.mcbianconi.quintkonnect.gradle
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 
 // Registers `quintIr` and, when `quintKonnect.readSpecIr` is true and not `skipKsp` (replaying a
 // saved trace needs no quint install, mirroring QuintKonnectPlugin.kt's `replayOverride == null`
 // guard on Test tasks), wires its output directory into KSP as the "quintkonnect.irDir" processor
-// option and makes every KSP task depend on it. An empty option value means "no IR".
+// option and makes every KSP task depend on it and take its output as an input. An empty option
+// value means "no IR".
 internal fun wireQuintIr(
     project: Project,
     extension: QuintKonnectExtension,
@@ -38,6 +40,11 @@ internal fun wireQuintIr(
         // across KSP releases.
         project.tasks.matching { it.name.startsWith("ksp") }.configureEach { task ->
             task.dependsOn(extension.readSpecIr.map { enabled -> if (enabled) listOf(quintIr) else emptyList<Any>() })
+            // KSP reads the IR through a processor option, not a source file: without this input a
+            // spec change leaves KSP UP-TO-DATE and its generated <Module>Spec types stale (qk-ixox).
+            task.inputs.files(extension.readSpecIr.map { enabled -> if (enabled) listOf(quintIr.flatMap { it.outputDir }) else emptyList<Any>() })
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+                .withPropertyName("quintIr")
         }
     }
 

@@ -165,6 +165,14 @@ A mismatch names the differing field, e.g. `cells.(1, 2): spec="X", impl="O"`; s
 regardless of order. See `references/types.md` for the full Quint-to-Kotlin type table
 (sum types, tuples, maps, `Option`, oversized integers).
 
+- **Let KSP generate the spec types** instead of writing them: with the Gradle plugin and
+  `quintKonnect { readSpecIr.set(true) }`, KSP writes `object <Module>Spec` (module `counter` ->
+  `CounterSpec`) into the driver's package, with one `@Serializable` class per record and sum
+  typedef plus a `State` data class of every state variable. Write only `extractFromDriver`:
+  `TypedState<MyDriver, CounterSpec.State>(serializer())`. Editing the spec regenerates them on
+  the next build. KSP warns about and leaves out a type with no decodable shape (a tuple with
+  mixed element types, a generic typedef other than `Option`, an uninterpreted type) and
+  everything containing it; hand-write those.
 - Mark a field the implementation doesn't track with `@QuintIgnore`
   (`io.github.mcbianconi.quintkonnect.annotations.QuintIgnore`) — it still has to decode, so
   give it a default (or make it nullable) if the spec might omit it; a mismatch on it never
@@ -256,7 +264,7 @@ Debugging notes:
 
 See the TicTacToe example in the quint-konnect repo (all links are on `main`):
 - [`TicTacToeDriver.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeDriver.kt) — annotated driver, matches the snippet above
-- [`GameState.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/GameState.kt) — `TypedState`, sum types, nested maps
+- [`TicTacToeState.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeState.kt) — `TypedState` over the KSP-generated `TictactoeSpec` (sum types, nested maps)
 - [`TicTacToe.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/main/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToe.kt) — the game logic under test
 - [`tictactoe.qnt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/resources/tictactoe.qnt) — the Quint spec
 - [`quinttest/`](https://github.com/mcbianconi/quint-konnect/tree/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/quinttest) — a `@QuintTest`/`nondetPath` example (the `CounterDriver` above)

@@ -174,6 +174,8 @@ class MyState : TypedState<MyDriver, MySpecState>(serializer()) {
 
 The framework decodes the spec state from the ITF trace and compares it field by field with `extractFromDriver()` after each step; a mismatch names the differing fields (e.g. `cells.(1, 2): spec="X", impl="O"`). Sets compare regardless of order.
 
+With `quintKonnect { readSpecIr.set(true) }`, KSP also generates these `@Serializable` types from the spec: `object <Module>Spec` in the driver's package holds a class for each record and sum typedef, a `State` data class with every state variable, and classes for anonymous record nondets. Then you only write `extractFromDriver`, e.g. `TypedState<MyDriver, CounterSpec.State>(serializer())`. A spec type with no decodable Kotlin shape (a tuple with mixed element types, a generic typedef other than `Option`, an uninterpreted type) is left out along with everything that contains it, and KSP warns and lists it.
+
 Mark state properties the implementation doesn't track with `@QuintIgnore` (from the annotations module); they still decode, so give them a default if the spec may omit them. Override `TypedState.compareField(path, spec, impl)` to compare a field your own way (return `null` to keep the default).
 
 ### 4. Run
@@ -380,7 +382,7 @@ itself needs to change to run them concurrently. Two entry points parallelize di
 See [`example/`](./example) for a complete TicTacToe example:
 - [`TicTacToe.kt`](example/src/main/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToe.kt) — game logic
 - [`TicTacToeDriver.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeDriver.kt) — annotated driver
-- [`GameState.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/GameState.kt) — state comparison
+- [`TicTacToeState.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeState.kt) — state comparison against the KSP-generated `TictactoeSpec` types
 - [`tictactoe.qnt`](example/src/test/resources/tictactoe.qnt) — Quint specification
 
 More examples under [`example/src/test/kotlin/.../example/`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example):

@@ -79,6 +79,29 @@ class QuintIrFunctionalTest {
         assertTrue(result.output.contains("dependsOnQuintIr=true"))
     }
 
+    @Test
+    fun `the KSP test task takes quintIr's output as an input when readSpecIr is set`() {
+        buildFile.appendText(
+            """
+
+            quintKonnect { readSpecIr.set(true) }
+
+            tasks.register("printQuintIrInput") {
+                doLast {
+                    val kspTask = tasks.named("kspTestKotlin").get()
+                    val inputFromQuintIr = kspTask.inputs.files.buildDependencies.getDependencies(kspTask)
+                        .any { it.name == "quintIr" }
+                    println("inputFromQuintIr=${'$'}inputFromQuintIr")
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printQuintIrInput").build()
+
+        assertTrue(result.output.contains("inputFromQuintIr=true"), result.output)
+    }
+
     // Not asserted here: the exact value passed to KSP's "quintkonnect.irDir" option. Referencing
     // com.google.devtools.ksp.gradle.KspExtension from the fixture script resolves to a KspExtension
     // class loaded by a different classloader than the one QuintKonnectPlugin registered the

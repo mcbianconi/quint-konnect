@@ -30,6 +30,12 @@ internal data class QuintModuleIr(
     // transitively-collected nondets.
     val actionExprs: Map<String, JsonObject>,
     val resolutionTable: JsonObject,
+    // A generic typedef's own type parameter names (`type Opt[a] = ...` -> ["a"]); absent for a
+    // non-generic one.
+    val typeDefParams: Map<String, List<String>> = emptyMap(),
+    // Typedefs declared in the same file's other modules (e.g. an imported `lib` module), for
+    // resolving a ConstType this module doesn't declare itself.
+    val externalTypeDefs: Map<String, QuintType> = emptyMap(),
 )
 
 internal data class QuintActionIr(val name: String, val nondetParams: List<QuintNondetParam>)
@@ -87,7 +93,12 @@ internal fun parseQuintIr(json: String): List<QuintModuleIr> {
     val types = root["types"]?.jsonObject ?: JsonObject(emptyMap())
     val table = root["table"]?.jsonObject ?: JsonObject(emptyMap())
     val modules = root["modules"]?.jsonArray.orEmpty()
-    return modules.map { parseModule(it.jsonObject, types, table) }
+    val parsed = modules.map { parseModule(it.jsonObject, types, table) }
+    return parsed.map { module ->
+        val external = LinkedHashMap<String, QuintType>()
+        parsed.filter { it !== module }.forEach { other -> other.typeDefs.forEach { (k, v) -> external.putIfAbsent(k, v) } }
+        module.copy(externalTypeDefs = external - module.typeDefs.keys)
+    }
 }
 
 // Loads the IR for one driver's spec: `<irDir>/<specPath>.json`, matching QuintIrTask's output
@@ -120,9 +131,14 @@ private fun parseModule(module: JsonObject, types: JsonObject, table: JsonObject
             decl.name() to parseType(decl.getObject("typeAnnotation"))
         }
 
-    val typeDefs = declarations
-        .filter { it["kind"]?.jsonPrimitive?.contentOrNull == "typedef" }
+    val typeDefDecls = declarations.filter { it["kind"]?.jsonPrimitive?.contentOrNull == "typedef" }
+    val typeDefs = typeDefDecls
         .mapNotNull { decl -> decl["type"]?.jsonObject?.let { decl.name() to parseType(it) } }
+        .toMap()
+    val typeDefParams = typeDefDecls
+        .mapNotNull { decl ->
+            decl["params"]?.jsonArray?.map { it.jsonPrimitive.content }?.takeIf { it.isNotEmpty() }?.let { decl.name() to it }
+        }
         .toMap()
 
     val actionDefs = declarations.filter {
@@ -136,7 +152,7 @@ private fun parseModule(module: JsonObject, types: JsonObject, table: JsonObject
     }
     val actionExprs = actionDefs.associate { decl -> decl.name() to decl.getObject("expr") }
 
-    return QuintModuleIr(module.name(), actions, variables, typeDefs, actionExprs, table)
+    return QuintModuleIr(module.name(), actions, variables, typeDefs, actionExprs, table, typeDefParams)
 }
 
 // The set of action names `mbt::actionTaken` can actually record for a driver whose init/step

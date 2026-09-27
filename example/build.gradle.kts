@@ -10,6 +10,35 @@ kotlin {
     }
 }
 
+// Mirrors the Gradle plugin's quintIr task (gradle-plugin/.../QuintIrTask.kt), since this module
+// wires KSP by hand: each IR file must be "<irDir>/<spec as @QuintRun/@QuintTest names it>.json".
+// escaping/ is left out: EscapingCounterDriver declares an action the spec doesn't have on purpose,
+// which the spec IR check (qk-75ad) would reject.
+val quintIrDir = layout.buildDirectory.dir("quint-konnect/ir")
+val quintIr = tasks.register("quintIr")
+fileTree("src/test/resources") { include("**/*.qnt"); exclude("escaping/**") }.forEach { spec ->
+    val relativePath = spec.relativeTo(projectDir).path
+    val out = quintIrDir.get().file("$relativePath.json").asFile
+    val task = tasks.register<Exec>("quintIr_" + relativePath.replace(Regex("[^A-Za-z0-9]"), "_")) {
+        inputs.file(spec).withPathSensitivity(PathSensitivity.RELATIVE)
+        outputs.file(out)
+        doFirst { out.parentFile.mkdirs() }
+        commandLine("quint", "typecheck", "--out", out.absolutePath, spec.absolutePath)
+    }
+    quintIr.configure { dependsOn(task) }
+}
+
+ksp {
+    arg("quintkonnect.irDir", quintIrDir.map { it.asFile.absolutePath })
+}
+
+tasks.matching { it.name == "kspTestKotlin" }.configureEach {
+    dependsOn(quintIr)
+    // The IR is read through a processor option, not a source file, so without this KSP stays
+    // UP-TO-DATE after a spec change and the generated <Module>Spec types go stale.
+    inputs.dir(quintIrDir).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("quintIr")
+}
+
 dependencies {
     implementation(libs.kotlinx.serialization.json)
 

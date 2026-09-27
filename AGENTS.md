@@ -111,7 +111,10 @@ Six modules, in dependency order:
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
   class and generates a JUnit Jupiter test class plus a `generatedStep()` dispatcher
   (`ksp/generators/`). `Driver.step`'s default implementation (`core`) finds the generated
-  dispatcher by class name, so a driver doesn't need to override `step` itself.
+  dispatcher by class name, so a driver doesn't need to override `step` itself. With spec IR
+  (`quintkonnect.irDir`), it also generates `object <Module>Spec` of `@Serializable` spec types
+  (`generators/SpecTypesGenerator.kt`) and defers such a driver one round so signatures that
+  reference them resolve.
 - `gradle-plugin` — a Gradle plugin (`io.github.mcbianconi.quint-konnect`,
   `QuintKonnectPlugin`) that, on a Kotlin JVM project, applies KSP, adds the `kspTest`/
   `testImplementation` dependencies on `ksp`/`core`, wires the KSP-generated test source
@@ -125,10 +128,11 @@ Six modules, in dependency order:
   (docs/decisions/quint-ir-source.md). Tested with `ProjectBuilder` (`test`)
   and Gradle TestKit (`functionalTest`, applies the plugin to a fixture project via
   `withPluginClasspath()`).
-- `example` — end-to-end examples: TicTacToe, rock-paper-scissors, a buggy driver the
-  tests expect to fail, a `@QuintTest` counter, and a fixture for escaped names. Wires KSP
-  and quint-konnect dependencies by hand (not through `gradle-plugin`, to avoid a
-  `publishToMavenLocal` dependency in tests) but sets the same project-dir system property.
+- `example` — end-to-end examples: TicTacToe (state types generated from the spec's IR),
+  rock-paper-scissors, a buggy driver the tests expect to fail, a `@QuintTest` counter, and a
+  fixture for escaped names. Wires KSP and quint-konnect dependencies by hand (not through
+  `gradle-plugin`, to avoid a `publishToMavenLocal` dependency in tests) but sets the same
+  project-dir system property and mirrors `quintIr` with one `quint typecheck` task per spec.
 
 Data flow: a Quint spec is run through the `quint` CLI (`quint run --mbt` or
 `quint test`) to produce ITF trace files; the default `TraceSource` (`TraceGenerator`)
