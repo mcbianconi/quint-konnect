@@ -60,6 +60,12 @@ quintKonnect {
 }
 ```
 
+### Test logging
+
+The plugin configures `testLogging` so a failure's trace/step/action/diff message and the
+reproduce line appear in the console. Opt out with `quintKonnect { configureTestLogging.set(false) }`,
+or override it with your own `tasks.test { testLogging { ... } }` below `plugins { }`.
+
 ### Downloading quint instead of installing it
 
 `quintKonnect.downloadQuint` (default `false`) makes a `downloadQuint` task fetch the pinned

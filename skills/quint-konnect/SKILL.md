@@ -212,13 +212,10 @@ Debugging notes:
 - **Read the seed from the failing dynamic test's name** (or the `Reproduce this error with
   QUINT_SEED=0x...` line printed to stderr), then rerun with that `QUINT_SEED` plus
   `QUINT_VERBOSE=2` to see every step leading to the failure.
-- **Gradle hides both the failure message and test stderr by default.** The console only prints
-  `java.lang.AssertionError at File.kt:19` — not the trace/step/action/diff text — because
-  Gradle's default `testLogging.exceptionFormat` is `SHORT`; `QUINT_VERBOSE` output and the
-  seed-reproduction line are separately hidden because they go to stderr. Fix both with
-  `testLogging { exceptionFormat = TestExceptionFormat.FULL; showStandardStreams = true }` (see
-  `references/gradle-setup.md`), or read `build/test-results/test/*.xml` /
-  `build/reports/tests/test/index.html`, which have the full text either way.
+- **Without the Gradle plugin, Gradle hides the failure message and test stderr.** The plugin
+  sets `testLogging` (`exceptionFormat = FULL`, `showStandardStreams = true`) for you; with the
+  manual setup add that block yourself (see `references/gradle-setup.md`), or read
+  `build/test-results/test/*.xml`, which has the full text either way.
 - **A green `test` task is cached (`UP-TO-DATE`)** and won't regenerate traces on a rerun; use
   `./gradlew test --rerun` to force fresh random traces (irrelevant when `QUINT_SEED` is set).
 - **Reproducing needs the same `-Pquint.maxSamples`/`-Pquint.maxSteps` overrides used in the

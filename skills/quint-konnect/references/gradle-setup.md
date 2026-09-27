@@ -69,23 +69,11 @@ quintKonnect {
 }
 ```
 
-The plugin does **not** configure `testLogging`. Gradle's own default hides two things on a
-failure: `exceptionFormat` defaults to `SHORT` (console shows only
-`java.lang.AssertionError at File.kt:19`, not the trace/step/action/diff message), and test
-stderr (where `QUINT_VERBOSE` output and the `Reproduce this error with QUINT_SEED=...` line go)
-is hidden entirely. Add this to see both in the console instead of digging through
-`build/test-results/test/*.xml`:
-
-```kotlin
-// build.gradle.kts — append anywhere; this uses the fully-qualified enum so it doesn't need an
-// import line added above `plugins { }` (Kotlin script only allows imports at the top of the file)
-tasks.test {
-    testLogging {
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showStandardStreams = true
-    }
-}
-```
+The plugin configures every `Test` task's `testLogging` (`exceptionFormat = FULL`,
+`showStandardStreams = true`, `events(FAILED)`), so a failure's trace/step/action/diff message
+and the stderr reproduce line show in the console. Opt out with
+`quintKonnect { configureTestLogging.set(false) }`; a `tasks.test { testLogging { ... } }` block
+below `plugins { }` also overrides it.
 
 ## Consuming a local build (`publishToMavenLocal`)
 
