@@ -8,6 +8,9 @@ import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.FAILURES_DIR_PROPERTY
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import io.github.mcbianconi.quintkonnect.trace.ItfFileTraceSource
+import io.github.mcbianconi.quintkonnect.trace.QUINT_EXECUTABLE_PROPERTY
+import io.github.mcbianconi.quintkonnect.trace.SEED_FILE_NAME
+import io.github.mcbianconi.quintkonnect.trace.TRACES_DIR_PROPERTY
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -635,6 +638,85 @@ class ReplayRunnerTest {
             return block()
         } finally {
             if (previous == null) System.clearProperty(PARALLELISM_PROPERTY) else System.setProperty(PARALLELISM_PROPERTY, previous)
+        }
+    }
+
+    // No fakeConfig-injected TraceSource here: these exercise the real default (the ReplayRunner(
+    // generatorConfig) constructor), i.e. defaultTraceSource's tracesDir lookup (trace/TraceSource.kt).
+    @Test
+    fun `replays from tracesDir instead of invoking quint when a subdirectory for testName exists`(@TempDir dir: Path) {
+        val driverDir = Files.createDirectories(dir.resolve("TracesDirDriver"))
+        Files.writeString(driverDir.resolve("run_1.itf.json"), """{"states": [{"mbt::actionTaken": "A", "mbt::nondetPicks": {}}]}""")
+        val dispatched = mutableListOf<String>()
+
+        withTracesDir(dir) {
+            withNonexistentQuintExecutable {
+                ReplayRunner(fakeConfig).traceReplays({ FakeDriver { dispatched += it.actionTaken } }, "TracesDirDriver")
+                    .forEach { it.run() }
+            }
+        }
+
+        assertEquals(listOf("A"), dispatched)
+    }
+
+    @Test
+    fun `falls back to invoking quint when tracesDir has no subdirectory for testName`(@TempDir dir: Path) {
+        withTracesDir(dir) {
+            withNonexistentQuintExecutable {
+                // TraceGenerator shells out to quintkonnect.quintExecutable and throws when it can't
+                // even start the process: proves quint was actually invoked, not that traces were
+                // silently found under a "NoSuchDriver" subdirectory that doesn't exist.
+                assertThrows<Exception> {
+                    ReplayRunner(fakeConfig).traceReplays({ FakeDriver() }, "NoSuchDriver")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `display uses the tracesDir-recorded seed, not generatorConfig's own`(@TempDir dir: Path) {
+        val driverDir = Files.createDirectories(dir.resolve("SeedDisplayDriver"))
+        Files.writeString(driverDir.resolve("run_1.itf.json"), """{"states": [{"mbt::actionTaken": "A", "mbt::nondetPicks": {}}]}""")
+        Files.writeString(driverDir.resolve(SEED_FILE_NAME), "0xrecorded")
+        val listener = RecordingReplayListener()
+
+        withTracesDir(dir) {
+            val replays = ReplayRunner(fakeConfig, listener = listener).traceReplays({ FakeDriver() }, "SeedDisplayDriver")
+            assertEquals("trace 1 (seed 0xrecorded)", replays[0].displayName)
+        }
+
+        assertTrue(listener.events.contains("runStarted"))
+    }
+
+    @Test
+    fun `an explicit non-default traceSource is never overridden by tracesDir`(@TempDir dir: Path) {
+        Files.createDirectories(dir.resolve("ExplicitSourceDriver"))
+        val traces = traceWithAction("A")
+
+        withTracesDir(dir) {
+            val replays = ReplayRunner(fakeConfig, TraceSource { traces }).traceReplays({ FakeDriver() }, "ExplicitSourceDriver")
+            assertEquals(1, replays.size)
+            assertEquals("trace 1 (seed 12345)", replays[0].displayName)
+        }
+    }
+
+    private fun <T> withTracesDir(dir: Path, block: () -> T): T {
+        val previous = System.getProperty(TRACES_DIR_PROPERTY)
+        System.setProperty(TRACES_DIR_PROPERTY, dir.toString())
+        try {
+            return block()
+        } finally {
+            if (previous == null) System.clearProperty(TRACES_DIR_PROPERTY) else System.setProperty(TRACES_DIR_PROPERTY, previous)
+        }
+    }
+
+    private fun <T> withNonexistentQuintExecutable(block: () -> T): T {
+        val previous = System.getProperty(QUINT_EXECUTABLE_PROPERTY)
+        System.setProperty(QUINT_EXECUTABLE_PROPERTY, "/no/such/quint-konnect-test-executable")
+        try {
+            return block()
+        } finally {
+            if (previous == null) System.clearProperty(QUINT_EXECUTABLE_PROPERTY) else System.setProperty(QUINT_EXECUTABLE_PROPERTY, previous)
         }
     }
 }

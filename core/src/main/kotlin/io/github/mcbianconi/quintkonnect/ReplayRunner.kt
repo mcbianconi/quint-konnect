@@ -6,6 +6,7 @@ import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import io.github.mcbianconi.quintkonnect.trace.ItfFileTraceSource
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
+import io.github.mcbianconi.quintkonnect.trace.TracesDirTraceSource
 import io.github.mcbianconi.quintkonnect.trace.defaultTraceSource
 import io.github.mcbianconi.quintkonnect.trace.replayCommand
 import io.github.mcbianconi.quintkonnect.trace.writeFailureTrace
@@ -27,6 +28,23 @@ internal const val PARALLELISM_PROPERTY: String = "quintkonnect.parallelism"
 internal fun resolveParallelism(override: String? = System.getProperty(PARALLELISM_PROPERTY)): Int =
     override?.toIntOrNull()?.coerceAtLeast(1) ?: 1
 
+// ReplayRunner's traceSource constructor parameter defaults to this sentinel, not directly to
+// defaultTraceSource(testName) (trace/TraceSource.kt): testName isn't known until runTest/
+// traceReplays is called, one step after construction. Never call generate() on this directly.
+private object DefaultTraceSource : TraceSource {
+    override fun generate(config: GeneratorConfig): List<ItfTrace> =
+        error("DefaultTraceSource.generate() called directly; ReplayRunner should have resolved it via resolveTraceSource() first.")
+}
+
+// generatorConfig.seed as baked into the generated RunConfig/TestConfig at test time isn't
+// necessarily the seed generateQuintTraces (gradle-plugin, qk-adm2) actually ran `quint` with when
+// replaying from a TracesDirTraceSource; this substitutes the recorded one for display purposes
+// only (ReplayRunner never calls generate() on it, so it never affects which trace is replayed).
+private class SeedOverriddenConfig(
+    private val delegate: GeneratorConfig,
+    override val seed: String,
+) : GeneratorConfig by delegate
+
 /**
  * Generates traces from [generatorConfig] via [traceSource] and replays each one against a fresh
  * driver from a driver factory, reporting progress to [listener].
@@ -38,9 +56,24 @@ internal fun resolveParallelism(override: String? = System.getProperty(PARALLELI
  */
 public class ReplayRunner(
     private val generatorConfig: GeneratorConfig,
-    private val traceSource: TraceSource = defaultTraceSource(),
+    private val traceSource: TraceSource = DefaultTraceSource,
     private val listener: ReplayListener = ConsoleReplayListener(),
 ) {
+
+    // [testName] isn't known until runTest/traceReplays is called, one step after this class is
+    // constructed (traceSource's default value above is evaluated at construction time), so
+    // resolving DefaultTraceSource into the real testName-aware default (defaultTraceSource(),
+    // trace/TraceSource.kt) has to happen here instead, the first time it's actually needed.
+    // [traceSource] itself is left untouched either way (=== DefaultTraceSource is what
+    // saveFailureTrace's `as? ItfFileTraceSource` check below relies on to skip re-saving a replayed
+    // failure), and an explicitly injected [traceSource] is never second-guessed against tracesDir.
+    private fun resolveTraceSource(testName: String): Pair<TraceSource, GeneratorConfig> {
+        if (traceSource !== DefaultTraceSource) return traceSource to generatorConfig
+        val resolved = defaultTraceSource(testName)
+        val recordedSeed = (resolved as? TracesDirTraceSource)?.recordedSeed()
+        val displayConfig = recordedSeed?.let { SeedOverriddenConfig(generatorConfig, it) } ?: generatorConfig
+        return resolved to displayConfig
+    }
 
     /**
      * Replays every trace against its own fresh driver, sequentially by default. Set the
@@ -53,8 +86,9 @@ public class ReplayRunner(
      * first, unlike the sequential loop, which stops at the first failure.
      */
     public fun <D : Driver> runTest(driverFactory: () -> D, testName: String) {
-        listener.onRunStarted(testName, generatorConfig)
-        val traces = traceSource.generate(generatorConfig)
+        val (resolvedSource, displayConfig) = resolveTraceSource(testName)
+        listener.onRunStarted(testName, displayConfig)
+        val traces = resolvedSource.generate(generatorConfig)
 
         var failure: Throwable? = null
         try {
@@ -74,7 +108,7 @@ public class ReplayRunner(
             failure = e
             throw e
         } finally {
-            listener.onRunFinished(testName, generatorConfig, failure)
+            listener.onRunFinished(testName, displayConfig, failure)
         }
     }
 
@@ -112,28 +146,29 @@ public class ReplayRunner(
      * throws [IllegalStateException].
      */
     public fun <D : Driver> traceReplays(driverFactory: () -> D, testName: String): List<TraceReplay> {
-        listener.onRunStarted(testName, generatorConfig)
-        val traces = traceSource.generate(generatorConfig)
+        val (resolvedSource, displayConfig) = resolveTraceSource(testName)
+        listener.onRunStarted(testName, displayConfig)
+        val traces = resolvedSource.generate(generatorConfig)
 
         if (traces.isEmpty()) {
             return listOf(
                 TraceReplay("no traces generated") {
                     val failure = IllegalStateException(zeroTracesMessage)
-                    listener.onRunFinished(testName, generatorConfig, failure)
+                    listener.onRunFinished(testName, displayConfig, failure)
                     throw failure
                 },
             )
         }
 
         return traces.mapIndexed { traceIdx, trace ->
-            TraceReplay("trace ${traceIdx + 1} (seed ${generatorConfig.seed})") {
+            TraceReplay("trace ${traceIdx + 1} (seed ${displayConfig.seed})") {
                 listener.onTraceStarted(traceIdx)
                 try {
                     replaySteps(traceIdx, trace, driverFactory())
                     listener.onTraceFinished(traceIdx)
                 } catch (e: Throwable) {
-                    listener.onTraceFailed(traceIdx, generatorConfig, e)
-                    val (failureFile, command) = saveFailureTrace(testName, traceIdx, trace, e)
+                    listener.onTraceFailed(traceIdx, displayConfig, e)
+                    val (failureFile, command) = saveFailureTrace(testName, traceIdx, trace, e, resolvedSource)
                     listener.onTraceFailureSaved(traceIdx, testName, failureFile, command)
                     throw e
                 }
@@ -144,8 +179,14 @@ public class ReplayRunner(
     // Skips writing (and points the printed command at the input instead) when this run was
     // itself replaying a saved trace: re-saving under the same default naming scheme could
     // overwrite an unrelated earlier failure that happens to share a testName/trace index.
-    private fun saveFailureTrace(testName: String, traceIdx: Int, trace: ItfTrace, originalFailure: Throwable): Pair<Path?, String?> {
-        val replayedFrom = (traceSource as? ItfFileTraceSource)?.path
+    private fun saveFailureTrace(
+        testName: String,
+        traceIdx: Int,
+        trace: ItfTrace,
+        originalFailure: Throwable,
+        resolvedSource: TraceSource,
+    ): Pair<Path?, String?> {
+        val replayedFrom = (resolvedSource as? ItfFileTraceSource)?.path
         if (replayedFrom != null) {
             return replayedFrom to replayCommand(testName, replayedFrom)
         }

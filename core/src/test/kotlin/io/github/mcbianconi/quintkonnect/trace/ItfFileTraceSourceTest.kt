@@ -69,7 +69,7 @@ class ItfFileTraceSourceTest {
 
     @Test
     fun `defaultTraceSource falls back to TraceGenerator when the property is unset`() {
-        assertSame(TraceGenerator, defaultTraceSource(replayPath = null))
+        assertSame(TraceGenerator, defaultTraceSource(testName = "SomeDriver", replayPath = null, tracesDir = null))
     }
 
     @Test
@@ -77,8 +77,42 @@ class ItfFileTraceSourceTest {
         val file = dir.resolve("a.itf.json")
         Files.writeString(file, """{"states": [{"x": 5}]}""")
 
-        val traces = defaultTraceSource(replayPath = file.toString()).generate(fakeConfig)
+        val traces = defaultTraceSource(testName = "SomeDriver", replayPath = file.toString()).generate(fakeConfig)
 
         assertEquals(5L, xOf(traces[0]))
+    }
+
+    @Test
+    fun `defaultTraceSource replays a traces directory when quintkonnect-tracesDir has a subdirectory for testName`(
+        @TempDir dir: Path,
+    ) {
+        val driverDir = Files.createDirectories(dir.resolve("SomeDriver"))
+        Files.writeString(driverDir.resolve("run_1.itf.json"), """{"states": [{"x": 7}]}""")
+
+        val source = defaultTraceSource(testName = "SomeDriver", replayPath = null, tracesDir = dir.toString())
+
+        assertEquals(7L, xOf(source.generate(fakeConfig)[0]))
+    }
+
+    @Test
+    fun `defaultTraceSource falls back to TraceGenerator when tracesDir has no subdirectory for testName`(
+        @TempDir dir: Path,
+    ) {
+        assertSame(
+            TraceGenerator,
+            defaultTraceSource(testName = "MissingDriver", replayPath = null, tracesDir = dir.toString()),
+        )
+    }
+
+    @Test
+    fun `an explicit -Pquint-replay wins over a matching tracesDir subdirectory`(@TempDir dir: Path) {
+        val driverDir = Files.createDirectories(dir.resolve("SomeDriver"))
+        Files.writeString(driverDir.resolve("run_1.itf.json"), """{"states": [{"x": 7}]}""")
+        val replayFile = dir.resolve("replayed.itf.json")
+        Files.writeString(replayFile, """{"states": [{"x": 9}]}""")
+
+        val source = defaultTraceSource(testName = "SomeDriver", replayPath = replayFile.toString(), tracesDir = dir.toString())
+
+        assertEquals(9L, xOf(source.generate(fakeConfig)[0]))
     }
 }
