@@ -93,6 +93,13 @@ To test locally without publishing anywhere remote: `./gradlew publishToMavenLoc
 Signing is skipped unless `signingInMemoryKey` is set as a Gradle property, so this works
 without keys; check `~/.m2/repository/io/github/mcbianconi/` for the result.
 
+`.claude-plugin/plugin.json`'s `version` must equal the library version and is bumped in the
+same commit (`docs/decisions/agent-skill-plugin.md`). Since `skills/quint-konnect/` and
+README.md now spell out `0.1.0` as literal coordinates rather than a `<VERSION>` placeholder,
+a version bump must also update every `0.1.0` under `skills/quint-konnect/` and in README.md
+(`grep -rn '0\.1\.0' skills/quint-konnect README.md` to find them), or the skill goes stale
+against the new release.
+
 ## Architecture Overview
 
 Six modules, in dependency order:

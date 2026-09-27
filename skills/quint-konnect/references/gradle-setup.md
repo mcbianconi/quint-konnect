@@ -1,9 +1,7 @@
 # Gradle setup
 
-quint-konnect isn't on Maven Central yet (tracked by quint-konnect bead qk-j02b). Every
-coordinate below uses `<VERSION>` as a placeholder — ask the user for the version they're using,
-or check whether they're consuming it via `includeBuild`/`publishToMavenLocal` from a local
-checkout instead.
+Current release is `0.1.0` on Maven Central under `io.github.mcbianconi`. Every coordinate below
+uses that version; check https://repo1.maven.org/maven2/io/github/mcbianconi/ for a newer one.
 
 Requires JDK 21, Kotlin 2.4.20+, and KSP 2.3.12+ (a KSP version pinned to a Kotlin version;
 check https://github.com/google/ksp/releases for the pair matching the project's Kotlin version).
@@ -29,7 +27,7 @@ On a module that already applies `org.jetbrains.kotlin.jvm`:
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.4.20"
-    id("io.github.mcbianconi.quint-konnect") version "<VERSION>"
+    id("io.github.mcbianconi.quint-konnect") version "0.1.0"
     kotlin("plugin.serialization") version "2.4.20"
 }
 
@@ -75,11 +73,13 @@ and the stderr reproduce line show in the console. Opt out with
 `quintKonnect { configureTestLogging.set(false) }`; a `tasks.test { testLogging { ... } }` block
 below `plugins { }` also overrides it.
 
-## Consuming a local build (`publishToMavenLocal`)
+## Testing an unreleased build (optional)
 
-Before quint-konnect is on Maven Central, add `mavenLocal()` to **both** repository blocks in
+To test a change not yet released — after running `./gradlew publishToMavenLocal` in a
+quint-konnect checkout — add `mavenLocal()` to **both** repository blocks in
 `settings.gradle.kts` — the plugin marker resolves via `pluginManagement`, the library artifacts
-via `dependencyResolutionManagement`:
+via `dependencyResolutionManagement` — and set every coordinate's version to match that
+checkout's `build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts` version, not `0.1.0`:
 
 ```kotlin
 // settings.gradle.kts
@@ -123,8 +123,8 @@ plugins {
 }
 
 dependencies {
-    kspTest("io.github.mcbianconi:quint-konnect-ksp:<VERSION>")
-    testImplementation("io.github.mcbianconi:quint-konnect-core:<VERSION>")
+    kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")
+    testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")

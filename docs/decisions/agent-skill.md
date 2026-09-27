@@ -16,7 +16,8 @@ table, seed/verbose debugging) and nothing upstream teaches it for Kotlin — qu
 Quint Connect tooling is Rust-only. Drafting it now, ahead of the 0.1.0 release, keeps it in
 sync with the API as Phase 3 (developer experience) lands, instead of writing it once at the
 end against a frozen snapshot; publishing/distribution (a Claude Code marketplace entry,
-`npx skills`) is separate and waits for real Maven Central coordinates.
+`npx skills`) is a separate concern (docs/decisions/agent-skill-plugin.md), released once
+0.1.0 shipped to Maven Central (qk-q6aq).
 
 **How to apply:** A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the
 Gradle plugin, or env vars/Gradle properties must update `skills/quint-konnect/` in the same
