@@ -36,6 +36,8 @@ public class QuintKonnectPlugin : Plugin<Project> {
         extension.quintVersion.convention(DEFAULT_QUINT_VERSION)
         extension.downloadQuint.convention(false)
         extension.configureTestLogging.convention(true)
+        extension.readSpecIr.convention(false)
+        extension.quintIrSpecs.from(project.fileTree(project.projectDir) { it.include("src/test/resources/**/*.qnt") })
 
         // Platform detection only runs if downloadQuint's task configuration is actually realized
         // (i.e. downloadQuint is enabled, or the task is run directly): applying this plugin with
@@ -93,6 +95,15 @@ public class QuintKonnectPlugin : Plugin<Project> {
         // which only holds if kotlin.jvm is already applied.
         project.pluginManager.withPlugin(KOTLIN_JVM_PLUGIN_ID) {
             project.pluginManager.apply(KSP_PLUGIN_ID)
+
+            wireQuintIr(
+                project = project,
+                extension = extension,
+                checkQuint = checkQuint,
+                downloadQuint = downloadQuint,
+                quintExecutablePath = quintExecutablePath(project, extension, downloadQuint),
+                skipKsp = replayOverride != null,
+            )
 
             // KSP writes generated test sources to build/generated/ksp/test/kotlin but doesn't
             // add that directory to the test source set itself.
@@ -158,7 +169,7 @@ public class QuintKonnectPlugin : Plugin<Project> {
 // Always present (never an absent Provider): CheckQuintTask.quintExecutable has its own "quint"
 // convention, but Property.set() with an absent Provider would permanently mask that convention
 // instead of falling back to it.
-private fun quintExecutablePath(
+internal fun quintExecutablePath(
     project: Project,
     extension: QuintKonnectExtension,
     downloadQuint: TaskProvider<DownloadQuintTask>,

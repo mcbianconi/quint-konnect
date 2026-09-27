@@ -1,5 +1,6 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 
 // CI's pin (.github/workflows/ci.yml), also the default `checkQuint` compares against.
@@ -21,4 +22,14 @@ public abstract class QuintKonnectExtension {
     // over the plugin's regardless of this flag, as long as it's applied after the plugin (e.g. in
     // the same build.gradle.kts, below the `plugins {}` block).
     public abstract val configureTestLogging: Property<Boolean>
+
+    // Spec files `quintIr` runs `quint typecheck` on (QuintIrTask.kt), to expose action/nondet
+    // names and types to KSP (qk-8i6m). Defaults to every .qnt file under src/test/resources;
+    // call quintIrSpecs.setFrom(...) to replace the default entirely, or quintIrSpecs.from(...)
+    // to add to it.
+    public abstract val quintIrSpecs: ConfigurableFileCollection
+
+    // Opt-in until KSP uses the IR for compile-time checks (qk-75ad): true makes every KSP task
+    // depend on `quintIr` and passes its output to the processor, so compiling tests needs quint.
+    public abstract val readSpecIr: Property<Boolean>
 }

@@ -85,6 +85,10 @@ dependencies {
     // build-logic/build.gradle.kts), including under TestKit's plugin-under-test classloader.
     implementation(libs.ksp.gradle.plugin)
     implementation(libs.kotlin.gradle.plugin)
+    // Reads `quint typecheck --out`'s "errors" array on failure (QuintIrTask.kt): plain
+    // JsonElement walking, not @Serializable classes, so no kotlin-serialization compiler plugin
+    // is needed here either.
+    implementation(libs.kotlinx.serialization.json)
 
     // `gradlePlugin { testSourceSets(functionalTest) }` above means the automatic gradleTestKit()
     // injection (https://docs.gradle.org/current/userguide/java_gradle_plugin.html#header)
