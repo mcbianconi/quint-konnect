@@ -84,9 +84,14 @@ class SpecTypesGeneratorTest {
             "public val flags: List<Boolean>,",
             "public data class Owner(\n    public val name: String,\n    public val tags: Set<String>,\n  )",
             "public data class At(\n    public val x: Long,\n    public val y: Long,\n  )",
+            // quint expands an applied generic (`Opt[Coin]`) into its sum before KSP sees it, so it
+            // is recovered as an application of the generic typedef and named after it.
+            "public val mine: OptCoin,",
+            "public data class Purse(\n    public val held: OptCoin,\n  )",
+            "@SerialName(\"Present\")\n    public data class Present(\n      public val `value`: Coin,\n    ) : OptCoin()",
         )
         expected.forEach { assertTrue(it in source, "missing:\n$it\n\nin:\n$source") }
-        assertFalse("class Opt" in source, source)
+        assertFalse("class Opt(" in source || "class Opt " in source, source)
         assertFalse("class Option" in source, source)
         assertFalse("class Mixed" in source, source)
         // The nondet `s` reads as Shape's expanded structure in quint's inferred types; it must

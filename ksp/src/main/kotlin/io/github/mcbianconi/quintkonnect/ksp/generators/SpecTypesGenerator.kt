@@ -33,8 +33,7 @@ private val SERIAL_NAME = ClassName("kotlinx.serialization", "SerialName")
 // actions' nondet types reach. Everything is nested in the object so a spec type named like an
 // implementation class in the same package (e.g. tictactoe's `Player`) doesn't clash.
 //
-// A type with no decodable Kotlin shape (a heterogeneous tuple, a generic typedef other than
-// `Option`, an uninterpreted type, ...) is left out along with everything containing it, and
+// A type with no decodable Kotlin shape (a heterogeneous tuple, an uninterpreted type, ...) is left out along with everything containing it, and
 // listed in one warning; a field is never dropped from a class that is generated.
 internal class SpecTypesGenerator(
     private val codeGenerator: CodeGenerator,
@@ -214,11 +213,50 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
         className
     }
 
-    private fun anonymousType(type: QuintType, context: String): ClassName = anonymousTypes[type] ?: run {
-        val className = wrapper.nestedClass(freshName(pascalCase(context)))
-        anonymousTypes[type] = className
-        types[className.simpleName] = declare(className, type, context)
-        className
+    private fun anonymousType(type: QuintType, context: String): ClassName {
+        val key = expand(type, mutableSetOf())
+        return anonymousTypes[key] ?: run {
+            val className = wrapper.nestedClass(freshName(genericApplicationName(key) ?: pascalCase(context)))
+            anonymousTypes[key] = className
+            types[className.simpleName] = declare(className, type, context)
+            className
+        }
+    }
+
+    // quint expands an applied generic typedef (`Opt[Coin]`) into its body before KSP sees it,
+    // so the application is recovered by matching `type` against each generic typedef's body and
+    // named after the typedef and its arguments (`OptCoin`) rather than after its first use.
+    private fun genericApplicationName(type: QuintType): String? {
+        for ((name, params) in module.typeDefParams) {
+            val body = expand(typeDef(name), mutableSetOf(name))
+            val bindings = mutableMapOf<String, QuintType>()
+            if (!unify(body, type, bindings)) continue
+            val args = params.map { bindings[it]?.let(::argName) ?: return@map null }
+            if (args.any { it == null }) continue
+            return name + args.joinToString("")
+        }
+        return null
+    }
+
+    private fun unify(pattern: QuintType, type: QuintType, bindings: MutableMap<String, QuintType>): Boolean = when (pattern) {
+        is QuintType.VarType -> bindings.getOrPut(pattern.name) { type } == type
+        is QuintType.SetType -> type is QuintType.SetType && unify(pattern.element, type.element, bindings)
+        is QuintType.ListType -> type is QuintType.ListType && unify(pattern.element, type.element, bindings)
+        is QuintType.FunType -> type is QuintType.FunType && unify(pattern.arg, type.arg, bindings) && unify(pattern.res, type.res, bindings)
+        is QuintType.TupleType -> type is QuintType.TupleType && pattern.elements.size == type.elements.size &&
+            pattern.elements.zip(type.elements).all { (p, t) -> unify(p, t, bindings) }
+        is QuintType.RecordType -> type is QuintType.RecordType && pattern.fields.keys == type.fields.keys &&
+            pattern.fields.all { (k, p) -> unify(p, type.fields.getValue(k), bindings) }
+        is QuintType.SumType -> type is QuintType.SumType && pattern.variants.keys == type.variants.keys &&
+            pattern.variants.all { (k, p) -> unify(p, type.variants.getValue(k), bindings) }
+        else -> pattern == type
+    }
+
+    private fun argName(type: QuintType): String? = when (type) {
+        QuintType.BoolType -> "Bool"
+        QuintType.IntType -> "Int"
+        QuintType.StrType -> "Str"
+        else -> structuralName(type) ?: genericApplicationName(type)
     }
 
     private fun declare(className: ClassName, type: QuintType, context: String): TypeSpec = when (type) {

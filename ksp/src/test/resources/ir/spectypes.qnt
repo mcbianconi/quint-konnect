@@ -12,6 +12,7 @@ module spectypes {
   type Shape = Circle({ r: int }) | Square(int) | Dot
   type Id = int
   type Mixed = { pair: (int, str) }
+  type Purse = { held: Opt[Coin] }
 
   var wallet: Coin
   var maybe: Option[Id]
@@ -19,6 +20,8 @@ module spectypes {
   var grid: (int, int) -> Shape
   var owner: { name: str, tags: Set[str] }
   var flags: List[bool]
+  var mine: Opt[Coin]
+  var purse: Purse
 
   action init = all {
     wallet' = { denom: "a", amount: 1 },
@@ -27,6 +30,8 @@ module spectypes {
     grid' = Map(),
     owner' = { name: "n", tags: Set() },
     flags' = [],
+    mine' = Absent,
+    purse' = { held: Absent },
   }
 
   action paint = {
@@ -39,6 +44,8 @@ module spectypes {
       grid' = grid.put((at.x, at.y), s),
       owner' = owner,
       flags' = flags,
+      mine' = mine,
+      purse' = purse,
     }
   }
 

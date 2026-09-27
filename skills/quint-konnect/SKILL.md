@@ -168,11 +168,11 @@ regardless of order. See `references/types.md` for the full Quint-to-Kotlin type
 - **Let KSP generate the spec types** instead of writing them: with the Gradle plugin and
   `quintKonnect { readSpecIr.set(true) }`, KSP writes `object <Module>Spec` (module `counter` ->
   `CounterSpec`) into the driver's package, with one `@Serializable` class per record and sum
-  typedef plus a `State` data class of every state variable. Write only `extractFromDriver`:
+  typedef, one per applied generic (`Opt[Coin]` becomes `OptCoin`), plus a `State` data class of
+  every state variable. Write only `extractFromDriver`:
   `TypedState<MyDriver, CounterSpec.State>(serializer())`. Editing the spec regenerates them on
   the next build. KSP warns about and leaves out a type with no decodable shape (a tuple with
-  mixed element types, a generic typedef other than `Option`, an uninterpreted type) and
-  everything containing it; hand-write those.
+  mixed element types, an uninterpreted type) and everything containing it; hand-write those.
 - Mark a field the implementation doesn't track with `@QuintIgnore`
   (`io.github.mcbianconi.quintkonnect.annotations.QuintIgnore`) — it still has to decode, so
   give it a default (or make it nullable) if the spec might omit it; a mismatch on it never
