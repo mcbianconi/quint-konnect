@@ -80,7 +80,9 @@ by hand.
 vanniktech gradle-maven-publish-plugin); `example` is not published. `gradle-plugin` also
 publishes its plugin marker artifact (`java-gradle-plugin`), not to the Gradle Plugin Portal
 (`docs/decisions/gradle-plugin-distribution.md`). `.github/workflows/release.yml`
-triggers on pushing a tag matching `v*` and runs `./gradlew publishAndReleaseToMavenCentral`.
+triggers on pushing a tag matching `v*`, runs `./gradlew publishAndReleaseToMavenCentral`,
+generates categorized release notes from conventional commits via `git-cliff` (`cliff.toml`),
+and creates the GitHub Release with `gh release create --notes-file`.
 
 To release: bump `version` in
 `build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts`, commit, then push a tag
