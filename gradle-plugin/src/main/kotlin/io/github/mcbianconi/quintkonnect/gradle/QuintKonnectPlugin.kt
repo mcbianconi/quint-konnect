@@ -19,6 +19,11 @@ internal const val PROJECT_DIR_SYSTEM_PROPERTY: String = "quintkonnect.projectDi
 // constant). Always set, like PROJECT_DIR_SYSTEM_PROPERTY, not a `-Pquint.*` override.
 internal const val FAILURES_DIR_SYSTEM_PROPERTY: String = "quintkonnect.failuresDir"
 
+// Mirrors TEST_TASK_PATH_PROPERTY in core/.../trace/FailureTraceWriter.kt: replayCommand() prints
+// a `./gradlew <this task's path> --tests ...` command targeting the right task in a
+// multi-project build. Always set, like PROJECT_DIR_SYSTEM_PROPERTY.
+internal const val TEST_TASK_PATH_SYSTEM_PROPERTY: String = "quintkonnect.testTaskPath"
+
 internal const val KSP_PLUGIN_ID: String = "com.google.devtools.ksp"
 internal const val KOTLIN_JVM_PLUGIN_ID: String = "org.jetbrains.kotlin.jvm"
 
@@ -113,6 +118,7 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 test.useJUnitPlatform()
                 test.systemProperty(PROJECT_DIR_SYSTEM_PROPERTY, projectDir)
                 test.systemProperty(FAILURES_DIR_SYSTEM_PROPERTY, failuresDir.get().asFile.absolutePath)
+                test.systemProperty(TEST_TASK_PATH_SYSTEM_PROPERTY, test.path)
                 test.jvmArgumentProviders.add(
                     QuintRuntimeArgumentProvider(
                         downloadQuint = extension.downloadQuint,

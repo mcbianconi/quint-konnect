@@ -3,16 +3,23 @@ package io.github.mcbianconi.quintkonnect
 import io.github.mcbianconi.itf.ItfState
 import io.github.mcbianconi.itf.ItfTrace
 import io.github.mcbianconi.itf.ItfValue
+import io.github.mcbianconi.itf.parseTrace
 import io.github.mcbianconi.quintkonnect.listener.ReplayListener
+import io.github.mcbianconi.quintkonnect.trace.FAILURES_DIR_PROPERTY
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import io.github.mcbianconi.quintkonnect.trace.ItfFileTraceSource
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
 
 class ReplayRunnerTest {
 
@@ -51,6 +58,8 @@ class ReplayRunnerTest {
         var runFailure: Throwable? = null
         var traceFailure: Throwable? = null
         val traceFailedSeeds = mutableListOf<String>()
+        val savedFailureFiles = mutableListOf<Path?>()
+        val savedReplayCommands = mutableListOf<String?>()
 
         override fun onRunStarted(testName: String, config: GeneratorConfig) {
             events += "runStarted"
@@ -77,6 +86,12 @@ class ReplayRunnerTest {
             events += "traceFailed:$traceIndex"
             traceFailure = failure
             traceFailedSeeds += config.seed
+        }
+
+        override fun onTraceFailureSaved(traceIndex: Int, testName: String, failureFile: Path?, replayCommand: String?) {
+            events += "traceFailureSaved:$traceIndex"
+            savedFailureFiles += failureFile
+            savedReplayCommands += replayCommand
         }
 
         override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {
@@ -410,6 +425,74 @@ class ReplayRunnerTest {
         assertSame(thrown, listener.traceFailure)
         assertTrue(listener.events.contains("traceFailed:0"))
         assertFalse(listener.events.any { it.startsWith("runFinished") })
+    }
+
+    @Test
+    fun `a failing trace is saved as ITF JSON and fires onTraceFailureSaved after onTraceFailed`(@TempDir dir: Path) {
+        val traces = traceWithAction("TestAction")
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+
+        withFailuresDir(dir) {
+            val replays = runner(traces, listener).traceReplays({ driver }, "MyTest")
+            assertThrows<AssertionError> { replays[0].run() }
+        }
+
+        assertEquals(listOf("traceFailed:0", "traceFailureSaved:0"), listener.events.filter { "traceFail" in it })
+        val savedFile = listener.savedFailureFiles.single()!!
+        assertEquals("MyTest-trace1.itf.json", savedFile.fileName.toString())
+        assertEquals(traces[0], parseTrace(Files.readString(savedFile)))
+        assertTrue(listener.savedReplayCommands.single()!!.contains("-Pquint.replay="))
+    }
+
+    @Test
+    fun `replaying a saved trace skips re-saving and points the command at the input file`(@TempDir dir: Path) {
+        val inputFile = dir.resolve("input.itf.json")
+        Files.writeString(inputFile, """{"states": [{"mbt::actionTaken": "TestAction", "mbt::nondetPicks": {}}]}""")
+
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+        val replayRunner = ReplayRunner(fakeConfig, ItfFileTraceSource(inputFile), listener)
+
+        val failuresDir = dir.resolve("failures")
+        withFailuresDir(failuresDir) {
+            val replays = replayRunner.traceReplays({ driver }, "MyTest")
+            assertThrows<AssertionError> { replays[0].run() }
+        }
+
+        assertEquals(inputFile, listener.savedFailureFiles.single())
+        assertTrue(listener.savedReplayCommands.single()!!.contains(inputFile.toString()))
+        assertFalse(Files.exists(failuresDir))
+    }
+
+    @Test
+    fun `a failure saving the trace does not mask the original failure and reports it as suppressed`() {
+        val traces = traceWithAction("TestAction")
+        val listener = RecordingReplayListener()
+        val driver = FakeDriver { throw IllegalStateException("boom") }
+
+        // A regular file where writeFailureTrace expects to create a directory: Files.createDirectories fails.
+        val notADirectory = Files.createTempFile("quint-konnect-test-", ".tmp")
+        notADirectory.toFile().deleteOnExit()
+
+        val thrown = withFailuresDir(notADirectory) {
+            val replays = runner(traces, listener).traceReplays({ driver }, "MyTest")
+            assertThrows<AssertionError> { replays[0].run() }
+        }
+
+        assertEquals(listOf(null), listener.savedFailureFiles)
+        assertEquals(listOf(null), listener.savedReplayCommands)
+        assertTrue(thrown.suppressed.isNotEmpty())
+    }
+
+    private fun <T> withFailuresDir(dir: Path, block: () -> T): T {
+        val previous = System.getProperty(FAILURES_DIR_PROPERTY)
+        System.setProperty(FAILURES_DIR_PROPERTY, dir.toString())
+        try {
+            return block()
+        } finally {
+            if (previous == null) System.clearProperty(FAILURES_DIR_PROPERTY) else System.setProperty(FAILURES_DIR_PROPERTY, previous)
+        }
     }
 
     @Test

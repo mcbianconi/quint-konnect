@@ -24,7 +24,7 @@ private fun sequenceNumber(fileName: String): Long? =
  * the project directory) to use it as [io.github.mcbianconi.quintkonnect.ReplayRunner]'s default
  * trace source without constructing one by hand.
  */
-public class ItfFileTraceSource(private val path: Path) : TraceSource {
+public class ItfFileTraceSource(internal val path: Path) : TraceSource {
 
     override fun generate(config: GeneratorConfig): List<ItfTrace> {
         val absolutePath = path.toAbsolutePath()

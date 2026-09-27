@@ -4,8 +4,13 @@ import io.github.mcbianconi.itf.ItfTrace
 import io.github.mcbianconi.quintkonnect.listener.ConsoleReplayListener
 import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import io.github.mcbianconi.quintkonnect.trace.ItfFileTraceSource
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
 import io.github.mcbianconi.quintkonnect.trace.defaultTraceSource
+import io.github.mcbianconi.quintkonnect.trace.replayCommand
+import io.github.mcbianconi.quintkonnect.trace.writeFailureTrace
+import java.io.IOException
+import java.nio.file.Path
 
 private val zeroTracesMessage =
     "Trace generation produced zero traces.\n" +
@@ -51,7 +56,8 @@ public class ReplayRunner(
      * Generates traces from [generatorConfig] once, then returns one [TraceReplay] per trace: its
      * [TraceReplay.run] creates a fresh driver via [driverFactory] and replays only that trace, so
      * a runner-neutral caller (e.g. a JUnit `@TestFactory`) can report and run each trace on its
-     * own. A failing trace calls [ReplayListener.onTraceFailed]; other traces are unaffected.
+     * own. A failing trace calls [ReplayListener.onTraceFailed], then [ReplayListener.onTraceFailureSaved]
+     * once the trace is saved as ITF JSON (or an attempt was made to); other traces are unaffected.
      *
      * Zero traces still fails visibly: the returned list has a single [TraceReplay] whose [run]
      * throws [IllegalStateException].
@@ -78,9 +84,28 @@ public class ReplayRunner(
                     listener.onTraceFinished(traceIdx)
                 } catch (e: Throwable) {
                     listener.onTraceFailed(traceIdx, generatorConfig, e)
+                    val (failureFile, command) = saveFailureTrace(testName, traceIdx, trace, e)
+                    listener.onTraceFailureSaved(traceIdx, testName, failureFile, command)
                     throw e
                 }
             }
+        }
+    }
+
+    // Skips writing (and points the printed command at the input instead) when this run was
+    // itself replaying a saved trace: re-saving under the same default naming scheme could
+    // overwrite an unrelated earlier failure that happens to share a testName/trace index.
+    private fun saveFailureTrace(testName: String, traceIdx: Int, trace: ItfTrace, originalFailure: Throwable): Pair<Path?, String?> {
+        val replayedFrom = (traceSource as? ItfFileTraceSource)?.path
+        if (replayedFrom != null) {
+            return replayedFrom to replayCommand(testName, replayedFrom)
+        }
+        return try {
+            val file = writeFailureTrace(testName, traceIdx, trace)
+            file to replayCommand(testName, file)
+        } catch (writeError: IOException) {
+            originalFailure.addSuppressed(writeError)
+            null to null
         }
     }
 

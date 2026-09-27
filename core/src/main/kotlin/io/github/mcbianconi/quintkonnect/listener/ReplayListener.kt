@@ -3,6 +3,7 @@ package io.github.mcbianconi.quintkonnect.listener
 import io.github.mcbianconi.itf.ItfState
 import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import java.nio.file.Path
 
 /**
  * Observes a replay run: trace generation, each trace and step, and the outcome.
@@ -46,6 +47,15 @@ public interface ReplayListener {
      * fires per trace, so every failing trace reports how to reproduce it, not just the last one.
      */
     public fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {}
+
+    /**
+     * Trace [traceIndex]'s failure (already reported via [onTraceFailed]) was saved as ITF JSON to
+     * [failureFile], replayable with [replayCommand]; both are `null` when saving failed or was
+     * skipped (e.g. this run was itself replaying a saved trace). Fired once per failing trace,
+     * right after [onTraceFailed], only via
+     * [io.github.mcbianconi.quintkonnect.ReplayRunner.traceReplays] (not [io.github.mcbianconi.quintkonnect.ReplayRunner.runTest]).
+     */
+    public fun onTraceFailureSaved(traceIndex: Int, testName: String, failureFile: Path?, replayCommand: String?) {}
 
     /**
      * The run for [testName] finished; [failure] is `null` on success.

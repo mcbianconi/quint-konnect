@@ -6,6 +6,7 @@ import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import java.io.PrintStream
+import java.nio.file.Path
 
 // Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
 // `-Pquint.verbose` Gradle property, for PR vs nightly CI profiles. Override > QUINT_VERBOSE > 0.
@@ -113,6 +114,13 @@ public class ConsoleReplayListener(
     override fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {
         error("[FAIL] trace ${traceIndex + 1}")
         error("Reproduce this error with `QUINT_SEED=${config.seed}`\n")
+    }
+
+    override fun onTraceFailureSaved(traceIndex: Int, testName: String, failureFile: Path?, replayCommand: String?) {
+        if (failureFile != null && replayCommand != null) {
+            info("Saved failing trace to $failureFile")
+            info("Replay it with:\n   $replayCommand\n")
+        }
     }
 
     override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {

@@ -51,6 +51,23 @@ class ConsoleReplayListenerTest {
     }
 
     @Test
+    fun `onTraceFailureSaved prints the saved path and replay command`() {
+        val output = capture {
+            it.onTraceFailureSaved(0, "MyTest", java.nio.file.Path.of("build/quint-konnect/failures/MyTest-trace1.itf.json"), "./gradlew test --tests '*MyTest*' -Pquint.replay=build/quint-konnect/failures/MyTest-trace1.itf.json")
+        }
+
+        assertTrue(output.contains("Saved failing trace to build/quint-konnect/failures/MyTest-trace1.itf.json"))
+        assertTrue(output.contains("./gradlew test --tests '*MyTest*' -Pquint.replay="))
+    }
+
+    @Test
+    fun `onTraceFailureSaved prints nothing when the file or command is null`() {
+        val output = capture { it.onTraceFailureSaved(0, "MyTest", null, null) }
+
+        assertTrue(output.isEmpty())
+    }
+
+    @Test
     fun `prints the run header naming the test and trace count`() {
         val output = capture { it.onRunStarted("my test", config) }
 
