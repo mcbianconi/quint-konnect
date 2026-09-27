@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.example.invariants
+package io.github.mcbianconi.quintkonnect.integrationtests.invariants
 
 import io.github.mcbianconi.quintkonnect.Driver
 import io.github.mcbianconi.quintkonnect.Step

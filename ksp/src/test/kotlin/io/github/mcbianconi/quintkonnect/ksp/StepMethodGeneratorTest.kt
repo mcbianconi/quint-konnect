@@ -19,7 +19,7 @@ class StepMethodGeneratorTest {
     private companion object {
         // The Kotlin *source* text for the annotation argument, escapes included, e.g.
         // `"never\$\"taken"`, mirroring the escaping fixture in
-        // example/.../escaping/EscapingCounterDriver.kt (qk-gu38).
+        // integration-tests/.../escaping/EscapingCounterDriver.kt (qk-gu38).
         val escapedActionSourceLiteral = "\"never\\\$\\\"taken\""
 
         // The decoded runtime value of that literal: `never$"taken`.

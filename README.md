@@ -392,6 +392,7 @@ itself needs to change to run them concurrently. Two entry points parallelize di
 | `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit Jupiter test classes with one dynamic test per trace. |
 | `gradle-plugin` | Gradle plugin (`io.github.mcbianconi.quint-konnect`): applies KSP and dependencies, resolves spec paths, checks the `quint` CLI. |
 | `example` | TicTacToe end-to-end example. |
+| `integration-tests` | Regression tests against real quint (not published). |
 
 ## Example
 
@@ -408,8 +409,8 @@ More examples under [`example/src/test/kotlin/.../example/`](example/src/test/ko
 - `projection/` — a warehouse checked by projection: `@QuintIgnore` on fields the implementation
   doesn't track and `compareField` for a batched counter, plus a buggy variant the test expects
   to fail.
-- `quinttest/`, `suspending/`, `partialstate/`, `escaping/`, `buggy/` — smaller fixtures for
-  `@QuintTest`, suspend actions, `@QuintIgnore`, escaped names and a negative test.
+- `quinttest/`, `suspending/`, `partialstate/`, `buggy/` — smaller fixtures for `@QuintTest`,
+  suspend actions, `@QuintIgnore` and a negative test.
 
 ## AI agents
 
@@ -436,6 +437,7 @@ Install it:
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :gradle-plugin:build        # Build the Gradle plugin + run its unit/functional tests
 ./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
+./gradlew :integration-tests:test    # Run regression tests against real quint (requires quint in PATH)
 ./gradlew build                      # Build all modules
 ```
 

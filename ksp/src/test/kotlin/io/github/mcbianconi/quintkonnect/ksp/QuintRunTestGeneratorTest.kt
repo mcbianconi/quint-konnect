@@ -49,7 +49,7 @@ class QuintRunTestGeneratorTest {
 
     private companion object {
         // Kotlin source text for a spec path containing '$' and '"', mirroring the escaping
-        // fixture in example/.../escaping/EscapingCounterDriver.kt (qk-gu38), which uses
+        // fixture in integration-tests/.../escaping/EscapingCounterDriver.kt (qk-gu38), which uses
         // `spec = "src/test/resources/escaping/counter\$1.qnt"`.
         val escapedSpecLiteral = "\"escaping/counter\\\$1.qnt\""
 

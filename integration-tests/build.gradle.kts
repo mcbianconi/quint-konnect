@@ -1,3 +1,7 @@
+// Unpublished regression tests against real quint that reach into core's internals (ReplayRunner,
+// ItfFileTraceSource, hand-set quintkonnect.* properties) or fixtures no user would write (escaping/),
+// so they don't belong in example/. Wires KSP/core as project dependencies, not through the Gradle
+// plugin, so running them needs no publishToMavenLocal.
 plugins {
     id("quintkonnect.kotlin-jvm")
     alias(libs.plugins.kotlin.serialization)
@@ -12,9 +16,11 @@ kotlin {
 
 // Mirrors the Gradle plugin's quintIr task (gradle-plugin/.../QuintIrTask.kt), since this module
 // wires KSP by hand: each IR file must be "<irDir>/<spec as @QuintRun/@QuintTest names it>.json".
+// escaping/ is left out: EscapingCounterDriver declares an action the spec doesn't have on purpose,
+// which the spec IR check (qk-75ad) would reject.
 val quintIrDir = layout.buildDirectory.dir("quint-konnect/ir")
 val quintIr = tasks.register("quintIr")
-fileTree("src/test/resources") { include("**/*.qnt") }.forEach { spec ->
+fileTree("src/test/resources") { include("**/*.qnt"); exclude("escaping/**") }.forEach { spec ->
     val relativePath = spec.relativeTo(projectDir).path
     val out = quintIrDir.get().file("$relativePath.json").asFile
     val task = tasks.register<Exec>("quintIr_" + relativePath.replace(Regex("[^A-Za-z0-9]"), "_")) {
@@ -38,14 +44,10 @@ tasks.matching { it.name == "kspTestKotlin" }.configureEach {
 }
 
 dependencies {
-    implementation(libs.kotlinx.serialization.json)
-
     kspTest(project(":ksp"))
 
     testImplementation(project(":core"))
     testImplementation(libs.kotlinx.serialization.json)
-    // Only the `suspending` example driver needs this, for its suspend @QuintAction (qk-33ky).
-    testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
