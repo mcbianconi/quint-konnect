@@ -36,7 +36,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
-    testRuntimeOnly(libs.junit.platform.launcher)
+    // implementation, not runtimeOnly: ParallelDynamicTestExecutionTest drives the Launcher API
+    // directly (compiling a generated @TestFactory class and running it with parallel execution
+    // configuration parameters set), not just relying on it being discovered at test runtime.
+    testImplementation(libs.junit.platform.launcher)
 }
 
 tasks.test {

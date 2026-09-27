@@ -244,8 +244,10 @@ Debugging notes:
   the spec — a typo only surfaces when a trace is replayed.
 - A failing trace (from a generated per-trace test) is saved to
   `build/quint-konnect/failures/<Driver>-trace<N>.itf.json` with a printed replay command;
-  replay it without quint via `-Pquint.replay=<path>`. Traces run in parallel only when JUnit
-  parallel execution is enabled for dynamic tests (see the README).
+  replay it without quint via `-Pquint.replay=<path>`. Generated `@TestFactory` methods carry
+  `@Execution(ExecutionMode.CONCURRENT)`, so their per-trace dynamic tests run concurrently as
+  soon as `junit.jupiter.execution.parallel.enabled=true` is set — no other JUnit configuration
+  needed, and it's a no-op otherwise (see the README's "Running traces in parallel").
 - `@QuintRun(invariants = ["inv"])` passes invariants to `quint run --invariants`; a violation
   fails the test naming the invariant, the seed and the violating trace.
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity

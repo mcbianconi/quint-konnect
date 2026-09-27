@@ -3,6 +3,7 @@ package io.github.mcbianconi.quintkonnect.ksp.generators
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -25,6 +26,8 @@ internal class QuintRunTestGenerator(
     private val genSeedMember = MemberName("io.github.mcbianconi.quintkonnect.trace", "genSeed")
     private val dynamicTestClassName = ClassName("org.junit.jupiter.api", "DynamicTest")
     private val testFactoryAnnotation = ClassName("org.junit.jupiter.api", "TestFactory")
+    private val executionAnnotationClassName = ClassName("org.junit.jupiter.api.parallel", "Execution")
+    private val executionModeClassName = ClassName("org.junit.jupiter.api.parallel", "ExecutionMode")
 
     fun generate(clazz: KSClassDeclaration) {
         val packageName = clazz.packageName.asString()
@@ -76,6 +79,11 @@ internal class QuintRunTestGenerator(
 
         val tracesMethod = FunSpec.builder("traces")
             .addAnnotation(testFactoryAnnotation)
+            .addAnnotation(
+                AnnotationSpec.builder(executionAnnotationClassName)
+                    .addMember("%T.CONCURRENT", executionModeClassName)
+                    .build(),
+            )
             .returns(LIST.parameterizedBy(dynamicTestClassName))
             .addCode(tracesBody)
             .build()

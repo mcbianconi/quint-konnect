@@ -316,27 +316,40 @@ test name and trace number.
 Traces are independent — each gets its own fresh driver — so nothing about the model-based testing
 itself needs to change to run them concurrently. Two entry points parallelize differently:
 
-- **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): enable
-  [JUnit's parallel execution](https://docs.junit.org/current/user-guide/#writing-tests-parallel-execution)
-  for dynamic tests in `src/test/resources/junit-platform.properties`:
+- **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): every
+  generated `@TestFactory fun traces()` carries `@Execution(ExecutionMode.CONCURRENT)`, and a
+  `DynamicTest`'s execution mode falls back to its `@TestFactory` method's own mode when the
+  `DynamicTest` doesn't set one itself (`DynamicNodeTestDescriptor`/`JupiterTestDescriptor` in
+  `junit-jupiter-engine`), so the per-trace dynamic tests it produces already run concurrently
+  once [JUnit's parallel execution](https://docs.junit.org/current/user-guide/#writing-tests-parallel-execution)
+  is switched on — no per-test or per-module `@Execution` annotation needed, and only
+  quint-konnect's generated tests are affected. Enable it in
+  `src/test/resources/junit-platform.properties`:
 
   ```properties
   junit.jupiter.execution.parallel.enabled=true
-  junit.jupiter.execution.parallel.mode.default=same_thread
-  junit.jupiter.execution.parallel.mode.classes.default=same_thread
   ```
 
-  Dynamic tests read `junit.jupiter.execution.parallel.mode.dynamic.default` for their own
-  parallelism (the two `.default` settings above keep ordinary `@Test` methods and classes
-  sequential, since these properties apply to every test in the module, and a KSP-generated test
-  class has no way to carry its own `@Execution` annotation):
+  `junit.jupiter.execution.parallel.mode.default` and `.mode.classes.default` both already default
+  to `same_thread`, so ordinary `@Test` methods and classes elsewhere in the module stay
+  sequential unless set otherwise. There is no `junit.jupiter.execution.parallel.mode.dynamic.default`
+  property — JUnit reads a dynamic test's own execution mode, not a separate dynamic-specific
+  default (a class of dynamic tests without an explicit mode inherits its container's, as above).
+
+  With parallelism enabled, size the thread pool traces actually run on, e.g. a fixed pool:
 
   ```properties
-  junit.jupiter.execution.parallel.mode.dynamic.default=concurrent
+  junit.jupiter.execution.parallel.config.strategy=fixed
+  junit.jupiter.execution.parallel.config.fixed.parallelism=4
   ```
 
   `ConsoleReplayListener` buffers each trace's output and flushes it as one block on that trace's
   completion, so concurrent traces don't interleave their lines.
+
+  When `junit.jupiter.execution.parallel.enabled` isn't set (or is `false`), JUnit Jupiter runs
+  every node — regardless of its `@Execution` mode — on the calling thread
+  (`SameThreadHierarchicalTestExecutorService`), so the annotation on generated tests has no
+  effect unless a project opts into parallelism itself.
 
 - **`Runner.runTest`** (the legacy batch path kept for binary compatibility with already-compiled
   generated code): set `-Pquint.parallelism=<int>` (`quintkonnect.parallelism`, default `1`) to

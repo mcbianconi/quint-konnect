@@ -94,6 +94,9 @@ class QuintTestTestGeneratorTest {
         val elementType = (tracesMethod.genericReturnType as ParameterizedType).actualTypeArguments[0]
         assertEquals(DynamicTest::class.java, elementType)
 
+        val execution = tracesMethod.getAnnotation(org.junit.jupiter.api.parallel.Execution::class.java)
+        assertEquals(org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT, execution.value)
+
         assertThrows<NoSuchMethodException> { testClass.getDeclaredMethod("run") }
     }
 
