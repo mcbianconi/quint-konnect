@@ -5,6 +5,9 @@ import io.github.mcbianconi.itf.ItfValue
 import io.github.mcbianconi.itf.display
 import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
+import io.github.mcbianconi.quintkonnect.trace.TEST_TASK_PATH_PROPERTY
+import io.github.mcbianconi.quintkonnect.trace.maxSamplesOverride
+import io.github.mcbianconi.quintkonnect.trace.maxStepsOverride
 import java.io.PrintStream
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -43,6 +46,27 @@ internal fun resolveUseColor(noColor: String?, quintColor: String?, hasConsole: 
 
 private fun defaultUseColor(): Boolean =
     resolveUseColor(System.getenv("NO_COLOR"), System.getenv("QUINT_COLOR"), System.console() != null)
+
+/**
+ * The `QUINT_SEED=... ./gradlew <task> -Pquint.maxSteps=... -Pquint.maxSamples=...` command to
+ * reproduce [config]'s run. Every `-Pquint.maxSamples`/`-Pquint.maxSteps` override active for the
+ * run (see `trace/GeneratorConfig.kt`) is appended alongside `QUINT_SEED`, so a copied line
+ * reproduces the run that failed, not just its random seed. [taskPath] mirrors
+ * [io.github.mcbianconi.quintkonnect.trace.replayCommand]'s own use of the
+ * `quintkonnect.testTaskPath` system property, falling back to plain `test` when unset.
+ */
+internal fun reproduceCommand(
+    config: GeneratorConfig,
+    maxSteps: Int? = maxStepsOverride(),
+    maxSamples: Int? = maxSamplesOverride(),
+    taskPath: String? = System.getProperty(TEST_TASK_PATH_PROPERTY),
+): String {
+    val overrides = buildString {
+        maxSteps?.let { append(" -Pquint.maxSteps=$it") }
+        maxSamples?.let { append(" -Pquint.maxSamples=$it") }
+    }
+    return "QUINT_SEED=${config.seed} ./gradlew ${taskPath ?: "test"}$overrides"
+}
 
 /**
  * Verbosity for the no-arg [ConsoleReplayListener] constructor: `verboseProperty`
@@ -137,7 +161,7 @@ public class ConsoleReplayListener(
 
     override fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {
         error("[FAIL] trace ${traceIndex + 1}", traceIndex)
-        error("Reproduce this error with `QUINT_SEED=${config.seed}`\n", traceIndex)
+        error("Reproduce this error with:\n   ${reproduceCommand(config)}\n", traceIndex)
     }
 
     override fun onTraceFailureSaved(traceIndex: Int, testName: String, failureFile: Path?, replayCommand: String?) {
@@ -161,7 +185,7 @@ public class ConsoleReplayListener(
             success("[OK] $testName")
         } else {
             error("[FAIL] $testName")
-            error("Reproduce this error with `QUINT_SEED=${config.seed}`\n")
+            error("Reproduce this error with:\n   ${reproduceCommand(config)}\n")
         }
     }
 }

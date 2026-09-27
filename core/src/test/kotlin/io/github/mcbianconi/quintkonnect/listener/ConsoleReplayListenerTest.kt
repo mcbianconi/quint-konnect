@@ -35,15 +35,16 @@ class ConsoleReplayListenerTest {
     }
 
     @Test
-    fun `prints FAIL and the reproduce seed line on failure`() {
+    fun `prints FAIL and the reproduce command on failure`() {
         val output = capture { it.onRunFinished("failing test", config, AssertionError("boom")) }
 
         assertTrue(output.contains("[FAIL] failing test"))
-        assertTrue(output.contains("Reproduce this error with `QUINT_SEED=12345`"))
+        assertTrue(output.contains("Reproduce this error with:"))
+        assertTrue(output.contains("QUINT_SEED=12345 ./gradlew test"))
     }
 
     @Test
-    fun `onTraceFailed prints FAIL and the reproduce seed line naming the trace`() {
+    fun `onTraceFailed prints FAIL and the reproduce command naming the trace`() {
         // onTraceFailureSaved(..., null, null) is the flush trigger a real failing trace always
         // gets right after onTraceFailed (ReplayRunner.traceReplays), whether or not saving worked.
         val output = capture {
@@ -52,7 +53,32 @@ class ConsoleReplayListenerTest {
         }
 
         assertTrue(output.contains("[FAIL] trace 3"))
-        assertTrue(output.contains("Reproduce this error with `QUINT_SEED=12345`"))
+        assertTrue(output.contains("Reproduce this error with:"))
+        assertTrue(output.contains("QUINT_SEED=12345 ./gradlew test"))
+    }
+
+    @Test
+    fun `reproduceCommand includes every active maxSteps and maxSamples override`() {
+        assertEquals(
+            "QUINT_SEED=12345 ./gradlew :example:test -Pquint.maxSteps=30 -Pquint.maxSamples=50",
+            reproduceCommand(config, maxSteps = 30, maxSamples = 50, taskPath = ":example:test"),
+        )
+    }
+
+    @Test
+    fun `reproduceCommand omits absent overrides and falls back to plain test`() {
+        assertEquals(
+            "QUINT_SEED=12345 ./gradlew test",
+            reproduceCommand(config, maxSteps = null, maxSamples = null, taskPath = null),
+        )
+    }
+
+    @Test
+    fun `reproduceCommand includes only the maxSteps override when maxSamples is unset`() {
+        assertEquals(
+            "QUINT_SEED=12345 ./gradlew test -Pquint.maxSteps=30",
+            reproduceCommand(config, maxSteps = 30, maxSamples = null, taskPath = null),
+        )
     }
 
     @Test
