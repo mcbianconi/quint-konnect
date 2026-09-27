@@ -99,6 +99,21 @@ internal class QuintRunTestGenerator(
 
         fileSpec.writeTo(codeGenerator, aggregating = false)
 
+        DriverManifestWriter.write(
+            codeGenerator = codeGenerator,
+            clazz = clazz,
+            kind = "run",
+            spec = spec,
+            main = main,
+            init = init,
+            step = step,
+            test = null,
+            maxSamples = maxSamples,
+            maxSteps = maxSteps,
+            seed = seed,
+            invariants = invariants,
+        )
+
         logger.info("Generated $packageName.$outputName for $className")
     }
 }
