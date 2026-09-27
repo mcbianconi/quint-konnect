@@ -1,0 +1,63 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+"""
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
+    ### {{ entry.group | striptags | trim | upper_first }}
+    {% for commit in entry.commits %}
+        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+            {% if commit.breaking %}[**breaking**] {% endif %}\
+            {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}
+{% if version %}\
+    {% if previous.version %}\
+        **Full Changelog**: https://github.com/mcbianconi/quint-konnect/compare/{{ previous.version }}...{{ version }}
+    {% else %}\
+        **Full Changelog**: https://github.com/mcbianconi/quint-konnect/commits/{{ version }}
+    {% endif %}\
+{% else %}\
+    {% if previous.version %}\
+        **Full Changelog**: https://github.com/mcbianconi/quint-konnect/compare/{{ previous.version }}...HEAD
+    {% endif %}\
+{% endif %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+commit_parsers = [
+    { message = "^feat", group = "<!-- 0 -->Features" },
+    { message = "^fix", group = "<!-- 1 -->Fixes" },
+    { message = "^doc", group = "<!-- 2 -->Documentation" },
+    { message = "^perf", group = "<!-- 3 -->Performance" },
+    { message = "^refactor", group = "<!-- 4 -->Refactor" },
+    { message = "^style", group = "<!-- 5 -->Styling" },
+    { message = "^test", group = "<!-- 6 -->Testing" },
+    { message = "^chore\\(release\\): prepare for", skip = true },
+    { message = "^chore\\(deps.*\\)", group = "<!-- 7 -->Build & Dependencies" },
+    { message = "^build", group = "<!-- 7 -->Build & Dependencies" },
+    { message = "^chore\\(pr\\)", skip = true },
+    { message = "^chore\\(pull\\)", skip = true },
+    { message = "^chore|^ci", group = "<!-- 8 -->Miscellaneous Tasks" },
+    { body = ".*security", group = "<!-- 9 -->Security" },
+]
+protect_breaking_commits = true
+filter_commits = false
+topo_order = false
+sort_commits = "oldest"
