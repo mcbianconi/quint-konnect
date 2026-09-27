@@ -25,14 +25,14 @@ Verified with `claude plugin validate .` (passes) and an isolated install
 (`CLAUDE_CONFIG_DIR=<scratch> claude plugin marketplace add .` +
 `claude plugin install quint-konnect@quint-konnect -y` +
 `claude plugin details quint-konnect`): the component inventory shows exactly one skill, zero
-agents/hooks/MCP servers — the dev skills under `.claude/skills/` (`ship-it`, `tbd`,
+agents/hooks/MCP servers — the dev skills under `../../.agents/skills/` (`ship-it`, `tbd`,
 `work-epic`) are not reachable through the plugin, because Claude Code's plugin loader only
-scans the plugin root's own `skills/` (and any explicit `skills` paths), never `.claude/skills/`.
+scans the plugin root's own `skills/` (and any explicit `skills` paths), never `../../.agents/skills/`.
 
 **`npx skills` is a separate, wider net.** The `skills` npm package (`npx skills add`) does not
 read `plugin.json`/`marketplace.json` to *restrict* discovery — it only uses them to *add*
 extra search directories. Its own hardcoded directory list (`AGENT_PROJECT_SKILL_DIRS`)
-includes `.claude/skills`, scanned to depth 3, regardless of any plugin manifest. Confirmed with
+includes `../../.agents/skills`, scanned to depth 3, regardless of any plugin manifest. Confirmed with
 `npx skills add . --list` from the repo root: it finds all four SKILL.md files (`quint-konnect`,
 `ship-it`, `tbd`, `work-epic`), not just the published one. There is no marketplace/plugin-level
 fix for this; the only exclusion mechanism in that CLI is `metadata: { internal: true }` in a
