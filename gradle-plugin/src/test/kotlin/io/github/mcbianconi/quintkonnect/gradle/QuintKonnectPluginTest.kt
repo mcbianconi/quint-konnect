@@ -1,6 +1,8 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
 import org.gradle.api.tasks.testing.Test as TestTask
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.testfixtures.ProjectBuilder
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -124,5 +126,47 @@ class QuintKonnectPluginTest {
 
         val checkQuint = project.tasks.getByName("checkQuint") as CheckQuintTask
         assertEquals("quint", checkQuint.quintExecutable.get())
+    }
+
+    @Test
+    fun `configureTestLogging defaults to true and configures FULL, standard streams and FAILED events`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+
+        val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
+        assertTrue(extension.configureTestLogging.get())
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertEquals(TestExceptionFormat.FULL, testTask.testLogging.exceptionFormat)
+        assertTrue(testTask.testLogging.showStandardStreams)
+        assertTrue(testTask.testLogging.events.contains(TestLogEvent.FAILED))
+    }
+
+    @Test
+    fun `configureTestLogging set to false leaves Gradle's own testLogging defaults in place`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
+        extension.configureTestLogging.set(false)
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertEquals(TestExceptionFormat.SHORT, testTask.testLogging.exceptionFormat)
+        assertFalse(testTask.testLogging.showStandardStreams)
+    }
+
+    @Test
+    fun `a project's own testLogging configuration applied after the plugin wins`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+
+        project.tasks.withType(TestTask::class.java).configureEach { test ->
+            test.testLogging { it.exceptionFormat = TestExceptionFormat.SHORT }
+        }
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertEquals(TestExceptionFormat.SHORT, testTask.testLogging.exceptionFormat)
     }
 }

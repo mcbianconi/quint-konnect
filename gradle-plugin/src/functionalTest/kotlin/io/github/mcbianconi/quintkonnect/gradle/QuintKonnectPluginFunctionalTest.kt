@@ -345,6 +345,91 @@ class QuintKonnectPluginFunctionalTest {
     }
 
     @Test
+    fun `the plugin configures FULL exceptionFormat and standard streams on Test tasks by default`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.register("printTestLogging") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("exceptionFormat=" + test.testLogging.exceptionFormat)
+                    println("showStandardStreams=" + test.testLogging.showStandardStreams)
+                    println("events=" + test.testLogging.events)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printTestLogging").build()
+
+        assertTrue(result.output.contains("exceptionFormat=FULL"))
+        assertTrue(result.output.contains("showStandardStreams=true"))
+        assertTrue(result.output.contains("FAILED"))
+    }
+
+    @Test
+    fun `quintKonnect configureTestLogging set to false leaves Gradle's own defaults in place`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            quintKonnect {
+                configureTestLogging.set(false)
+            }
+
+            tasks.register("printTestLogging") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("exceptionFormat=" + test.testLogging.exceptionFormat)
+                    println("showStandardStreams=" + test.testLogging.showStandardStreams)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printTestLogging").build()
+
+        assertTrue(result.output.contains("exceptionFormat=SHORT"))
+        assertTrue(result.output.contains("showStandardStreams=false"))
+    }
+
+    @Test
+    fun `a project's own testLogging configuration below the plugins block wins`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.test {
+                testLogging {
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+                }
+            }
+
+            tasks.register("printTestLogging") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("exceptionFormat=" + test.testLogging.exceptionFormat)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printTestLogging").build()
+
+        assertTrue(result.output.contains("exceptionFormat=SHORT"))
+    }
+
+    @Test
     fun `setting -Pquint-parallelism maps it to quintkonnect-parallelism`() {
         buildFile.writeText(
             """

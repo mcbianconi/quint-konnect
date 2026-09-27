@@ -6,6 +6,8 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.io.File
 
@@ -33,6 +35,7 @@ public class QuintKonnectPlugin : Plugin<Project> {
         val extension = project.extensions.create("quintKonnect", QuintKonnectExtension::class.java)
         extension.quintVersion.convention(DEFAULT_QUINT_VERSION)
         extension.downloadQuint.convention(false)
+        extension.configureTestLogging.convention(true)
 
         // Platform detection only runs if downloadQuint's task configuration is actually realized
         // (i.e. downloadQuint is enabled, or the task is run directly): applying this plugin with
@@ -132,6 +135,20 @@ public class QuintKonnectPlugin : Plugin<Project> {
                         parallelism = project.provider { parallelismOverride },
                     ),
                 )
+            }
+
+            // Its own configureEach, registered after the one above: Gradle runs configureEach
+            // actions in registration order when a Test task is realized, so a project's own
+            // testLogging configuration (applied later, e.g. below the plugins {} block in the
+            // same build.gradle.kts) still runs after this one and wins.
+            project.tasks.withType(Test::class.java).configureEach { test ->
+                if (extension.configureTestLogging.get()) {
+                    test.testLogging { logging ->
+                        logging.exceptionFormat = TestExceptionFormat.FULL
+                        logging.showStandardStreams = true
+                        logging.events(TestLogEvent.FAILED)
+                    }
+                }
             }
         }
     }
