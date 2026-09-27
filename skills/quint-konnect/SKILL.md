@@ -252,7 +252,9 @@ Debugging notes:
   `config()`); otherwise a typo only surfaces when a trace is replayed.
 - A failing trace (from a generated per-trace test) is saved to
   `build/quint-konnect/failures/<Driver>-trace<N>.itf.json` with a printed replay command;
-  replay it without quint via `-Pquint.replay=<path>`. Generated `@TestFactory` methods carry
+  replay it without quint via `-Pquint.replay=<path>` — unless `readSpecIr` is also set, in which
+  case quint is still needed to regenerate the KSP-generated spec types the driver compiles
+  against. Generated `@TestFactory` methods carry
   `@Execution(ExecutionMode.CONCURRENT)`, so their per-trace dynamic tests run concurrently as
   soon as `junit.jupiter.execution.parallel.enabled=true` is set — no other JUnit configuration
   needed, and it's a no-op otherwise (see the README's "Running traces in parallel").

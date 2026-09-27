@@ -315,6 +315,12 @@ installation at all — Test tasks skip `checkQuint`/`downloadQuint` whenever it
 `ItfFileTraceSource` directly (e.g. from a fixture under test resources) to replay a saved trace
 without the Gradle plugin.
 
+With `quintKonnect { readSpecIr.set(true) }`, this doesn't hold: KSP's generated `<Module>Spec`
+types are a compile-time dependency of the driver code, so `quint` is still needed (via `quintIr`)
+to (re)typecheck the spec and generate them, even on a `-Pquint.replay` run that never invokes
+`quint` itself at test time. See
+[`docs/decisions/replay-needs-quint-with-read-spec-ir.md`](docs/decisions/replay-needs-quint-with-read-spec-ir.md).
+
 Replaying an already-saved trace doesn't re-save it if it fails again: the printed command still
 points at the same input file, so it can't overwrite an unrelated failure that happens to share a
 test name and trace number.
