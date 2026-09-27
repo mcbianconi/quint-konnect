@@ -265,8 +265,8 @@ The library reads these to dispatch to the correct driver method and deserialize
 | `NO_COLOR` | any non-empty value | Disables ANSI colours ([no-color.org](https://no-color.org)); `QUINT_COLOR` wins |
 
 ```bash
-QUINT_VERBOSE=1 ./gradlew :example:test
-QUINT_SEED=0x1234 ./gradlew :example:test
+QUINT_VERBOSE=1 ./gradlew -p example test
+QUINT_SEED=0x1234 ./gradlew -p example test
 ```
 
 ## Runtime overrides for PR vs nightly CI profiles
@@ -286,8 +286,8 @@ Test-task system properties:
 | `-Pquint.parallelism=<int>` | `quintkonnect.parallelism` | `Runner.runTest`'s own thread pool size (default `1`); see "Running traces in parallel" below |
 
 ```bash
-./gradlew :example:test -Pquint.maxSamples=1000 -Pquint.verbose=1   # nightly profile
-./gradlew :example:test -Pquint.maxSamples=20                       # fast PR profile
+./gradlew -p example test -Pquint.maxSamples=1000 -Pquint.verbose=1   # nightly profile
+./gradlew -p example test -Pquint.maxSamples=20                       # fast PR profile
 ```
 
 Each Gradle property is a Test-task input (via a `CommandLineArgumentProvider`), so tests rerun
@@ -391,12 +391,13 @@ itself needs to change to run them concurrently. Two entry points parallelize di
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
 | `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit Jupiter test classes with one dynamic test per trace. |
 | `gradle-plugin` | Gradle plugin (`io.github.mcbianconi.quint-konnect`): applies KSP and dependencies, resolves spec paths, checks the `quint` CLI. |
-| `example` | TicTacToe end-to-end example. |
+| `example` | End-to-end examples: a separate Gradle build applying the plugin, see [`example/README.md`](example/README.md). |
 | `integration-tests` | Regression tests against real quint (not published). |
 
 ## Example
 
-See [`example/`](./example) for a complete TicTacToe example:
+See [`example/`](./example) for a complete TicTacToe example, in a Gradle build set up like the
+one above (`./gradlew -p example build`):
 - [`TicTacToe.kt`](example/src/main/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToe.kt) — game logic
 - [`TicTacToeDriver.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeDriver.kt) — annotated driver
 - [`TicTacToeState.kt`](example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeState.kt) — state comparison against the KSP-generated `TictactoeSpec` types
@@ -436,7 +437,7 @@ Install it:
 ./gradlew :core:test                 # Run core unit tests (no quint CLI required)
 ./gradlew :ksp:build                 # Build KSP processor
 ./gradlew :gradle-plugin:build        # Build the Gradle plugin + run its unit/functional tests
-./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
+./gradlew -p example build           # Build the example (a separate build applying the plugin) + run its tests (requires quint in PATH)
 ./gradlew :integration-tests:test    # Run regression tests against real quint (requires quint in PATH)
 ./gradlew build                      # Build all modules
 ```

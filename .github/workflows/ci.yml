@@ -35,3 +35,8 @@ jobs:
 
       - name: Build
         run: ./gradlew build
+
+      - name: Build example
+        # A separate Gradle build (example/settings.gradle.kts) applying the plugin like a user
+        # project, so the root `build` above doesn't cover it.
+        run: ./gradlew -p example build
