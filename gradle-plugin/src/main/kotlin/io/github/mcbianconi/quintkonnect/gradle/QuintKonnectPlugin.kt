@@ -106,7 +106,6 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 checkQuint = checkQuint,
                 downloadQuint = downloadQuint,
                 quintExecutablePath = quintExecutablePath(project, extension, downloadQuint),
-                skipKsp = replayOverride != null,
             )
 
             // KSP writes generated test sources to build/generated/ksp/test/kotlin but doesn't

@@ -18,3 +18,4 @@ comment next to the code it governs is easier to keep in sync than a separate fi
 - [Agent skill](agent-skill.md) — a user-facing skill at `skills/quint-konnect/`, separate from this repo's dev skills, defers spec authoring to quint-llm-kit
 - [Agent skill plugin packaging](agent-skill-plugin.md) — root-rooted `.claude-plugin/` (source `"./"`) so the skill doesn't move; `npx skills add` still surfaces the dev skills, plugin.json version pinned to the library version
 - [Quint IR source](quint-ir-source.md) — `quintIr` runs `quint typecheck --out`, not `quint compile`, and collects an action's `nondet` params transitively through the actions it calls
+- [Replay needs quint with readSpecIr](replay-needs-quint-with-read-spec-ir.md) — `-Pquint.replay` still needs `quint` installed when `readSpecIr` is on, since KSP's generated spec types are a compile-time dependency

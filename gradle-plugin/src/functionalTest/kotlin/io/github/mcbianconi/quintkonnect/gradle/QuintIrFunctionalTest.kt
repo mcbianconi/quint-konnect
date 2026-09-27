@@ -133,7 +133,12 @@ class QuintIrFunctionalTest {
     }
 
     @Test
-    fun `setting -Pquint-replay skips wiring quintIr into KSP`() {
+    fun `setting -Pquint-replay does not skip wiring quintIr into KSP when readSpecIr is set`() {
+        // qk-sa74: KSP's generated <Module>Spec types are a compile-time dependency of the driver
+        // code, not something a replay run can skip the way it skips actually invoking quint at
+        // test time (see docs/decisions/replay-needs-quint-with-read-spec-ir.md). Previously,
+        // skipping this wiring left KSP without the IR option it had run with before, so it reran
+        // and generated no <Module>Spec types, breaking compilation for any driver using them.
         val traceFile = File(projectDir, "saved.itf.json").apply { writeText("""{"states": []}""") }
         buildFile.appendText(
             """
@@ -153,7 +158,35 @@ class QuintIrFunctionalTest {
 
         val result = runner("printQuintIrDependency", "-Pquint.replay=${traceFile.name}").build()
 
-        assertTrue(result.output.contains("dependsOnQuintIr=false"))
+        assertTrue(result.output.contains("dependsOnQuintIr=true"))
+    }
+
+    @Test
+    fun `setting -Pquint-replay still requires quint via checkQuint when readSpecIr is set`() {
+        // The flip side of the above: readSpecIr's compile-time dependency on quintIr means a
+        // replay run still needs quint installed to (re)generate the IR, even though the replayed
+        // Test task itself never invokes quint.
+        val traceFile = File(projectDir, "saved.itf.json").apply { writeText("""{"states": []}""") }
+        buildFile.appendText(
+            """
+
+            quintKonnect { readSpecIr.set(true) }
+
+            tasks.register("printCheckQuintDependency") {
+                doLast {
+                    val kspTask = tasks.named("kspTestKotlin").get()
+                    val dependsOnCheckQuint = kspTask.taskDependencies.getDependencies(kspTask)
+                        .flatMap { it.taskDependencies.getDependencies(it) }
+                        .any { it.name == "checkQuint" }
+                    println("dependsOnCheckQuint=${'$'}dependsOnCheckQuint")
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printCheckQuintDependency", "-Pquint.replay=${traceFile.name}").build()
+
+        assertTrue(result.output.contains("dependsOnCheckQuint=true"))
     }
 
     private fun runner(vararg args: String): GradleRunner =
