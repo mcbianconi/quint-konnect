@@ -3,17 +3,21 @@ type: is
 id: is-01m3j7vn4yap7e5egmd816wjqy
 title: Move internal regression tests from example/ into a new :integration-tests module
 kind: task
-status: open
+status: in_progress
 priority: 3
-version: 3
+version: 4
+delegate: claude-code@vm
 labels:
   - roadmap
 dependencies:
   - type: blocks
     target: is-01m3j7vnc9vr73kchj9xd35bcc
 parent_id: is-01m3j7vmxf3e87tr20a324y2s9
+hold: null
+hold_until: null
 created_at: 2026-09-27T20:10:46.813Z
-updated_at: 2026-09-27T20:11:00.876Z
+updated_at: 2026-09-27T20:29:39.284Z
+started_at: 2026-09-27T20:29:39.284Z
 ---
 Create `:integration-tests` in the root build (`settings.gradle.kts` include), unpublished,
 wired like `example/build.gradle.kts` is today (`kspTest(project(":ksp"))`,
