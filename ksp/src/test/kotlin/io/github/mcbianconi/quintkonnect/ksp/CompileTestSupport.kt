@@ -5,6 +5,7 @@ package io.github.mcbianconi.quintkonnect.ksp
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import io.github.mcbianconi.itf.ItfValue
@@ -36,7 +37,10 @@ internal fun testStep(
     return stepCtor.newInstance(actionTaken, nondetPicks, state) as Step
 }
 
-internal fun compileWithProcessor(vararg sources: SourceFile): JvmCompilationResult {
+internal fun compileWithProcessor(
+    vararg sources: SourceFile,
+    kspOptions: Map<String, String> = emptyMap(),
+): JvmCompilationResult {
     val compilation = KotlinCompilation().apply {
         this.sources = sources.toList()
         inheritClassPath = true
@@ -46,6 +50,7 @@ internal fun compileWithProcessor(vararg sources: SourceFile): JvmCompilationRes
         useKsp2()
         symbolProcessorProviders = mutableListOf(QuintKonnectProcessorProvider())
         messageOutputStream = System.out
+        kspProcessorOptions = kspOptions.toMutableMap()
     }
     return compilation.compile()
 }
