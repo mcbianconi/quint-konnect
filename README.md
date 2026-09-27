@@ -37,7 +37,7 @@ pluginManagement {
 // build.gradle.kts, on a module that already applies org.jetbrains.kotlin.jvm
 plugins {
     kotlin("jvm") version "2.4.20"
-    id("io.github.mcbianconi.quint-konnect") version "0.1.0"
+    id("io.github.mcbianconi.quint-konnect") version "0.2.0"
 }
 ```
 
@@ -103,8 +103,8 @@ plugins {
 }
 
 dependencies {
-    kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")
-    testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")
+    kspTest("io.github.mcbianconi:quint-konnect-ksp:0.2.0")
+    testImplementation("io.github.mcbianconi:quint-konnect-core:0.2.0")
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")

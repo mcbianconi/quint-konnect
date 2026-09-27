@@ -28,14 +28,14 @@ Read `references/gradle-setup.md` for the full snippets (Gradle plugin path and 
 fallback) before writing any build file — it has the exact dependency coordinates, the
 `pluginManagement` block the plugin needs, and the KSP generated-source-dir wiring. In short:
 
-- Prefer applying the Gradle plugin, id `io.github.mcbianconi.quint-konnect` version `0.1.0`. It
+- Prefer applying the Gradle plugin, id `io.github.mcbianconi.quint-konnect` version `0.2.0`. It
   applies KSP, adds the `kspTest`/`testImplementation` dependencies, wires the generated test
   source directory, and adds a `checkQuint` task that fails the build if `quint` is missing.
 - Without the plugin, apply `com.google.devtools.ksp` yourself, add
-  `kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")` and
-  `testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")`, and wire
+  `kspTest("io.github.mcbianconi:quint-konnect-ksp:0.2.0")` and
+  `testImplementation("io.github.mcbianconi:quint-konnect-core:0.2.0")`, and wire
   `build/generated/ksp/test/kotlin` into the `test` source set.
-- Current release is `0.1.0` on Maven Central under `io.github.mcbianconi`; the plugin pulls
+- Current release is `0.2.0` on Maven Central under `io.github.mcbianconi`; the plugin pulls
   `-ksp`/`-core` at its own version, so only the plugin version needs to be set explicitly.
 - A driver's spec file and its Kotlin driver class both live under `src/test/`, not `src/main/`
   (drivers are test code; only the plugin wires `kspTest`, not `ksp`).
