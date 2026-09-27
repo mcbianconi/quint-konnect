@@ -114,7 +114,7 @@ the action taken as its own sum-type variable, and the driver must point `config
 ```kotlin
 import io.github.mcbianconi.quintkonnect.DriverConfig
 
-@QuintTest(spec = "src/test/resources/quinttest/counter.qnt", test = "happyTest")
+@QuintTest(spec = "src/test/resources/quinttest/counter.qnt", test = "happyTest", ignore = ["lastAction"])
 class CounterDriver : Driver {
     var count = 0L
     override fun config(): DriverConfig = DriverConfig(nondetPath = listOf("lastAction"))
@@ -140,6 +140,12 @@ action add(n) = all { count' = count + n, lastAction' = Add({ n: n }) }
 `nondetPath` is the dot-path to the variable holding it. Without this, `@QuintTest`'s default
 `DriverConfig()` doesn't work — see
 `docs/decisions/quint-test-needs-nondet-path.md` in the quint-konnect repo for why.
+
+`ignore = ["lastAction"]` on the annotation is a separate, compile-time-only thing: it's what
+lets `CounterState` below be built over a KSP-generated class instead of a hand-written one, by
+leaving `lastAction` out of it. `config()`'s `nondetPath` and the annotation's `ignore` don't
+derive one another — KSP can't see a driver's runtime `config()` override, so a nondetPath
+variable normally needs listing in both places.
 
 ## 4. Check state (optional, but recommended)
 
@@ -173,10 +179,18 @@ regardless of order. See `references/types.md` for the full Quint-to-Kotlin type
   `TypedState<MyDriver, CounterSpec.State>(serializer())`. Editing the spec regenerates them on
   the next build. KSP warns about and leaves out a type with no decodable shape (a tuple with
   mixed element types, an uninterpreted type) and everything containing it; hand-write those.
-- Mark a field the implementation doesn't track with `@QuintIgnore`
-  (`io.github.mcbianconi.quintkonnect.annotations.QuintIgnore`) — it still has to decode, so
-  give it a default (or make it nullable) if the spec might omit it; a mismatch on it never
-  fails the check.
+- **A driver that only models some state variables** doesn't have to fall back to a hand-written
+  class: `@QuintRun`/`@QuintTest`'s `ignore` parameter (e.g. `ignore = ["lastAction"]`) names
+  variables to leave out, and KSP generates a `<Driver>State` class beside `State` with just the
+  rest (`CounterSpec.CounterDriverState`, for a driver class named `CounterDriver`) — an unknown
+  variable name there is a compile error. This only drops the field; use it when the
+  implementation has nothing to compare it to at all.
+- Mark a field the implementation *does* track but wants excluded from comparison with
+  `@QuintIgnore` (`io.github.mcbianconi.quintkonnect.annotations.QuintIgnore`) instead — it still
+  has to decode, so give it a default (or make it nullable) if the spec might omit it; a mismatch
+  on it never fails the check. Unlike `ignore`, this only works on a hand-written state class:
+  `@QuintIgnore` can't go on a KSP-generated one, since that class may be shared by several
+  drivers of the same module and one driver's `@QuintIgnore` would silently affect the others too.
 - Override `TypedState.compareField(path, spec, impl)` for a field that needs its own
   comparison logic; return `null` to fall through to the default structural comparison.
 - If the driver doesn't return a real `State`, the default `quintState()` skips state checking
@@ -272,7 +286,7 @@ See the TicTacToe example in the quint-konnect repo (all links are on `main`):
 - [`TicTacToeState.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToeState.kt) — `TypedState` over the KSP-generated `TictactoeSpec` (sum types, nested maps)
 - [`TicTacToe.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/main/kotlin/io/github/mcbianconi/quintkonnect/example/tictactoe/TicTacToe.kt) — the game logic under test
 - [`tictactoe.qnt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/resources/tictactoe.qnt) — the Quint spec
-- [`quinttest/`](https://github.com/mcbianconi/quint-konnect/tree/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/quinttest) — a `@QuintTest`/`nondetPath` example (the `CounterDriver` above)
+- [`quinttest/`](https://github.com/mcbianconi/quint-konnect/tree/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/quinttest) — a `@QuintTest`/`nondetPath` example (the `CounterDriver` above), and `ignore` projecting onto a KSP-generated `CounterDriverState`
 - [`partialstate/PartialRpsGameState.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/partialstate/PartialRpsGameState.kt) — `@QuintIgnore` in use
 - [`suspending/SuspendingCounterDriver.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/suspending/SuspendingCounterDriver.kt) — `suspend` `@QuintAction`
 - [`buggy/BuggyRockPaperScissorsDriver.kt`](https://github.com/mcbianconi/quint-konnect/blob/main/example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/buggy/BuggyRockPaperScissorsDriver.kt) — a driver the tests expect to fail, useful for seeing the `AssertionError` shape first-hand

@@ -176,7 +176,9 @@ The framework decodes the spec state from the ITF trace and compares it field by
 
 With `quintKonnect { readSpecIr.set(true) }`, KSP also generates these `@Serializable` types from the spec: `object <Module>Spec` in the driver's package holds a class for each record and sum typedef, a `State` data class with every state variable, classes for anonymous record nondets, and one class per applied generic (`Opt[Coin]` becomes `OptCoin`). Then you only write `extractFromDriver`, e.g. `TypedState<MyDriver, CounterSpec.State>(serializer())`. A spec type with no decodable Kotlin shape (a tuple with mixed element types, an uninterpreted type) is left out along with everything that contains it, and KSP warns and lists it.
 
-Mark state properties the implementation doesn't track with `@QuintIgnore` (from the annotations module); they still decode, so give them a default if the spec may omit them. Override `TypedState.compareField(path, spec, impl)` to compare a field your own way (return `null` to keep the default).
+A driver that only models some state variables can also project onto a KSP-generated class instead of hand-writing one: `@QuintRun`/`@QuintTest`'s `ignore` parameter names variables to leave out, and KSP generates a `<Driver>State` class beside `State` with the rest (an unknown name there is a compile error). This drops the field entirely, so use it when there's nothing to compare it to at all.
+
+Mark a field the implementation *does* track but wants excluded from comparison with `@QuintIgnore` (from the annotations module) instead; it still decodes, so give it a default if the spec may omit it. Unlike `ignore`, `@QuintIgnore` only works on a hand-written state class — a KSP-generated one may be shared by several drivers of the same module, so one driver's `@QuintIgnore` can't go on it without silently affecting the others. Override `TypedState.compareField(path, spec, impl)` to compare a field your own way (return `null` to keep the default).
 
 ### 4. Run
 
@@ -204,6 +206,7 @@ Mark state properties the implementation doesn't track with `@QuintIgnore` (from
 | `maxSteps` | Int | -1 | Max steps per trace (unlimited if -1) |
 | `invariants` | Array<String> | `[]` | Invariant names passed to `quint run --invariants`; a violation fails the test with the invariant name, the seed and the violating trace |
 | `seed` | String | `""` | Fixed seed for reproducibility; `""` generates a random seed |
+| `ignore` | Array<String> | `[]` | State variables to leave out of the KSP-generated `<Driver>State` projection (an unknown name is a compile error) |
 
 `@QuintTest` parameters:
 
@@ -214,6 +217,7 @@ Mark state properties the implementation doesn't track with `@QuintIgnore` (from
 | `main` | String | `""` | Quint module name (if not inferred) |
 | `maxSamples` | Int | -1 (100 traces) | Number of traces to generate; -1 uses the library default of 100 |
 | `seed` | String | `""` | Fixed seed for reproducibility; `""` generates a random seed |
+| `ignore` | Array<String> | `[]` | State variables to leave out of the KSP-generated `<Driver>State` projection (an unknown name is a compile error) |
 
 `quint test` has no `--mbt` flag, so its traces carry no `mbt::actionTaken` or
 `mbt::nondetPicks`. A `@QuintTest` spec must store the action taken in a sum-type variable,
@@ -222,6 +226,10 @@ and the driver must point `DriverConfig.nondetPath` at it:
 ```kotlin
 override fun config() = DriverConfig(nondetPath = listOf("lastAction"))
 ```
+
+That variable is usually also unmodeled by the implementation, so it's a common candidate for
+`ignore` too (e.g. `@QuintTest(..., ignore = ["lastAction"])`) — the two don't derive one
+another, since KSP can't see a driver's runtime `config()` override.
 
 See [`example/.../quinttest/`](./example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/quinttest)
 and [the decision record](./docs/decisions/quint-test-needs-nondet-path.md).
@@ -410,8 +418,9 @@ More examples under [`example/src/test/kotlin/.../example/`](example/src/test/ko
 - `projection/` — a warehouse checked by projection: `@QuintIgnore` on fields the implementation
   doesn't track and `compareField` for a batched counter, plus a buggy variant the test expects
   to fail.
-- `quinttest/`, `suspending/`, `partialstate/`, `buggy/` — smaller fixtures for `@QuintTest`,
-  suspend actions, `@QuintIgnore` and a negative test.
+- `quinttest/`, `suspending/`, `partialstate/`, `buggy/` — smaller fixtures for `@QuintTest`
+  (including `ignore` projecting onto a KSP-generated `CounterDriverState`), suspend actions,
+  `@QuintIgnore` and a negative test.
 
 ## AI agents
 
