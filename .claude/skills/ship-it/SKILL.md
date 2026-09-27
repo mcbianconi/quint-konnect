@@ -14,9 +14,7 @@ authorize landing another agent's in-progress branch; ask about those.
 2. Commit uncommitted session work onto the branch it belongs to (`but amend -t` or
    `but commit -b`). Docs-only or config-only changes with no matching branch go on their own
    branch. Ask if the placement is ambiguous; never land half-committed work.
-3. Check every commit has the `Co-Authored-By` trailer when an agent wrote it
-   (`git log -1 --format=%B <sha>`); fix with `but reword <id> -m "..."`.
-4. Branches that depend on each other must be stacked (`but move <child> --above <parent>`)
+3. Branches that depend on each other must be stacked (`but move <child> --above <parent>`)
    rather than merged in a fixed order — the project owner approved stacking for this.
 
 ## 2. Verify before landing
