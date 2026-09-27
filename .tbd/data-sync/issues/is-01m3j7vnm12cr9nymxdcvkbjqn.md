@@ -3,9 +3,9 @@ type: is
 id: is-01m3j7vnm12cr9nymxdcvkbjqn
 title: Use the generated <Module>Spec types in every example driver where they fit
 kind: task
-status: in_progress
+status: closed
 priority: 3
-version: 3
+version: 4
 delegate: claude-code@vm
 labels:
   - roadmap
@@ -14,8 +14,12 @@ parent_id: is-01m3j7vmxf3e87tr20a324y2s9
 hold: null
 hold_until: null
 created_at: 2026-09-27T20:10:47.296Z
-updated_at: 2026-09-27T20:40:26.066Z
+updated_at: 2026-09-27T20:42:12.983Z
 started_at: 2026-09-27T20:40:26.066Z
+closed_at: 2026-09-27T20:42:12.983Z
+close_reason: Done in 5bd0d3b on claude/example-standalone-qk-03a3
+resolution: null
+duplicate_of: null
 ---
 Only `tictactoe/TicTacToeState.kt` uses them today. Per driver (paths under
 `example/src/test/kotlin/io/github/mcbianconi/quintkonnect/example/`):
