@@ -242,14 +242,15 @@ Debugging notes:
 - No Windows support.
 - No compile-time check that a `@QuintAction` name or nondet parameter name actually exists in
   the spec — a typo only surfaces when a trace is replayed.
+- A failing trace (from a generated per-trace test) is saved to
+  `build/quint-konnect/failures/<Driver>-trace<N>.itf.json` with a printed replay command;
+  replay it without quint via `-Pquint.replay=<path>`. Traces run in parallel only when JUnit
+  parallel execution is enabled for dynamic tests (see the README).
+- `@QuintRun(invariants = ["inv"])` passes invariants to `quint run --invariants`; a violation
+  fails the test naming the invariant, the seed and the violating trace.
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity
   can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin).
-- A failing trace isn't saved anywhere, and there's no ready-made command to replay just that
-  trace — reproduce with `QUINT_SEED` and rerun the whole test instead.
-- No way to replay a saved `.itf.json` trace without invoking `quint` again.
 - No trace shrinking: a failing trace is whatever length `quint run`/`quint test` produced.
-- Traces within a run replay sequentially, not in parallel.
-- No support for `quint run --invariant` / invariant-violation reporting.
 - JUnit 5 only (no runner-neutral adapter yet).
 
 ## Worked example

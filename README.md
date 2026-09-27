@@ -185,6 +185,7 @@ Mark state properties the implementation doesn't track with `@QuintIgnore` (from
 | `step` | String | `""` | Step action override |
 | `maxSamples` | Int | -1 (100 traces) | Number of traces to generate; -1 uses the library default of 100 |
 | `maxSteps` | Int | -1 | Max steps per trace (unlimited if -1) |
+| `invariants` | Array<String> | `[]` | Invariant names passed to `quint run --invariants`; a violation fails the test with the invariant name, the seed and the violating trace |
 | `seed` | String | `""` | Fixed seed for reproducibility; `""` generates a random seed |
 
 `@QuintTest` parameters:
