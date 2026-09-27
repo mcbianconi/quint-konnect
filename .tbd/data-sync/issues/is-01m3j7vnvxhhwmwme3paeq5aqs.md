@@ -3,15 +3,19 @@ type: is
 id: is-01m3j7vnvxhhwmwme3paeq5aqs
 title: Let a driver project the generated <Module>Spec.State
 kind: feature
-status: open
+status: closed
 priority: 4
-version: 1
+version: 2
 labels:
   - roadmap
 dependencies: []
 parent_id: is-01m3j7vmxf3e87tr20a324y2s9
 created_at: 2026-09-27T20:10:47.548Z
-updated_at: 2026-09-27T20:10:47.548Z
+updated_at: 2026-09-27T21:33:46.065Z
+closed_at: 2026-09-27T21:33:46.065Z
+close_reason: "Implemented: @QuintRun/@QuintTest ignore param + per-driver generated <Driver>State (PR #11 mcbianconi/quint-konnect)"
+resolution: null
+duplicate_of: null
 ---
 The generated `State` has every state variable, so it can't be used when a driver compares a
 subset: `@QuintIgnore` fields (example `projection/`, `partialstate/`), the `nondetPath` carrier
