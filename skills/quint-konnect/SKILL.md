@@ -243,8 +243,9 @@ Debugging notes:
 ## Known limitations
 
 - No Windows support.
-- No compile-time check that a `@QuintAction` name or nondet parameter name actually exists in
-  the spec — a typo only surfaces when a trace is replayed.
+- A `@QuintAction` name or nondet parameter name is only checked against the spec at compile
+  time with `quintKonnect { readSpecIr.set(true) }` (`@QuintRun` drivers that don't override
+  `config()`); otherwise a typo only surfaces when a trace is replayed.
 - A failing trace (from a generated per-trace test) is saved to
   `build/quint-konnect/failures/<Driver>-trace<N>.itf.json` with a printed replay command;
   replay it without quint via `-Pquint.replay=<path>`. Generated `@TestFactory` methods carry
