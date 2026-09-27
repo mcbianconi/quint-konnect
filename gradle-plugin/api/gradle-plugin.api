@@ -19,6 +19,21 @@ public abstract class io/github/mcbianconi/quintkonnect/gradle/DownloadQuintTask
 	public abstract fun getVersion ()Lorg/gradle/api/provider/Property;
 }
 
+public abstract class io/github/mcbianconi/quintkonnect/gradle/GenerateQuintTracesTask : org/gradle/api/DefaultTask {
+	public fun <init> ()V
+	public abstract fun getEnvSeed ()Lorg/gradle/api/provider/Property;
+	protected abstract fun getExecOperations ()Lorg/gradle/process/ExecOperations;
+	public abstract fun getManifests ()Lorg/gradle/api/file/ConfigurableFileCollection;
+	public abstract fun getMaxSamplesOverride ()Lorg/gradle/api/provider/Property;
+	public abstract fun getMaxStepsOverride ()Lorg/gradle/api/provider/Property;
+	public abstract fun getOutputDir ()Lorg/gradle/api/file/DirectoryProperty;
+	public abstract fun getProjectDirectory ()Lorg/gradle/api/provider/Property;
+	public abstract fun getQuintExecutable ()Lorg/gradle/api/provider/Property;
+	public abstract fun getQuintVersion ()Lorg/gradle/api/provider/Property;
+	public abstract fun getSeedOverride ()Lorg/gradle/api/provider/Property;
+	public final fun run ()V
+}
+
 public abstract class io/github/mcbianconi/quintkonnect/gradle/QuintIrTask : org/gradle/api/DefaultTask {
 	public fun <init> ()V
 	protected abstract fun getExecOperations ()Lorg/gradle/process/ExecOperations;
