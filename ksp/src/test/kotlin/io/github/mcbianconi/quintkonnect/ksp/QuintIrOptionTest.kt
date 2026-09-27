@@ -11,9 +11,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-// Exercises QuintKonnectProcessor's "quintkonnect.irDir" option end to end: qk-8i6m only wires
-// this up (no generated code changes, no validation), so these tests check that loading the IR
-// never affects compilation, whether it's found or not; qk-75ad turns a miss into a compile error.
+// Exercises QuintKonnectProcessor's "quintkonnect.irDir" option end to end for a driver whose
+// @QuintAction surface already matches its spec, so these tests check that loading the IR never
+// affects compilation on its own, whether it's found or not; SpecActionValidatorTest covers a
+// found module's own name/param mismatches (qk-75ad), which still leave a miss as a warning.
 class QuintIrOptionTest {
 
     private val driverSource = kotlinSource(

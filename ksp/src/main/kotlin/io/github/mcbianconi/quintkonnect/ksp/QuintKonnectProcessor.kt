@@ -44,9 +44,9 @@ internal class QuintKonnectProcessor(
         return emptyList()
     }
 
-    // Loads (and, for now, discards) the driver's spec IR: qk-8i6m only wires this up so
-    // qk-75ad/qk-ixox can call loadQuintIrModule themselves instead of re-deriving spec/main from
-    // the annotation and re-parsing the JSON.
+    // Loads the driver's spec IR and, for @QuintRun (not @QuintTest: see validateAgainstSpec's
+    // own doc comment), checks its @QuintAction surface against it (qk-75ad); qk-ixox will also
+    // read this IR to generate types.
     private fun loadIr(clazz: KSClassDeclaration, annotationShortName: String) {
         val dir = irDir ?: return
         val annotation = clazz.annotations.first { it.shortName.asString() == annotationShortName }
@@ -62,6 +62,12 @@ internal class QuintKonnectProcessor(
         }
         if (module == null) {
             logger.warn("quint-konnect: no quint IR found for spec \"$spec\" under $dir", clazz)
+            return
+        }
+        if (annotationShortName == "QuintRun" && !overridesNondetExtraction(clazz)) {
+            val init = (args["init"] as? String)?.takeIf { it.isNotBlank() } ?: "init"
+            val step = (args["step"] as? String)?.takeIf { it.isNotBlank() } ?: "step"
+            validateAgainstSpec(clazz, module, init, step, logger)
         }
     }
 }

@@ -23,6 +23,13 @@ internal data class QuintModuleIr(
     val actions: Map<String, QuintActionIr>,
     val variables: Map<String, QuintType>,
     val typeDefs: Map<String, QuintType>,
+    // Raw per-action-def expr and the document's name-resolution table, kept only for
+    // dispatchableActionNames (qk-75ad): unlike nondetParams, telling apart a directly
+    // dispatchable action (reached through `any {...}`, quint's own opcode "actionAny") from a
+    // helper one (reached through `if`/`match`) needs the expression shape itself, not just the
+    // transitively-collected nondets.
+    val actionExprs: Map<String, JsonObject>,
+    val resolutionTable: JsonObject,
 )
 
 internal data class QuintActionIr(val name: String, val nondetParams: List<QuintNondetParam>)
@@ -86,8 +93,9 @@ internal fun parseQuintIr(json: String): List<QuintModuleIr> {
 // Loads the IR for one driver's spec: `<irDir>/<specPath>.json`, matching QuintIrTask's output
 // naming (specPath relative to the project directory, same as `@QuintRun`/`@QuintTest`'s `spec`).
 // Returns null when the file doesn't exist (spec not covered by quintKonnect.quintIrSpecs) or the
-// requested main module isn't found, rather than failing the build: qk-8i6m only wires this up,
-// qk-75ad turns a miss into a compile error.
+// requested main module isn't found, rather than failing the build: a miss stays a warning even
+// after qk-75ad (QuintKonnectProcessor.loadIr), since quintIrSpecs can legitimately leave a spec
+// out; qk-75ad only turns a *found* module's own name/param mismatches into errors.
 internal fun loadQuintIrModule(irDir: File, specPath: String, main: String?): QuintModuleIr? {
     val irFile = File(irDir, "$specPath.json")
     if (!irFile.isFile) return null
@@ -126,8 +134,53 @@ private fun parseModule(module: JsonObject, types: JsonObject, table: JsonObject
         collectNondets(decl.getObject("expr"), types, table, mutableSetOf(decl.id()), nondets)
         decl.name() to QuintActionIr(decl.name(), nondets.values.toList())
     }
+    val actionExprs = actionDefs.associate { decl -> decl.name() to decl.getObject("expr") }
 
-    return QuintModuleIr(module.name(), actions, variables, typeDefs)
+    return QuintModuleIr(module.name(), actions, variables, typeDefs, actionExprs, table)
+}
+
+// The set of action names `mbt::actionTaken` can actually record for a driver whose init/step
+// entry points are `entryNames` (default "init"/"step", or @QuintRun's own init/step overrides):
+// an entry point whose own expr is a direct `any {...}` (opcode "actionAny", confirmed against
+// quint 0.32.0's IR and its own `--mbt` output in docs/decisions/quint-ir-source.md) contributes
+// its resolved branches instead of its own name, recursively (a branch can itself be another
+// `any {...}`); anything else (e.g. a plain `all {...}`, as tictactoe.qnt's `init`) contributes
+// its own name, since that's what `--mbt` records when there's no further any-dispatch. A branch
+// bound through a `let` (e.g. `any { nondet n = ...; add(n) }`, quint-konnect's fixture.qnt/probe
+// spec) is unwrapped down to the call it lets into first. An entry name absent from the module
+// (a bad @QuintRun override) contributes nothing, rather than guessing.
+internal fun QuintModuleIr.dispatchableActionNames(entryNames: Collection<String>): Set<String> {
+    val visited = mutableSetOf<String>()
+    val out = mutableSetOf<String>()
+    entryNames.forEach { collectDispatchNames(it, actionExprs, resolutionTable, visited, out) }
+    return out
+}
+
+private fun collectDispatchNames(
+    name: String,
+    actionExprs: Map<String, JsonObject>,
+    table: JsonObject,
+    visited: MutableSet<String>,
+    out: MutableSet<String>,
+) {
+    if (!visited.add(name)) return
+    val expr = actionExprs[name] ?: return
+    if (expr["kind"]?.jsonPrimitive?.contentOrNull == "app" && expr["opcode"]?.jsonPrimitive?.contentOrNull == "actionAny") {
+        for (arg in expr["args"]?.jsonArray.orEmpty()) {
+            val resolved = resolveCallable(unwrapLet(arg.jsonObject), table) ?: continue
+            collectDispatchNames(resolved.name(), actionExprs, table, visited, out)
+        }
+    } else {
+        out.add(name)
+    }
+}
+
+private fun unwrapLet(expr: JsonObject): JsonObject {
+    var current = expr
+    while (current["kind"]?.jsonPrimitive?.contentOrNull == "let") {
+        current = current.getObject("expr")
+    }
+    return current
 }
 
 // Qualifiers whose own def can textually contain a `nondet` binding, or itself be a chain to one

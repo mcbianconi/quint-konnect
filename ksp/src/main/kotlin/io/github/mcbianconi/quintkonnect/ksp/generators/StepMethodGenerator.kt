@@ -20,6 +20,34 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 import com.squareup.kotlinpoet.ksp.writeTo
 
+// A function and the @QuintAction annotation that applies to it, which may live on an
+// overridee further up the class hierarchy (see `findQuintAction`). Shared with
+// SpecActionValidator.kt (qk-75ad), which needs the same "what's this driver's @QuintAction
+// surface" scan StepMethodGenerator already does.
+internal class ActionMember(val function: KSFunctionDeclaration, val annotation: KSAnnotation) {
+    val actionName: String by lazy {
+        val nameArg = annotation.arguments.firstOrNull { it.name?.asString() == "name" }
+        (nameArg?.value as? String)?.takeIf { it.isNotBlank() } ?: function.simpleName.asString()
+    }
+}
+
+// Kotlin doesn't repeat an annotation on an override unless the source re-states it, but the
+// action still applies: `getAllFunctions()` returns only the overriding declaration, so without
+// this walk an overridden @QuintAction function would silently stop being an action. Each step
+// of the walk is the closest overridee (`findOverridee()`), so a multi-level override chain
+// (base -> mid -> derived) is followed all the way to whichever declaration carries the
+// annotation.
+internal fun KSFunctionDeclaration.findQuintAction(): KSAnnotation? {
+    var current: KSFunctionDeclaration? = this
+    val seen = mutableSetOf<KSFunctionDeclaration>()
+    while (current != null && seen.add(current)) {
+        val found = current.annotations.firstOrNull { it.shortName.asString() == "QuintAction" }
+        if (found != null) return found
+        current = current.findOverridee() as? KSFunctionDeclaration
+    }
+    return null
+}
+
 internal class StepMethodGenerator(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
@@ -29,15 +57,6 @@ internal class StepMethodGenerator(
     private val decodeMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decode")
     private val decodeOrNullMember = MemberName("io.github.mcbianconi.quintkonnect.nondet", "decodeOrNull")
     private val runBlockingMember = MemberName("kotlinx.coroutines", "runBlocking")
-
-    // A function and the @QuintAction annotation that applies to it, which may live on an
-    // overridee further up the class hierarchy (see `findQuintAction`).
-    private class ActionMember(val function: KSFunctionDeclaration, val annotation: KSAnnotation) {
-        val actionName: String by lazy {
-            val nameArg = annotation.arguments.firstOrNull { it.name?.asString() == "name" }
-            (nameArg?.value as? String)?.takeIf { it.isNotBlank() } ?: function.simpleName.asString()
-        }
-    }
 
     fun generate(clazz: KSClassDeclaration, resolver: Resolver) {
         val packageName = clazz.packageName.asString()
@@ -110,23 +129,6 @@ internal class StepMethodGenerator(
         fileSpec.writeTo(codeGenerator, aggregating = false)
 
         logger.info("Generated $packageName.$outputName for $className")
-    }
-
-    // Kotlin doesn't repeat an annotation on an override unless the source re-states it, but the
-    // action still applies: `getAllFunctions()` returns only the overriding declaration, so without
-    // this walk an overridden @QuintAction function would silently stop being an action. Each step
-    // of the walk is the closest overridee (`findOverridee()`), so a multi-level override chain
-    // (base -> mid -> derived) is followed all the way to whichever declaration carries the
-    // annotation.
-    private fun KSFunctionDeclaration.findQuintAction(): KSAnnotation? {
-        var current: KSFunctionDeclaration? = this
-        val seen = mutableSetOf<KSFunctionDeclaration>()
-        while (current != null && seen.add(current)) {
-            val found = current.annotations.firstOrNull { it.shortName.asString() == "QuintAction" }
-            if (found != null) return found
-            current = current.findOverridee() as? KSFunctionDeclaration
-        }
-        return null
     }
 
     // qk-9lsz: a @QuintAction function must be callable from the generated dispatcher file, which
