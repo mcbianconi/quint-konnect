@@ -34,13 +34,18 @@ plugins {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.14.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.4")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // Only if a @QuintAction is `suspend`:
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 }
 ```
+
+Any JUnit Jupiter 5.x or 6.x works: `gradle-plugin` adds no JUnit dependency itself, and
+KSP-generated test classes only call `@TestFactory`/`DynamicTest.dynamicTest(String, Executable)`,
+unchanged across that range. quint-konnect's own test suite ran on 5.14.4 before this project's
+JUnit 6 upgrade and runs on 6.1.3 now — both verified, not just inferred from the stable API.
 
 Applying the plugin to a Kotlin JVM module:
 - applies `com.google.devtools.ksp` and adds `kspTest("io.github.mcbianconi:quint-konnect-ksp")`
@@ -48,7 +53,7 @@ Applying the plugin to a Kotlin JVM module:
   version (`quint-konnect-core` brings in `quint-konnect-annotations` and
   `kotlinx-serialization-json` transitively — don't declare either yourself);
 - adds `build/generated/ksp/test/kotlin` to the `test` source set (this is where the generated
-  dispatcher and JUnit 5 test class land — don't create files there by hand);
+  dispatcher and JUnit Jupiter test class land — don't create files there by hand);
 - configures every `Test` task with `useJUnitPlatform()` and a system property so a relative
   `spec` path (`@QuintRun`/`@QuintTest`) resolves against the Gradle project directory, not the
   test JVM's working directory. This only applies to test JVMs Gradle itself launches — an IDE
@@ -133,8 +138,8 @@ dependencies {
     kspTest("io.github.mcbianconi:quint-konnect-ksp:<VERSION>")
     testImplementation("io.github.mcbianconi:quint-konnect-core:<VERSION>")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.14.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.4")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // Only if a @QuintAction is `suspend`:
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

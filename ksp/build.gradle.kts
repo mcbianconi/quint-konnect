@@ -7,7 +7,7 @@ mavenPublishing {
     coordinates(artifactId = "quint-konnect-ksp")
     pom {
         name.set("quint-konnect-ksp")
-        description.set("KSP2 processor that generates JUnit 5 tests and step dispatchers for quint-konnect drivers.")
+        description.set("KSP2 processor that generates JUnit Jupiter tests and step dispatchers for quint-konnect drivers.")
     }
 }
 
@@ -31,9 +31,9 @@ dependencies {
     // call against explicitly (qk-33ky), rather than relying on the version the Kotlin compiler
     // tooling itself transitively pulls in via kctfork.
     testImplementation(libs.kotlinx.coroutines.core)
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {

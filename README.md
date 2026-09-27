@@ -11,7 +11,7 @@ Quint Spec → [quint CLI] → ITF trace files → quint-konnect → your Kotlin
 ```
 
 1. You annotate a *driver* class with `@QuintRun` or `@QuintTest`.
-2. KSP generates a JUnit 5 test class (one dynamic test per trace) and a `generatedStep()` dispatcher at compile time.
+2. KSP generates a JUnit Jupiter test class (one dynamic test per trace) and a `generatedStep()` dispatcher at compile time.
 3. At test runtime, the library invokes the `quint` CLI to generate randomized traces from your spec.
 4. Each trace step is replayed against your driver. Optionally, state is compared after every step.
 
@@ -73,7 +73,7 @@ before.
 
 `quint-konnect-core`'s API brings in `kotlinx-serialization-json` transitively, so you don't need
 to declare it yourself. You still need the Kotlin serialization compiler plugin (for your driver's
-`@Serializable` spec state classes) and JUnit 5:
+`@Serializable` spec state classes) and JUnit Jupiter (see "Supported JUnit versions" below):
 
 ```kotlin
 plugins {
@@ -81,8 +81,8 @@ plugins {
 }
 
 dependencies {
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 ```
@@ -100,8 +100,8 @@ dependencies {
     kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")
     testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")
     testImplementation(libs.kotlinx.serialization.json)
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -119,6 +119,15 @@ tasks.test {
 </details>
 
 Requires `quint` in `PATH`.
+
+### Supported JUnit versions
+
+This repo's own tests run on JUnit 6.1.3. `gradle-plugin` adds no JUnit dependency of its own, so
+your project picks whichever JUnit Jupiter version it wants: KSP-generated test classes only call
+`@TestFactory` and `DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit Jupiter 5.0
+through 6.x, so JUnit 5 and JUnit 6 both work. JUnit 6 raises the baselines to Java 17 and Kotlin
+2.1 ([release notes](https://docs.junit.org/6.0.0/release-notes/)); this project already requires
+JDK 21 and Kotlin 2.4.20+, so that adds no extra constraint here.
 
 ### 2. Write your driver
 The driver is a class annotated with `@QuintRun` or `@QuintTest` and implements `Driver` from `quint-konnect`.
@@ -308,7 +317,7 @@ Traces are independent — each gets its own fresh driver — so nothing about t
 itself needs to change to run them concurrently. Two entry points parallelize differently:
 
 - **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): enable
-  [JUnit 5's parallel execution](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parallel-execution)
+  [JUnit's parallel execution](https://docs.junit.org/current/user-guide/#writing-tests-parallel-execution)
   for dynamic tests in `src/test/resources/junit-platform.properties`:
 
   ```properties
@@ -343,7 +352,7 @@ itself needs to change to run them concurrently. Two entry points parallelize di
 | `annotations` | Annotation declarations only. No runtime dependency. |
 | `itf` | ITF parsing and decoding into `@Serializable` types (`ItfValue`, `ItfTrace`). |
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
-| `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit 5 test classes with one dynamic test per trace. |
+| `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit Jupiter test classes with one dynamic test per trace. |
 | `gradle-plugin` | Gradle plugin (`io.github.mcbianconi.quint-konnect`): applies KSP and dependencies, resolves spec paths, checks the `quint` CLI. |
 | `example` | TicTacToe end-to-end example. |
 

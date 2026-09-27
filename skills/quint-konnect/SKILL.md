@@ -180,7 +180,7 @@ regardless of order. See `references/types.md` for the full Quint-to-Kotlin type
 ./gradlew :mymodule:test
 ```
 
-Each generated `@QuintRun`/`@QuintTest` test class exposes one JUnit 5 **dynamic test per
+Each generated `@QuintRun`/`@QuintTest` test class exposes one JUnit Jupiter **dynamic test per
 trace**, named `trace <n> (seed <seed>)`. The seed is for the whole run (one `quint` invocation
 that emits several traces), not per trace — every dynamic test in a run shares the same seed,
 and "trace N" is just that trace's index within the run.
@@ -251,7 +251,7 @@ Debugging notes:
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity
   can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin).
 - No trace shrinking: a failing trace is whatever length `quint run`/`quint test` produced.
-- JUnit 5 only (no runner-neutral adapter yet).
+- JUnit Jupiter only (5.x or 6.x; no runner-neutral adapter for other frameworks yet).
 
 ## Worked example
 

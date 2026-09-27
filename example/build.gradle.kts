@@ -19,9 +19,9 @@ dependencies {
     testImplementation(libs.kotlinx.serialization.json)
     // Only the `suspending` example driver needs this, for its suspend @QuintAction (qk-33ky).
     testImplementation(libs.kotlinx.coroutines.core)
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {

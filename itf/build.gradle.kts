@@ -18,9 +18,9 @@ dependencies {
     // https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_separation
     api(libs.kotlinx.serialization.json)
 
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {

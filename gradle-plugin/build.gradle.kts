@@ -91,15 +91,15 @@ dependencies {
     // targets functionalTest, not test: ProjectBuilder (used by the plain unit tests here) needs
     // it declared explicitly on this configuration instead.
     testImplementation(gradleTestKit())
-    testImplementation(libs.junit5.api)
-    testRuntimeOnly(libs.junit5.engine)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     // The functional tests reference QUINT_INSTALL_COMMAND/DEFAULT_QUINT_VERSION from main.
     "functionalTestImplementation"(sourceSets.main.get().output)
-    "functionalTestImplementation"(libs.junit5.api)
-    "functionalTestRuntimeOnly"(libs.junit5.engine)
-    "functionalTestRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+    "functionalTestImplementation"(libs.junit.api)
+    "functionalTestRuntimeOnly"(libs.junit.engine)
+    "functionalTestRuntimeOnly"(libs.junit.platform.launcher)
 }
 
 tasks.test {

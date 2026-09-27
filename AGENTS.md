@@ -28,6 +28,13 @@ comment on that line in `.github/workflows/ci.yml`). A consumer project can inst
 itself (README.md's "Downloading quint instead of installing it" section); `gradle-plugin`'s own
 `functionalTest` exercises that path against a local `file://` fixture, not a real download.
 
+This repo's own tests run on JUnit 6.1.3 (`gradle/libs.versions.toml`'s `junit` version). The
+`gradle-plugin` doesn't add a JUnit dependency itself (see its section below) — a consumer picks
+their own JUnit Jupiter version. KSP-generated test classes only call `@TestFactory` and
+`DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit Jupiter 5.0 through 6.x, so a
+consumer can stay on JUnit 5 or move to JUnit 6 independently of this project's own version; see
+README.md's "Supported JUnit versions" section.
+
 ```bash
 ./gradlew :annotations:build         # Build annotation declarations
 ./gradlew :itf:test                  # Run ITF parsing/decoding unit tests
@@ -102,7 +109,7 @@ Six modules, in dependency order:
   `ReplayRunner.traceReplays` to get one `TraceReplay` per trace; `Runner.runTest` is kept for
   binary compatibility.
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
-  class and generates a JUnit 5 test class plus a `generatedStep()` dispatcher
+  class and generates a JUnit Jupiter test class plus a `generatedStep()` dispatcher
   (`ksp/generators/`). `Driver.step`'s default implementation (`core`) finds the generated
   dispatcher by class name, so a driver doesn't need to override `step` itself.
 - `gradle-plugin` — a Gradle plugin (`io.github.mcbianconi.quint-konnect`,
