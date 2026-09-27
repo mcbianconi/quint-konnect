@@ -83,6 +83,8 @@ internal class QuintKonnectProcessor(
         val args = annotationArgs(clazz, annotationShortName)
         val spec = args["spec"] as? String
         val main = (args["main"] as? String)?.takeIf { it.isNotBlank() }
+        @Suppress("UNCHECKED_CAST")
+        val ignore = (args["ignore"] as? List<String>).orEmpty().filter { it.isNotBlank() }
 
         val module = when {
             spec == null -> null
@@ -95,7 +97,17 @@ internal class QuintKonnectProcessor(
             }
         }
         irByDriver[key] = module
-        if (module != null) specTypesGenerator.add(clazz, spec!!, module)
+        if (module != null) {
+            specTypesGenerator.add(clazz, spec!!, module, ignore)
+            val unknown = ignore.filterNot { it in module.variables }
+            if (unknown.isNotEmpty()) {
+                logger.error(
+                    "quint-konnect: ignore names unknown state variable(s) ${unknown.sorted()} for " +
+                        "spec \"$spec\"; known variables: ${module.variables.keys.sorted()}.",
+                    clazz,
+                )
+            }
+        }
         return module
     }
 

@@ -41,7 +41,7 @@ class SpecTypesGeneratorTest {
     private fun JvmCompilationResult.generated(fileName: String): String =
         sourcesGeneratedBySymbolProcessor.single { it.name == fileName }.readText()
 
-    private fun driver(pkg: String, name: String, spec: String, body: String = "") = kotlinSource(
+    private fun driver(pkg: String, name: String, spec: String, body: String = "", ignore: List<String> = emptyList()) = kotlinSource(
         "$name.kt",
         """
         package $pkg
@@ -50,7 +50,7 @@ class SpecTypesGeneratorTest {
         import io.github.mcbianconi.quintkonnect.annotations.QuintAction
         import io.github.mcbianconi.quintkonnect.annotations.QuintRun
 
-        @QuintRun(spec = "$spec")
+        @QuintRun(spec = "$spec"${if (ignore.isEmpty()) "" else ", ignore = [${ignore.joinToString(", ") { "\"$it\"" }}]"})
         class $name : Driver {
             @QuintAction("init")
             fun init() {}
@@ -190,5 +190,57 @@ class SpecTypesGeneratorTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         assertEquals(listOf("FirstDriver.kt", "SecondDriver.kt"), originsByFile["SpectypesSpec"])
+    }
+
+    // qk-ymex: `ignore` (an @QuintRun/@QuintTest annotation parameter) drives a per-driver
+    // `<Driver>State` next to the shared `State`, so a driver that doesn't model every variable
+    // can still project onto a KSP-generated class instead of hand-writing one.
+    @Test
+    fun `ignore generates a driver-specific state dropping the ignored variable`(@TempDir tempDir: File) {
+        val result = compile(
+            tempDir,
+            "fixture",
+            driver("fx", "FxDriver", "ir/fixture.qnt", ignore = listOf("lastChoice")),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val source = result.generated("FixtureSpec.kt")
+        assertTrue(
+            "public data class FxDriverState(\n    public val `value`: Long,\n    public val config: Config,\n  )" in source,
+            source,
+        )
+        // The canonical State still has every variable, lastChoice included.
+        assertTrue("public val lastChoice: Choice," in source, source)
+    }
+
+    @Test
+    fun `ignoring an unsupported variable still generates the driver-specific state`(@TempDir tempDir: File) {
+        val result = compile(
+            tempDir,
+            "unsupportedvar",
+            driver("uv", "UvDriver", "ir/unsupportedvar.qnt", ignore = listOf("pair")),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val source = result.generated("UnsupportedvarSpec.kt")
+        assertTrue("public data class UvDriverState(\n    public val `value`: Long,\n  )" in source, source)
+        // The canonical State is skipped: `pair` has no decodable shape.
+        assertTrue("UnsupportedvarSpec leaves out spec types" in result.messages, result.messages)
+        assertTrue("tuple (int, str) mixes element types" in result.messages, result.messages)
+    }
+
+    @Test
+    fun `an unknown ignore name is a compile error`(@TempDir tempDir: File) {
+        val result = compile(
+            tempDir,
+            "fixture",
+            driver("fx2", "Fx2Driver", "ir/fixture.qnt", ignore = listOf("nope")),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            "ignore names unknown state variable(s) [nope]" in result.messages,
+            result.messages,
+        )
     }
 }

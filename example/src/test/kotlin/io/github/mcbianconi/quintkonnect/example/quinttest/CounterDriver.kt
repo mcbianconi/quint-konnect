@@ -10,6 +10,7 @@ import io.github.mcbianconi.quintkonnect.annotations.QuintTest
 @QuintTest(
     spec = "src/test/resources/quinttest/counter.qnt",
     test = "happyTest",
+    ignore = ["lastAction"],
 )
 class CounterDriver : Driver {
     var count = 0L

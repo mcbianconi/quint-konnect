@@ -13,8 +13,10 @@ import kotlinx.serialization.serializer
  * the actual game status, to demonstrate that an ignored field never fails [TypedState.check] even
  * though its value plainly disagrees with the spec once a round is played.
  *
- * Hand-written rather than `RockPaperScissorsSpec.State`: `@QuintIgnore` can't go on a generated
- * class (qk-ymex).
+ * Hand-written rather than `RockPaperScissorsSpec.State` (or a `PartialStateRpsDriver`-specific
+ * projection, `@QuintRun(ignore = [...])`, qk-ymex): that mechanism drops an unmodeled field
+ * entirely, whereas this needs [status] present (with a wrong value) to demonstrate that
+ * `@QuintIgnore` tolerates it.
  */
 @Serializable
 data class PartialRpsState(

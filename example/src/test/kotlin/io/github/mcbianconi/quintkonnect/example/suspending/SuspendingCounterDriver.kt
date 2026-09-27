@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 @QuintTest(
     spec = "src/test/resources/quinttest/counter.qnt",
     test = "happyTest",
+    ignore = ["lastAction"],
 )
 class SuspendingCounterDriver : Driver {
     var count = 0L

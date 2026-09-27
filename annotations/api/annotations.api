@@ -6,6 +6,7 @@ public abstract interface annotation class io/github/mcbianconi/quintkonnect/ann
 }
 
 public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintRun : java/lang/annotation/Annotation {
+	public abstract fun ignore ()[Ljava/lang/String;
 	public abstract fun init ()Ljava/lang/String;
 	public abstract fun invariants ()[Ljava/lang/String;
 	public abstract fun main ()Ljava/lang/String;
@@ -17,6 +18,7 @@ public abstract interface annotation class io/github/mcbianconi/quintkonnect/ann
 }
 
 public abstract interface annotation class io/github/mcbianconi/quintkonnect/annotations/QuintTest : java/lang/annotation/Annotation {
+	public abstract fun ignore ()[Ljava/lang/String;
 	public abstract fun main ()Ljava/lang/String;
 	public abstract fun maxSamples ()I
 	public abstract fun seed ()Ljava/lang/String;
