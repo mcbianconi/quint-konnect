@@ -2,7 +2,9 @@
 
 package io.github.mcbianconi.quintkonnect.ksp
 
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import io.github.mcbianconi.quintkonnect.QuintSuite
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
@@ -17,6 +19,15 @@ import java.nio.file.Path
 // (SEED_PROPERTY, QUINT_EXECUTABLE_PROPERTY in trace/Seed.kt, trace/GeneratorConfig.kt).
 private const val SEED_OVERRIDE_PROPERTY = "quintkonnect.seed"
 private const val QUINT_EXECUTABLE_PROPERTY = "quintkonnect.quintExecutable"
+
+// KSP2's generated .kt sources land under <outputDirectory's parent>/ksp/sources/kotlin
+// (kctfork's own `kspSourcesDir`, mirrored here as a plain File path the same way
+// DriverManifestWriterTest reads the generated manifest resources).
+private fun generatedKotlinFileText(result: JvmCompilationResult, fileName: String): String =
+    result.outputDirectory.parentFile.resolve("ksp/sources/kotlin")
+        .walkTopDown()
+        .first { it.isFile && it.name == fileName }
+        .readText()
 
 private fun withSystemProperty(name: String, value: String, block: () -> Unit) {
     val previous = System.getProperty(name)
@@ -98,6 +109,24 @@ class QuintTestTestGeneratorTest {
         assertEquals(org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT, execution.value)
 
         assertThrows<NoSuchMethodException> { testClass.getDeclaredMethod("run") }
+    }
+
+    @Test
+    fun `generates a runner-neutral QuintSuite object alongside the JUnit adapter`() {
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
+
+        val suiteClass = result.classLoader.loadClass("test1.TestDriverQuintSuite")
+        val suite = suiteClass.getField("INSTANCE").get(null) as QuintSuite
+        assertEquals("TestDriver", suite.name)
+    }
+
+    @Test
+    fun `the JUnit adapter only delegates to the suite`() {
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
+
+        val adapterSource = generatedKotlinFileText(result, "TestDriverQuintTestTest.kt")
+        assertTrue(adapterSource.contains("TestDriverQuintSuite.traceReplays()"), adapterSource)
+        assertTrue(!adapterSource.contains("ReplayRunner"), adapterSource)
     }
 
     @Test

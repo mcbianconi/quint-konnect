@@ -30,7 +30,7 @@ itself (README.md's "Downloading quint instead of installing it" section); `grad
 
 This repo's own tests run on JUnit 6.1.3 (`gradle/libs.versions.toml`'s `junit` version). The
 `gradle-plugin` doesn't add a JUnit dependency itself (see its section below) — a consumer picks
-their own JUnit Jupiter version. KSP-generated test classes only call `@TestFactory` and
+their own JUnit Jupiter version. The generated JUnit adapter classes only call `@TestFactory` and
 `DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit Jupiter 5.0 through 6.x, so a
 consumer can stay on JUnit 5 or move to JUnit 6 independently of this project's own version; see
 README.md's "Supported JUnit versions" section.
@@ -116,16 +116,17 @@ Six modules in the root build, in dependency order, plus the separate `example` 
 - `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`, behind the
   injectable `TraceSource`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`),
   state comparison (`State.kt`), and the replay loop (`ReplayRunner`, observed by a
-  `ReplayListener`; `listener/ConsoleReplayListener` is the default). Generated tests call
+  `ReplayListener`; `listener/ConsoleReplayListener` is the default). Generated suites call
   `ReplayRunner.traceReplays` to get one `TraceReplay` per trace; `Runner.runTest` is kept for
   binary compatibility.
 - `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
-  class and generates a JUnit Jupiter test class plus a `generatedStep()` dispatcher
-  (`ksp/generators/`). `Driver.step`'s default implementation (`core`) finds the generated
-  dispatcher by class name, so a driver doesn't need to override `step` itself. With spec IR
-  (`quintkonnect.irDir`), it also generates `object <Module>Spec` of `@Serializable` spec types
-  (`generators/SpecTypesGenerator.kt`) and defers such a driver one round so signatures that
-  reference them resolve.
+  class and generates a runner-neutral `<Driver>QuintSuite` (core's `QuintSuite`), a JUnit Jupiter
+  adapter class delegating to it (skipped with `quintkonnect.adapter=none`), and a
+  `generatedStep()` dispatcher (`ksp/generators/`). `Driver.step`'s default implementation
+  (`core`) finds the generated dispatcher by class name, so a driver doesn't need to override
+  `step` itself. With spec IR (`quintkonnect.irDir`), it also generates `object <Module>Spec` of
+  `@Serializable` spec types (`generators/SpecTypesGenerator.kt`) and defers such a driver one
+  round so signatures that reference them resolve.
 - `gradle-plugin` — a Gradle plugin (`io.github.mcbianconi.quint-konnect`,
   `QuintKonnectPlugin`) that, on a Kotlin JVM project, applies KSP, adds the `kspTest`/
   `testImplementation` dependencies on `ksp`/`core`, wires the KSP-generated test source
@@ -166,8 +167,9 @@ provides a `TypedState`, compares implementation state against the spec's state
 naming the trace, step, action and nondet picks (see `ReplayRunner.kt`), and every
 `ReplayListener` (the console one included) is notified of the failure before it's thrown.
 Construct a `ReplayRunner` directly to plug in a custom `TraceSource` or `ReplayListener`;
-generated test classes expose `@TestFactory fun traces(): List<DynamicTest>` built from
-`ReplayRunner.traceReplays`, and `Runner.runTest` stays for binary compatibility.
+generated `<Driver>QuintSuite` objects call `ReplayRunner.traceReplays` and the JUnit adapter
+exposes their `TraceReplay`s as `@TestFactory fun traces(): List<DynamicTest>`; `Runner.runTest`
+stays for binary compatibility.
 
 `@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
 `mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).

@@ -18,6 +18,9 @@ internal class QuintKonnectProcessor(
     // the Gradle plugin's quintIr task is wired up; null (the default outside that plugin, e.g.
     // example's manual KSP wiring) means IR lookup is skipped entirely, unchanged from before qk-8i6m.
     private val irDir: File?,
+    // Raw "quintkonnect.adapter" processor option value, resolved per driver by
+    // QuintSuiteGenerator (null/blank means "junit", the default).
+    private val adapterOption: String?,
 ) : SymbolProcessor {
 
     private val quintRunFqn  = "io.github.mcbianconi.quintkonnect.annotations.QuintRun"
@@ -41,7 +44,7 @@ internal class QuintKonnectProcessor(
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
-                QuintRunTestGenerator(codeGenerator, logger).generate(clazz)
+                QuintRunTestGenerator(codeGenerator, logger, adapterOption).generate(clazz)
                 if (module != null) validateRunDriver(clazz, module)
             }
 
@@ -53,7 +56,7 @@ internal class QuintKonnectProcessor(
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
-                QuintTestTestGenerator(codeGenerator, logger).generate(clazz)
+                QuintTestTestGenerator(codeGenerator, logger, adapterOption).generate(clazz)
             }
 
         specTypesGenerator.flush()

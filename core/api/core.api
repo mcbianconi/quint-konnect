@@ -25,6 +25,16 @@ public final class io/github/mcbianconi/quintkonnect/DriverConfig {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/github/mcbianconi/quintkonnect/QuintSuite {
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun traceReplays (Lio/github/mcbianconi/quintkonnect/listener/ReplayListener;)Ljava/util/List;
+	public static synthetic fun traceReplays$default (Lio/github/mcbianconi/quintkonnect/QuintSuite;Lio/github/mcbianconi/quintkonnect/listener/ReplayListener;ILjava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/github/mcbianconi/quintkonnect/QuintSuite$DefaultImpls {
+	public static synthetic fun traceReplays$default (Lio/github/mcbianconi/quintkonnect/QuintSuite;Lio/github/mcbianconi/quintkonnect/listener/ReplayListener;ILjava/lang/Object;)Ljava/util/List;
+}
+
 public final class io/github/mcbianconi/quintkonnect/ReplayRunner {
 	public fun <init> (Lio/github/mcbianconi/quintkonnect/trace/GeneratorConfig;Lio/github/mcbianconi/quintkonnect/trace/TraceSource;Lio/github/mcbianconi/quintkonnect/listener/ReplayListener;)V
 	public synthetic fun <init> (Lio/github/mcbianconi/quintkonnect/trace/GeneratorConfig;Lio/github/mcbianconi/quintkonnect/trace/TraceSource;Lio/github/mcbianconi/quintkonnect/listener/ReplayListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

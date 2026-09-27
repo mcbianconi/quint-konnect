@@ -202,10 +202,15 @@ regardless of order. See `references/types.md` for the full Quint-to-Kotlin type
 ./gradlew :mymodule:test
 ```
 
-Each generated `@QuintRun`/`@QuintTest` test class exposes one JUnit Jupiter **dynamic test per
-trace**, named `trace <n> (seed <seed>)`. The seed is for the whole run (one `quint` invocation
-that emits several traces), not per trace — every dynamic test in a run shares the same seed,
-and "trace N" is just that trace's index within the run.
+KSP generates two classes per driver: `<Driver>QuintSuite` (implements core's `QuintSuite`, holds
+the `RunConfig`/`TestConfig` and calls `ReplayRunner`) and a thin JUnit adapter,
+`<Driver>QuintRunTest`/`<Driver>QuintTestTest`, whose `@TestFactory fun traces()` just delegates
+to the suite. The adapter exposes one JUnit Jupiter **dynamic test per trace**, named
+`trace <n> (seed <seed>)`. The seed is for the whole run (one `quint` invocation that emits
+several traces), not per trace — every dynamic test in a run shares the same seed, and "trace N"
+is just that trace's index within the run. Set `ksp { arg("quintkonnect.adapter", "none") }` to
+generate only the suite, with no JUnit class (a Kotest adapter is planned; until then, call
+`<Driver>QuintSuite.traceReplays()` directly).
 
 Environment variables:
 
@@ -279,7 +284,9 @@ Debugging notes:
 - Shrinking (`shrinkQuintTraces`) only searches smaller `--max-steps` with the same seed, for
   `@QuintRun` drivers; it doesn't minimize a trace step by step, and `@QuintTest` traces aren't
   shrunk.
-- JUnit Jupiter only (5.x or 6.x; no runner-neutral adapter for other frameworks yet).
+- JUnit Jupiter (5.x or 6.x) is the only generated adapter today; `<Driver>QuintSuite` itself is
+  runner-neutral, so a Kotest adapter can reuse it later. Set `quintkonnect.adapter` to `"none"`
+  to skip generating the JUnit class.
 
 ## Worked example
 

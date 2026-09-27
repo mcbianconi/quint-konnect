@@ -10,14 +10,14 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Variance
 
-// qk-9lsz: `Runner.runTest`'s generated `driverFactory = { X() }` call needs a constructor
+// qk-9lsz: the generated `<Driver>QuintSuite`'s `driverFactory = { X() }` call needs a constructor
 // callable with no arguments; report that at compile time instead of leaving it as a confusing
 // error in KSP-generated code.
 internal fun validateNoArgConstructor(clazz: KSClassDeclaration, logger: KSPLogger): Boolean {
     if (hasPublicNoArgConstructor(clazz)) return false
     logger.error(
         "${clazz.simpleName.asString()} must have a public no-arg constructor: the generated " +
-            "test class instantiates the driver with ${clazz.simpleName.asString()}().",
+            "QuintSuite instantiates the driver with ${clazz.simpleName.asString()}().",
         clazz,
     )
     return true

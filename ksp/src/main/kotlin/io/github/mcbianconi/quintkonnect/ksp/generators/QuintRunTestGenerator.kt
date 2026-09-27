@@ -3,34 +3,20 @@ package io.github.mcbianconi.quintkonnect.ksp.generators
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.MemberName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.writeTo
 
 internal class QuintRunTestGenerator(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
+    private val adapterOption: String?,
 ) {
 
-    private val replayRunnerClassName = ClassName("io.github.mcbianconi.quintkonnect", "ReplayRunner")
     private val runConfigClassName = ClassName("io.github.mcbianconi.quintkonnect.trace", "RunConfig")
     private val genSeedMember = MemberName("io.github.mcbianconi.quintkonnect.trace", "genSeed")
-    private val dynamicTestClassName = ClassName("org.junit.jupiter.api", "DynamicTest")
-    private val testFactoryAnnotation = ClassName("org.junit.jupiter.api", "TestFactory")
-    private val executionAnnotationClassName = ClassName("org.junit.jupiter.api.parallel", "Execution")
-    private val executionModeClassName = ClassName("org.junit.jupiter.api.parallel", "ExecutionMode")
 
     fun generate(clazz: KSClassDeclaration) {
-        val packageName = clazz.packageName.asString()
         val className = clazz.simpleName.asString()
         val outputName = "${className}QuintRunTest"
 
@@ -68,36 +54,7 @@ internal class QuintRunTestGenerator(
         }
         configBlock.unindent().add(")")
 
-        val tracesBody = CodeBlock.builder()
-            .add("return %T(%L).traceReplays(\n", replayRunnerClassName, configBlock.build())
-            .indent()
-            .add("driverFactory = { %T() },\n", clazz.toClassName())
-            .add("testName = %S,\n", className)
-            .unindent()
-            .add(").map { %T.dynamicTest(it.displayName) { it.run() } }\n", dynamicTestClassName)
-            .build()
-
-        val tracesMethod = FunSpec.builder("traces")
-            .addAnnotation(testFactoryAnnotation)
-            .addAnnotation(
-                AnnotationSpec.builder(executionAnnotationClassName)
-                    .addMember("%T.CONCURRENT", executionModeClassName)
-                    .build(),
-            )
-            .returns(LIST.parameterizedBy(dynamicTestClassName))
-            .addCode(tracesBody)
-            .build()
-
-        val typeSpec = TypeSpec.classBuilder(outputName)
-            .addOriginatingKSFile(clazz.containingFile!!)
-            .addFunction(tracesMethod)
-            .build()
-
-        val fileSpec = FileSpec.builder(packageName, outputName)
-            .addType(typeSpec)
-            .build()
-
-        fileSpec.writeTo(codeGenerator, aggregating = false)
+        QuintSuiteGenerator(codeGenerator, logger, adapterOption).generate(clazz, configBlock.build(), outputName)
 
         DriverManifestWriter.write(
             codeGenerator = codeGenerator,
@@ -113,7 +70,5 @@ internal class QuintRunTestGenerator(
             seed = seed,
             invariants = invariants,
         )
-
-        logger.info("Generated $packageName.$outputName for $className")
     }
 }

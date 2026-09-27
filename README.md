@@ -11,7 +11,7 @@ Quint Spec → [quint CLI] → ITF trace files → quint-konnect → your Kotlin
 ```
 
 1. You annotate a *driver* class with `@QuintRun` or `@QuintTest`.
-2. KSP generates a JUnit Jupiter test class (one dynamic test per trace) and a `generatedStep()` dispatcher at compile time.
+2. KSP generates a runner-neutral `<Driver>QuintSuite`, a JUnit Jupiter adapter class that delegates to it (one dynamic test per trace), and a `generatedStep()` dispatcher at compile time.
 3. At test runtime, the library invokes the `quint` CLI to generate randomized traces from your spec.
 4. Each trace step is replayed against your driver. Optionally, state is compared after every step.
 
@@ -129,11 +129,19 @@ Requires `quint` in `PATH`.
 ### Supported JUnit versions
 
 This repo's own tests run on JUnit 6.1.3. `gradle-plugin` adds no JUnit dependency of its own, so
-your project picks whichever JUnit Jupiter version it wants: KSP-generated test classes only call
-`@TestFactory` and `DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit Jupiter 5.0
-through 6.x, so JUnit 5 and JUnit 6 both work. JUnit 6 raises the baselines to Java 17 and Kotlin
-2.1 ([release notes](https://docs.junit.org/6.0.0/release-notes/)); this project already requires
-JDK 21 and Kotlin 2.4.20+, so that adds no extra constraint here.
+your project picks whichever JUnit Jupiter version it wants: the generated JUnit adapter class
+only calls `@TestFactory` and `DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit
+Jupiter 5.0 through 6.x, so JUnit 5 and JUnit 6 both work. JUnit 6 raises the baselines to Java 17
+and Kotlin 2.1 ([release notes](https://docs.junit.org/6.0.0/release-notes/)); this project already
+requires JDK 21 and Kotlin 2.4.20+, so that adds no extra constraint here.
+
+KSP always generates the runner-neutral `<Driver>QuintSuite` (implements `QuintSuite`, holds the
+`RunConfig`/`TestConfig` and calls `ReplayRunner`); the JUnit adapter class
+(`<Driver>QuintRunTest`/`<Driver>QuintTestTest`) is generated alongside it unless you set
+`ksp { arg("quintkonnect.adapter", "none") }`, in which case you call
+`<Driver>QuintSuite.traceReplays()` yourself (e.g. from another test framework). `"junit"` is the
+default when the option is absent or blank; any other value is a compile error. A Kotest adapter
+is planned but not built yet.
 
 ### 2. Write your driver
 The driver is a class annotated with `@QuintRun` or `@QuintTest` and implements `Driver` from `quint-konnect`.
@@ -354,8 +362,9 @@ and `-Pquint.replay` runs aren't shrunk.
 Traces are independent — each gets its own fresh driver — so nothing about the model-based testing
 itself needs to change to run them concurrently. Two entry points parallelize differently:
 
-- **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): every
-  generated `@TestFactory fun traces()` carries `@Execution(ExecutionMode.CONCURRENT)`, and a
+- **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): the
+  generated JUnit adapter's `@TestFactory fun traces()` carries `@Execution(ExecutionMode.CONCURRENT)`
+  (skipped along with the rest of the adapter class when `quintkonnect.adapter` is `"none"`), and a
   `DynamicTest`'s execution mode falls back to its `@TestFactory` method's own mode when the
   `DynamicTest` doesn't set one itself (`DynamicNodeTestDescriptor`/`JupiterTestDescriptor` in
   `junit-jupiter-engine`), so the per-trace dynamic tests it produces already run concurrently
@@ -403,7 +412,7 @@ itself needs to change to run them concurrently. Two entry points parallelize di
 | `annotations` | Annotation declarations only. No runtime dependency. |
 | `itf` | ITF parsing and decoding into `@Serializable` types (`ItfValue`, `ItfTrace`). |
 | `core` | Runtime: `quint` CLI invocation, trace generation, step extraction, state comparison, runner. |
-| `ksp` | KSP2 processor. Generates `generatedStep()` and JUnit Jupiter test classes with one dynamic test per trace. |
+| `ksp` | KSP2 processor. Generates `generatedStep()`, a runner-neutral `QuintSuite` object, and (by default) a JUnit Jupiter adapter class with one dynamic test per trace. |
 | `gradle-plugin` | Gradle plugin (`io.github.mcbianconi.quint-konnect`): applies KSP and dependencies, resolves spec paths, checks the `quint` CLI. |
 | `example` | End-to-end examples: a separate Gradle build applying the plugin, see [`example/README.md`](example/README.md). |
 | `integration-tests` | Regression tests against real quint (not published). |

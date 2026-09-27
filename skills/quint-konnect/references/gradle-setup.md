@@ -40,10 +40,13 @@ dependencies {
 }
 ```
 
-Any JUnit Jupiter 5.x or 6.x works: `gradle-plugin` adds no JUnit dependency itself, and
-KSP-generated test classes only call `@TestFactory`/`DynamicTest.dynamicTest(String, Executable)`,
-unchanged across that range. quint-konnect's own test suite ran on 5.14.4 before this project's
-JUnit 6 upgrade and runs on 6.1.3 now — both verified, not just inferred from the stable API.
+Any JUnit Jupiter 5.x or 6.x works: `gradle-plugin` adds no JUnit dependency itself, and the
+generated JUnit adapter class only calls `@TestFactory`/`DynamicTest.dynamicTest(String,
+Executable)`, unchanged across that range. quint-konnect's own test suite ran on 5.14.4 before
+this project's JUnit 6 upgrade and runs on 6.1.3 now — both verified, not just inferred from the
+stable API. Set `ksp { arg("quintkonnect.adapter", "none") }` to skip generating that adapter
+class (no JUnit Jupiter dependency needed for the generated code) and call the generated
+`<Driver>QuintSuite.traceReplays()` directly instead.
 
 Applying the plugin to a Kotlin JVM module:
 - applies `com.google.devtools.ksp` and adds `kspTest("io.github.mcbianconi:quint-konnect-ksp")`
@@ -51,7 +54,8 @@ Applying the plugin to a Kotlin JVM module:
   version (`quint-konnect-core` brings in `quint-konnect-annotations` and
   `kotlinx-serialization-json` transitively — don't declare either yourself);
 - adds `build/generated/ksp/test/kotlin` to the `test` source set (this is where the generated
-  dispatcher and JUnit Jupiter test class land — don't create files there by hand);
+  dispatcher, `QuintSuite` object, and JUnit Jupiter adapter class land — don't create files
+  there by hand);
 - configures every `Test` task with `useJUnitPlatform()` and a system property so a relative
   `spec` path (`@QuintRun`/`@QuintTest`) resolves against the Gradle project directory, not the
   test JVM's working directory. This only applies to test JVMs Gradle itself launches — an IDE
