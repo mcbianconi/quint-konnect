@@ -3,7 +3,7 @@
 // https://vanniktech.github.io/gradle-maven-publish-plugin/base/
 // POM/coordinates DSL: https://vanniktech.github.io/gradle-maven-publish-plugin/central/
 // Applied by annotations/itf/core/ksp (qk-j02b); each of those modules sets its own
-// artifactId and POM name/description. :example is not published.
+// artifactId and POM name/description. :example and :integration-tests are not published.
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 

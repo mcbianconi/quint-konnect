@@ -48,7 +48,7 @@ private fun readSeedArgument(argsFile: Path): String {
 class QuintTestTestGeneratorTest {
 
     private companion object {
-        // Mirrors the escaping used in QuintRunTestGeneratorTest / the example fixture (qk-gu38).
+        // Mirrors the escaping used in QuintRunTestGeneratorTest / the integration-tests fixture (qk-gu38).
         val escapedTestLiteral = "\"my\\\$test\\\"name\""
 
         val result = compileWithProcessor(

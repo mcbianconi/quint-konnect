@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.example.escaping
+package io.github.mcbianconi.quintkonnect.integrationtests.escaping
 
 import io.github.mcbianconi.quintkonnect.TypedState
 import kotlinx.serialization.Serializable

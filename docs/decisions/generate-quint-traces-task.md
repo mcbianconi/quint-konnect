@@ -9,7 +9,7 @@ manifest KSP writes per driver instead of the SOURCE-retention annotation itself
 can't read that). Every Test task depends on it (unless `-Pquint.replay` is set) and gets
 `quintkonnect.tracesDir` pointed at its output; `ReplayRunner`'s default `TraceSource`
 (`TracesDirTraceSource`, core's `trace/TraceSource.kt`) replays `<tracesDir>/<testName>/` when
-present, falling back to invoking `quint` itself (`TraceGenerator`) otherwise — so `example` and any
+present, falling back to invoking `quint` itself (`TraceGenerator`) otherwise — so `integration-tests` and any
 non-plugin consumer keep working unchanged (qk-adm2).
 
 **Manifest:** KSP (`ksp/.../generators/DriverManifestWriter.kt`) writes one JSON resource per driver

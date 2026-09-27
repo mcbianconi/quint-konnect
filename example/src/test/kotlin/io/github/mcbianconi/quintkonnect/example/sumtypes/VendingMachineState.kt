@@ -1,13 +1,11 @@
 package io.github.mcbianconi.quintkonnect.example.sumtypes
 
 import io.github.mcbianconi.quintkonnect.TypedState
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-@Serializable
-data class VendingMachineValue(val credit: Long, val selected: String)
-
-class VendingMachineState : TypedState<VendingMachineDriver, VendingMachineValue>(serializer()) {
-    override fun extractFromDriver(driver: VendingMachineDriver): VendingMachineValue =
-        VendingMachineValue(credit = driver.credit, selected = driver.selected)
+// `statePath = machine` (VendingMachineDriver.config) compares only that record, so this checks
+// VendingmachineSpec.Machine rather than the whole VendingmachineSpec.State.
+class VendingMachineState : TypedState<VendingMachineDriver, VendingmachineSpec.Machine>(serializer()) {
+    override fun extractFromDriver(driver: VendingMachineDriver): VendingmachineSpec.Machine =
+        VendingmachineSpec.Machine(credit = driver.credit, selected = driver.selected)
 }

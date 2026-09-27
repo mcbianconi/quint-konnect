@@ -43,8 +43,9 @@ README.md's "Supported JUnit versions" section.
 ./gradlew :ksp:test                  # Run KSP processor tests (kotlin-compile-testing + KSP2, no quint CLI required)
 ./gradlew :gradle-plugin:test         # Run the Gradle plugin's unit tests (ProjectBuilder, no quint CLI required)
 ./gradlew :gradle-plugin:functionalTest # Run its TestKit functional tests (requires quint in PATH: one test asserts checkQuint's real-mismatch warning)
-./gradlew :example:build             # Build example + run end-to-end test (requires quint in PATH)
-./gradlew build                      # Build all modules
+./gradlew -p example build           # Build example (separate build applying the plugin) + run its tests (requires quint in PATH)
+./gradlew :integration-tests:test    # Run regression tests against real quint (requires quint in PATH)
+./gradlew build                      # Build all modules (not example, see below)
 ```
 
 Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGeneratorTest`.
@@ -62,8 +63,8 @@ section for the full precedence and the `quintkonnect.*` system properties they 
 README.md's "Running traces in parallel"; generated tests parallelize through JUnit's own dynamic
 test execution instead).
 
-`annotations`, `itf`, `core`, `ksp` and `gradle-plugin` (not `example`) build with Kotlin's
-explicit API mode (`quintkonnect.library` convention plugin in `build-logic/`): every public
+`annotations`, `itf`, `core`, `ksp` and `gradle-plugin` (not `example` or `integration-tests`)
+build with Kotlin's explicit API mode (`quintkonnect.library` convention plugin in `build-logic/`): every public
 declaration needs an explicit `public`/`internal`/`private` modifier, and each module
 keeps a reference ABI dump at `<module>/api/<module>.api`, checked by `checkKotlinAbi`
 (runs as part of `check`/`build`). After a deliberate public API change in one of those
@@ -77,9 +78,10 @@ by hand.
 
 `annotations`, `itf`, `core`, `ksp` and `gradle-plugin` publish to Maven Central under
 `io.github.mcbianconi` (`quintkonnect.publish` convention plugin in `build-logic/`, the
-vanniktech gradle-maven-publish-plugin); `example` is not published. `gradle-plugin` also
-publishes its plugin marker artifact (`java-gradle-plugin`), not to the Gradle Plugin Portal
-(`docs/decisions/gradle-plugin-distribution.md`). `.github/workflows/release.yml`
+vanniktech gradle-maven-publish-plugin); `example` and `integration-tests` are not
+published. `gradle-plugin` also publishes its plugin marker artifact (`java-gradle-plugin`),
+not to the Gradle Plugin Portal (`docs/decisions/gradle-plugin-distribution.md`).
+`.github/workflows/release.yml`
 triggers on pushing a tag matching `v*`, runs `./gradlew publishAndReleaseToMavenCentral`,
 generates categorized release notes from conventional commits via `git-cliff` (`cliff.toml`),
 and creates the GitHub Release with `gh release create --notes-file`.
@@ -104,7 +106,7 @@ against the new release.
 
 ## Architecture Overview
 
-Six modules, in dependency order:
+Six modules in the root build, in dependency order, plus the separate `example` build:
 
 - `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
   dependency, so it stays on a driver's compile classpath without pulling in `core`.
@@ -142,10 +144,17 @@ Six modules, in dependency order:
   and Gradle TestKit (`functionalTest`, applies the plugin to a fixture project via
   `withPluginClasspath()`).
 - `example` — end-to-end examples: TicTacToe (state types generated from the spec's IR),
-  rock-paper-scissors, a buggy driver the tests expect to fail, a `@QuintTest` counter, and a
-  fixture for escaped names. Wires KSP and quint-konnect dependencies by hand (not through
-  `gradle-plugin`, to avoid a `publishToMavenLocal` dependency in tests) but sets the same
-  project-dir system property and mirrors `quintIr` with one `quint typecheck` task per spec.
+  rock-paper-scissors, a buggy driver the tests expect to fail, and a `@QuintTest` counter. Not
+  part of the root build: its own `settings.gradle.kts` applies `gradle-plugin` with `readSpecIr`
+  like a user project, with `includeBuild("..")` plus `dependencySubstitution` standing in for the
+  Maven Central coordinates (`pluginManagement { includeBuild("..") }` would silently drop the
+  substitution). Run it with `./gradlew -p example build`.
+- `integration-tests` — unpublished regression tests against real quint that go through
+  `core`'s internals rather than what a user would write: exact shrink output, a saved-trace
+  replay via `ItfFileTraceSource`, an invariant violation through `Runner.runTest`, and the
+  escaped-names fixture (qk-gu38). Wires KSP and `core` as project dependencies (not through
+  `gradle-plugin`, to avoid a `publishToMavenLocal` dependency), sets the plugin's project-dir
+  system property by hand and mirrors `quintIr` with one `quint typecheck` task per spec.
 
 Data flow: a Quint spec is run through the `quint` CLI (`quint run --mbt` or
 `quint test`) to produce ITF trace files; the default `TraceSource` (`TraceGenerator`)

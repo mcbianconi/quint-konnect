@@ -1,65 +1,23 @@
 plugins {
-    id("quintkonnect.kotlin-jvm")
+    alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    id("quintkonnect.ksp")
+    id("io.github.mcbianconi.quint-konnect")
 }
 
 kotlin {
-    sourceSets.test {
-        kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
+    jvmToolchain(21)
 }
 
-// Mirrors the Gradle plugin's quintIr task (gradle-plugin/.../QuintIrTask.kt), since this module
-// wires KSP by hand: each IR file must be "<irDir>/<spec as @QuintRun/@QuintTest names it>.json".
-// escaping/ is left out: EscapingCounterDriver declares an action the spec doesn't have on purpose,
-// which the spec IR check (qk-75ad) would reject.
-val quintIrDir = layout.buildDirectory.dir("quint-konnect/ir")
-val quintIr = tasks.register("quintIr")
-fileTree("src/test/resources") { include("**/*.qnt"); exclude("escaping/**") }.forEach { spec ->
-    val relativePath = spec.relativeTo(projectDir).path
-    val out = quintIrDir.get().file("$relativePath.json").asFile
-    val task = tasks.register<Exec>("quintIr_" + relativePath.replace(Regex("[^A-Za-z0-9]"), "_")) {
-        inputs.file(spec).withPathSensitivity(PathSensitivity.RELATIVE)
-        outputs.file(out)
-        doFirst { out.parentFile.mkdirs() }
-        commandLine("quint", "typecheck", "--out", out.absolutePath, spec.absolutePath)
-    }
-    quintIr.configure { dependsOn(task) }
-}
-
-ksp {
-    arg("quintkonnect.irDir", quintIrDir.map { it.asFile.absolutePath })
-}
-
-tasks.matching { it.name == "kspTestKotlin" }.configureEach {
-    dependsOn(quintIr)
-    // The IR is read through a processor option, not a source file, so without this KSP stays
-    // UP-TO-DATE after a spec change and the generated <Module>Spec types go stale.
-    inputs.dir(quintIrDir).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("quintIr")
+quintKonnect {
+    // Generates `<Module>Spec` types from each spec under src/test/resources (README.md's
+    // "Implement state checking").
+    readSpecIr.set(true)
 }
 
 dependencies {
-    implementation(libs.kotlinx.serialization.json)
-
-    kspTest(project(":ksp"))
-
-    testImplementation(project(":core"))
-    testImplementation(libs.kotlinx.serialization.json)
-    // Only the `suspending` example driver needs this, for its suspend @QuintAction (qk-33ky).
+    // Only the `suspending` and `asyncstore` drivers need this, for their suspend @QuintActions.
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
-    testLogging {
-        showStandardStreams = true
-    }
-    // Matches PROJECT_DIR_PROPERTY in core/.../trace/GeneratorConfig.kt: without the
-    // quintkonnect Gradle plugin (qk-udpu) to set this, wire it by hand so a relative `spec`
-    // resolves the same way from `gradle test` and from an IDE run.
-    systemProperty("quintkonnect.projectDir", project.projectDir.absolutePath)
 }

@@ -1,4 +1,4 @@
-package io.github.mcbianconi.quintkonnect.example.invariants
+package io.github.mcbianconi.quintkonnect.integrationtests.invariants
 
 import io.github.mcbianconi.quintkonnect.Runner
 import io.github.mcbianconi.quintkonnect.trace.RunConfig

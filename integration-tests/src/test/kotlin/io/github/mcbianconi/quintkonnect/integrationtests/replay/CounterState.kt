@@ -1,11 +1,9 @@
-package io.github.mcbianconi.quintkonnect.example.quinttest
+package io.github.mcbianconi.quintkonnect.integrationtests.replay
 
 import io.github.mcbianconi.quintkonnect.TypedState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-// Hand-written rather than CounterSpec.State, which also has `lastAction` (the nondetPath carrier
-// this driver doesn't model); see qk-ymex.
 @Serializable
 data class CounterValue(val count: Long)
 
