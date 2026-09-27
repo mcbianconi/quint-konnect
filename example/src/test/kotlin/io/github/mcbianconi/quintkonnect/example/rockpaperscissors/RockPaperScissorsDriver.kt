@@ -18,7 +18,7 @@ class RockPaperScissorsDriver : Driver {
     fun init() = game.init()
 
     @QuintAction("decide_moves")
-    fun decideMoves(move1: MoveSer, move2: MoveSer) =
+    fun decideMoves(move1: RockPaperScissorsSpec.Move, move2: RockPaperScissorsSpec.Move) =
         game.decideMoves(move1.toMove(), move2.toMove())
 
     @QuintAction("find_winner")
@@ -26,11 +26,4 @@ class RockPaperScissorsDriver : Driver {
 
     @QuintAction("restart")
     fun restart() = game.init()
-}
-
-private fun MoveSer.toMove(): Move = when (this) {
-    MoveSer.Init -> Move.INIT
-    MoveSer.Rock -> Move.ROCK
-    MoveSer.Paper -> Move.PAPER
-    MoveSer.Scissors -> Move.SCISSORS
 }

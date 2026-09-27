@@ -8,7 +8,8 @@ import kotlinx.serialization.serializer
 
 // The spec tracks bin placement (`binOf`) and a growing reservation history (`reservationLog`)
 // that this driver never models. `@QuintIgnore`d fields still need a value to build this class,
-// even though TypedState.check never compares them.
+// even though TypedState.check never compares them. Hand-written rather than WarehouseSpec.State,
+// since `@QuintIgnore` can't go on a generated class (qk-ymex).
 @Serializable
 data class WarehouseValue(
     val stock: Map<Long, Long>,
