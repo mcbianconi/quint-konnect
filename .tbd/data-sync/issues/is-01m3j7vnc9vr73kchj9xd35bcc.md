@@ -3,17 +3,21 @@ type: is
 id: is-01m3j7vnc9vr73kchj9xd35bcc
 title: Turn example/ into a standalone Gradle build that applies the quint-konnect plugin
 kind: task
-status: open
+status: in_progress
 priority: 3
-version: 2
+version: 3
+delegate: claude-code@vm
 labels:
   - roadmap
 dependencies:
   - type: blocks
     target: is-01m3j7vnm12cr9nymxdcvkbjqn
 parent_id: is-01m3j7vmxf3e87tr20a324y2s9
+hold: null
+hold_until: null
 created_at: 2026-09-27T20:10:47.048Z
-updated_at: 2026-09-27T20:10:47.296Z
+updated_at: 2026-09-27T20:33:36.671Z
+started_at: 2026-09-27T20:33:36.671Z
 ---
 Goal: `example/build.gradle.kts` looks like README.md's setup section.
 
