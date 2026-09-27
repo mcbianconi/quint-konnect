@@ -3,15 +3,19 @@ type: is
 id: is-01m3e2j2kdtvex13knhqjv1703
 title: Release agent skill after 0.1.0
 kind: feature
-status: in_progress
+status: closed
 priority: 2
-version: 4
+version: 5
 labels:
   - roadmap
 dependencies: []
 parent_id: is-01m3dzfsn7btzx8cswvs0rg65t
 created_at: 2026-09-26T05:21:12.301Z
-updated_at: 2026-09-27T14:16:49.303Z
+updated_at: 2026-09-27T14:21:02.489Z
+closed_at: 2026-09-27T14:21:02.488Z
+close_reason: 0.1.0 is released; replaced skills/quint-konnect <VERSION> placeholders with real 0.1.0 coordinates, added README AI agents install instructions, added AGENTS.md plugin.json version-bump rule, and fixed the now-stale line in docs/decisions/agent-skill.md. Committed as vxm on branch skill-release.
+resolution: null
+duplicate_of: null
 ---
 The skill ships after the first Maven Central release (0.1.0 does not wait for it). Replace <VERSION> with real Maven Central coordinates, bump plugin.json version, add README 'AI agents' section (/plugin marketplace add mcbianconi/quint-konnect, npx skills add mcbianconi/quint-konnect).
 
