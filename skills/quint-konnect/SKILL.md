@@ -232,6 +232,10 @@ Debugging notes:
   `QUINT_SEED=...` line doesn't repeat those overrides for you. A bug that only shows up near a
   spec's bounds (e.g. a clamped counter) may also need a higher `maxSamples`/`maxSteps` than the
   annotation's default to be caught at all.
+- **Shrink a long failing trace before debugging it:** with the Gradle plugin,
+  `./gradlew shrinkQuintTraces --tests '*MyDriver*' -Pquint.seed=<seed>` reruns quint with the
+  same seed and smaller `--max-steps` and reports the shortest failing trace it finds, saved as
+  `build/quint-konnect/failures/<Driver>-shrunk-trace<N>.itf.json` (`@QuintRun` only).
 - **Fix the implementation, not the spec**, unless the spec itself is wrong — the whole point
   of the exercise is checking the implementation against the spec, not the reverse.
 - An **anonymous action** (a spec action `quint` can't name, e.g. from an unnamed `any`/`all`
@@ -256,7 +260,9 @@ Debugging notes:
   fails the test naming the invariant, the seed and the violating trace.
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity
   can be overridden per run with `-Pquint.maxSamples=…` etc. (Gradle plugin).
-- No trace shrinking: a failing trace is whatever length `quint run`/`quint test` produced.
+- Shrinking (`shrinkQuintTraces`) only searches smaller `--max-steps` with the same seed, for
+  `@QuintRun` drivers; it doesn't minimize a trace step by step, and `@QuintTest` traces aren't
+  shrunk.
 - JUnit Jupiter only (5.x or 6.x; no runner-neutral adapter for other frameworks yet).
 
 ## Worked example

@@ -26,6 +26,10 @@ internal const val FAILURES_DIR_SYSTEM_PROPERTY: String = "quintkonnect.failures
 // multi-project build. Always set, like PROJECT_DIR_SYSTEM_PROPERTY.
 internal const val TEST_TASK_PATH_SYSTEM_PROPERTY: String = "quintkonnect.testTaskPath"
 
+// Mirrors SHRINK_PROPERTY in core/.../trace/Shrink.kt: set only on shrinkQuintTraces (qk-a8ay).
+internal const val SHRINK_SYSTEM_PROPERTY: String = "quintkonnect.shrink"
+internal const val SHRINK_TASK_NAME: String = "shrinkQuintTraces"
+
 internal const val KSP_PLUGIN_ID: String = "com.google.devtools.ksp"
 internal const val KOTLIN_JVM_PLUGIN_ID: String = "org.jetbrains.kotlin.jvm"
 
@@ -149,6 +153,21 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 )
             }
 
+            // qk-a8ay: `test`'s own classes, rerun with shrinking on. It runs quint itself instead of
+            // replaying generateQuintTraces' output (shrinking needs fresh runs with a smaller
+            // --max-steps), so it's the one Test task without a tracesDir; filter it to one driver
+            // with --tests and pin the failing run's seed with -Pquint.seed.
+            project.tasks.register(SHRINK_TASK_NAME, Test::class.java) { task ->
+                val test = project.tasks.named("test", Test::class.java)
+                task.group = "verification"
+                task.description = "Reruns failing quint-konnect traces with the same seed and a smaller " +
+                    "--max-steps, reporting the shortest failing trace found."
+                task.testClassesDirs = test.get().testClassesDirs
+                task.classpath = test.get().classpath
+                task.systemProperty(SHRINK_SYSTEM_PROPERTY, "true")
+                task.outputs.upToDateWhen { false }
+            }
+
             val projectDir = project.projectDir.absolutePath
             val failuresDir = project.layout.buildDirectory.dir("quint-konnect/failures")
             project.tasks.withType(Test::class.java).configureEach { test ->
@@ -160,6 +179,8 @@ public class QuintKonnectPlugin : Plugin<Project> {
                     test.dependsOn(
                         extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
                     )
+                }
+                if (replayOverride == null && test.name != SHRINK_TASK_NAME) {
                     test.dependsOn(generateQuintTraces)
                     test.jvmArgumentProviders.add(
                         TracesDirArgumentProvider(
@@ -171,7 +192,9 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 test.useJUnitPlatform()
                 test.systemProperty(PROJECT_DIR_SYSTEM_PROPERTY, projectDir)
                 test.systemProperty(FAILURES_DIR_SYSTEM_PROPERTY, failuresDir.get().asFile.absolutePath)
-                test.systemProperty(TEST_TASK_PATH_SYSTEM_PROPERTY, test.path)
+                // A trace saved by shrinkQuintTraces replays through the regular test task.
+                val replayTaskPath = if (test.name == SHRINK_TASK_NAME) test.path.substringBeforeLast(':') + ":test" else test.path
+                test.systemProperty(TEST_TASK_PATH_SYSTEM_PROPERTY, replayTaskPath)
                 test.jvmArgumentProviders.add(
                     QuintRuntimeArgumentProvider(
                         downloadQuint = extension.downloadQuint,

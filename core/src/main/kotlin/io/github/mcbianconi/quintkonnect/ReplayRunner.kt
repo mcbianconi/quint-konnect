@@ -5,15 +5,19 @@ import io.github.mcbianconi.quintkonnect.listener.ConsoleReplayListener
 import io.github.mcbianconi.quintkonnect.listener.ReplayListener
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import io.github.mcbianconi.quintkonnect.trace.ItfFileTraceSource
+import io.github.mcbianconi.quintkonnect.trace.MaxStepsConfig
+import io.github.mcbianconi.quintkonnect.trace.RunConfig
 import io.github.mcbianconi.quintkonnect.trace.TraceSource
 import io.github.mcbianconi.quintkonnect.trace.TracesDirTraceSource
 import io.github.mcbianconi.quintkonnect.trace.defaultTraceSource
 import io.github.mcbianconi.quintkonnect.trace.replayCommand
+import io.github.mcbianconi.quintkonnect.trace.shrinkEnabled
 import io.github.mcbianconi.quintkonnect.trace.writeFailureTrace
 import java.io.IOException
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private val zeroTracesMessage =
     "Trace generation produced zero traces.\n" +
@@ -40,6 +44,11 @@ private object DefaultTraceSource : TraceSource {
 // necessarily the seed generateQuintTraces (gradle-plugin, qk-adm2) actually ran `quint` with when
 // replaying from a TracesDirTraceSource; this substitutes the recorded one for display purposes
 // only (ReplayRunner never calls generate() on it, so it never affects which trace is replayed).
+// The AssertionError replaySteps throws, carrying the failing step for shrinking (qk-a8ay).
+internal class StepFailure(message: String, cause: Throwable, val stepIdx: Int) : AssertionError(message, cause)
+
+private object SilentListener : ReplayListener
+
 private class SeedOverriddenConfig(
     private val delegate: GeneratorConfig,
     override val seed: String,
@@ -67,6 +76,8 @@ public class ReplayRunner(
     // [traceSource] itself is left untouched either way (=== DefaultTraceSource is what
     // saveFailureTrace's `as? ItfFileTraceSource` check below relies on to skip re-saving a replayed
     // failure), and an explicitly injected [traceSource] is never second-guessed against tracesDir.
+    private val shrinkAttempted = AtomicBoolean(false)
+
     private fun resolveTraceSource(testName: String): Pair<TraceSource, GeneratorConfig> {
         if (traceSource !== DefaultTraceSource) return traceSource to generatorConfig
         val resolved = defaultTraceSource(testName)
@@ -167,13 +178,54 @@ public class ReplayRunner(
                     replaySteps(traceIdx, trace, driverFactory())
                     listener.onTraceFinished(traceIdx)
                 } catch (e: Throwable) {
-                    listener.onTraceFailed(traceIdx, displayConfig, e)
-                    val (failureFile, command) = saveFailureTrace(testName, traceIdx, trace, e, resolvedSource)
+                    val shrunk = shrinkIfEnabled(e, resolvedSource, driverFactory)
+                    val reported = shrunk?.second ?: e
+                    listener.onTraceFailed(traceIdx, displayConfig, reported)
+                    val (failureFile, command) = if (shrunk == null) {
+                        saveFailureTrace(testName, traceIdx, trace, e, resolvedSource)
+                    } else {
+                        saveFailureTrace(testName, shrunk.third, shrunk.first, reported, resolvedSource, "$testName-shrunk")
+                    }
                     listener.onTraceFailureSaved(traceIdx, testName, failureFile, command)
-                    throw e
+                    throw reported
                 }
             }
         }
+    }
+
+    // qk-a8ay: with shrinking on (the plugin's shrinkQuintTraces task), the first failing trace of a
+    // `quint run` config is regenerated with the same seed at --max-steps 0, 1, ... up to one below
+    // its failing step; the first run with a failing trace gives the shortest failure found, as
+    // (trace, error, its index). Null when shrinking is off, doesn't apply (replaying saved traces,
+    // `quint test`, an error that isn't a step failure) or finds nothing shorter.
+    private fun <D : Driver> shrinkIfEnabled(
+        failure: Throwable,
+        source: TraceSource,
+        driverFactory: () -> D,
+    ): Triple<ItfTrace, AssertionError, Int>? {
+        if (!shrinkEnabled() || failure !is StepFailure || generatorConfig !is RunConfig) return null
+        if (source is ItfFileTraceSource || source is TracesDirTraceSource) return null
+        if (!shrinkAttempted.compareAndSet(false, true)) return null
+
+        for (maxSteps in 0 until failure.stepIdx) {
+            val traces = try {
+                source.generate(MaxStepsConfig(generatorConfig, maxSteps))
+            } catch (e: Exception) {
+                failure.addSuppressed(e)
+                return null
+            }
+            traces.forEachIndexed { idx, candidate ->
+                try {
+                    replaySteps(idx, candidate, driverFactory(), SilentListener)
+                } catch (shorter: StepFailure) {
+                    val message = "Shrunk failing trace: it failed at step ${failure.stepIdx}; rerunning " +
+                        "quint with the same seed (${generatorConfig.seed}) and --max-steps $maxSteps, " +
+                        "trace ${idx + 1} fails at step ${shorter.stepIdx}.\n${shorter.message}"
+                    return Triple(candidate, AssertionError(message, shorter), idx)
+                }
+            }
+        }
+        return null
     }
 
     // Skips writing (and points the printed command at the input instead) when this run was
@@ -185,13 +237,14 @@ public class ReplayRunner(
         trace: ItfTrace,
         originalFailure: Throwable,
         resolvedSource: TraceSource,
+        fileStem: String = testName,
     ): Pair<Path?, String?> {
         val replayedFrom = (resolvedSource as? ItfFileTraceSource)?.path
         if (replayedFrom != null) {
             return replayedFrom to replayCommand(testName, replayedFrom)
         }
         return try {
-            val file = writeFailureTrace(testName, traceIdx, trace)
+            val file = writeFailureTrace(fileStem, traceIdx, trace)
             file to replayCommand(testName, file)
         } catch (writeError: IOException) {
             originalFailure.addSuppressed(writeError)
@@ -200,7 +253,12 @@ public class ReplayRunner(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <D : Driver> replaySteps(traceIdx: Int, trace: ItfTrace, driver: D) {
+    private fun <D : Driver> replaySteps(
+        traceIdx: Int,
+        trace: ItfTrace,
+        driver: D,
+        listener: ReplayListener = this.listener,
+    ) {
         val state = driver.quintState() as State<D>
 
         trace.states.forEachIndexed { stepIdx, itfState ->
@@ -222,7 +280,7 @@ public class ReplayRunner(
                     (step?.let { ", action '${it.actionTaken}'" } ?: "")
                 val nondets = step?.nondetPicks?.takeIf { !it.isEmpty() }
                     ?.let { "\nNondet picks:\n$it" } ?: ""
-                val wrapped = AssertionError("Failure in $location$nondets\n${e.message ?: e}", e)
+                val wrapped = StepFailure("Failure in $location$nondets\n${e.message ?: e}", e, stepIdx)
                 listener.onStepFailed(traceIdx, stepIdx, step, wrapped)
                 throw wrapped
             }

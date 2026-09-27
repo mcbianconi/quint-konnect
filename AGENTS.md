@@ -134,7 +134,11 @@ Six modules, in dependency order:
   (opt out with `quintKonnect.configureTestLogging`) and registers `quintIr`, which runs
   `quint typecheck --out` on `quintKonnect.quintIrSpecs` and, when `quintKonnect.readSpecIr`
   is true, passes the IR directory to KSP as the `quintkonnect.irDir` option
-  (docs/decisions/quint-ir-source.md). Tested with `ProjectBuilder` (`test`)
+  (docs/decisions/quint-ir-source.md). It registers `generateQuintTraces`, which runs quint once
+  per driver into `build/quint-konnect/traces/` for Test tasks to replay
+  (docs/decisions/generate-quint-traces-task.md), and `shrinkQuintTraces`, a Test task over
+  `test`'s classes that runs quint itself with `quintkonnect.shrink` set so `ReplayRunner`
+  reports the shortest failing trace (core's `trace/Shrink.kt`). Tested with `ProjectBuilder` (`test`)
   and Gradle TestKit (`functionalTest`, applies the plugin to a fixture project via
   `withPluginClasspath()`).
 - `example` — end-to-end examples: TicTacToe (state types generated from the spec's IR),

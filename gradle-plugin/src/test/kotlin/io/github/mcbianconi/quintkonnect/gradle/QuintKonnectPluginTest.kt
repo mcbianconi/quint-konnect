@@ -64,6 +64,25 @@ class QuintKonnectPluginTest {
     }
 
     @Test
+    fun `shrinkQuintTraces reruns test's classes with shrinking on and without generated traces`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+
+        val test = project.tasks.getByName("test") as TestTask
+        val shrink = project.tasks.getByName(SHRINK_TASK_NAME) as TestTask
+        assertEquals("true", shrink.systemProperties[SHRINK_SYSTEM_PROPERTY])
+        assertNull(test.systemProperties[SHRINK_SYSTEM_PROPERTY])
+        assertEquals(test.testClassesDirs.files, shrink.testClassesDirs.files)
+        assertEquals(":test", shrink.systemProperties[TEST_TASK_PATH_SYSTEM_PROPERTY])
+
+        val shrinkDeps = shrink.taskDependencies.getDependencies(shrink).map { it.name }
+        assertTrue("checkQuint" in shrinkDeps, shrinkDeps.toString())
+        assertFalse("generateQuintTraces" in shrinkDeps, shrinkDeps.toString())
+        assertTrue("generateQuintTraces" in test.taskDependencies.getDependencies(test).map { it.name })
+    }
+
+    @Test
     fun `downloadQuint defaults to false and checkQuint keeps resolving quint from PATH`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(QuintKonnectPlugin::class.java)

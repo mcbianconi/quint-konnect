@@ -60,6 +60,12 @@ Applying the plugin to a Kotlin JVM module:
 - registers a `checkQuint` task (every `Test` task depends on it) that fails the build if `quint`
   isn't on `PATH`, and warns (without failing) if its version doesn't match
   `quintKonnect.quintVersion` (default `"0.32.0"`).
+- registers `generateQuintTraces`, which runs `quint` once per driver into
+  `build/quint-konnect/traces/` before `test`, so `Test` tasks replay those files (cached when
+  every driver's seed is pinned);
+- registers `shrinkQuintTraces`, a `Test` task over `test`'s classes that reruns `quint` with the
+  same seed and smaller `--max-steps` to find a shorter failing trace
+  (`./gradlew shrinkQuintTraces --tests '*MyDriver*' -Pquint.seed=<seed>`).
 
 ```kotlin
 quintKonnect {

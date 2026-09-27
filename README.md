@@ -319,6 +319,22 @@ Replaying an already-saved trace doesn't re-save it if it fails again: the print
 points at the same input file, so it can't overwrite an unrelated failure that happens to share a
 test name and trace number.
 
+### Shrinking a failing trace
+
+`./gradlew shrinkQuintTraces --tests '*MyDriver*' -Pquint.seed=<seed of the failing run>` reruns
+`test`'s classes with shrinking on. For the first failing trace of a `@QuintRun` driver, it reruns
+`quint run` with the same seed at `--max-steps` 0, 1, … up to one below the failing step, and
+reports the first failing trace it finds:
+
+```
+Shrunk failing trace: it failed at step 5; rerunning quint with the same seed (42) and --max-steps 2, trace 1 fails at step 2.
+```
+
+That trace is saved as `build/quint-konnect/failures/<Driver>-shrunk-trace<N>.itf.json`, with a
+replay command for the regular `test` task. The task always runs `quint` itself (it never replays
+`generateQuintTraces`' output) and is never UP-TO-DATE. `@QuintTest` drivers, invariant violations
+and `-Pquint.replay` runs aren't shrunk.
+
 ## Running traces in parallel
 
 Traces are independent — each gets its own fresh driver — so nothing about the model-based testing
