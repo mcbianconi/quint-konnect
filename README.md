@@ -264,6 +264,8 @@ Test-task system properties:
 | `-Pquint.maxSteps=<int>` | `quintkonnect.maxSteps` | `@QuintRun`'s `maxSteps` (falls back to the annotation value, then quint's own default; `@QuintTest`/`quint test` has no `--max-steps`) |
 | `-Pquint.seed=<hex>` | `quintkonnect.seed` | The seed used, in order: this override, a non-blank `@QuintRun(seed = ...)`/`@QuintTest(seed = ...)`, `QUINT_SEED`, then a random seed |
 | `-Pquint.verbose=0\|1\|2` | `quintkonnect.verbose` | `ConsoleReplayListener`'s verbosity (falls back to `QUINT_VERBOSE`, then `0`) |
+| `-Pquint.replay=<path>` | `quintkonnect.replay` | Replays a saved `.itf.json` file/directory instead of generating traces; see "Replaying a saved trace" below |
+| `-Pquint.parallelism=<int>` | `quintkonnect.parallelism` | `Runner.runTest`'s own thread pool size (default `1`); see "Running traces in parallel" below |
 
 ```bash
 ./gradlew :example:test -Pquint.maxSamples=1000 -Pquint.verbose=1   # nightly profile
@@ -274,6 +276,64 @@ Each Gradle property is a Test-task input (via a `CommandLineArgumentProvider`),
 when it changes instead of reporting a stale `UP-TO-DATE`. `-Pquint.maxSamples`/`-Pquint.maxSteps`
 must parse as integers and `-Pquint.verbose` must be `0`, `1` or `2`; an invalid value fails the
 build at configuration time with that requirement in the message.
+
+## Replaying a saved trace
+
+A seed alone only reproduces a failure with the same spec and `quint` version, and the `.itf.json`
+trace `quint` wrote is deleted with its temp directory once the run finishes. So on a failing
+trace, `ReplayRunner.traceReplays` (what generated `@QuintRun`/`@QuintTest` tests call) saves it to
+`build/quint-konnect/failures/<test>-trace<N>.itf.json` and prints a command to replay just that
+file:
+
+```
+Saved failing trace to build/quint-konnect/failures/TicTacToeDriver-trace3.itf.json
+Replay it with:
+   ./gradlew :test --tests '*TicTacToeDriver*' -Pquint.replay=build/quint-konnect/failures/TicTacToeDriver-trace3.itf.json
+```
+
+`-Pquint.replay=<path>` (a file or a directory of `.itf.json` files, resolved against the project
+directory) replaces trace generation with `ItfFileTraceSource` for that run, so it needs no `quint`
+installation at all — Test tasks skip `checkQuint`/`downloadQuint` whenever it's set. Construct
+`ItfFileTraceSource` directly (e.g. from a fixture under test resources) to replay a saved trace
+without the Gradle plugin.
+
+Replaying an already-saved trace doesn't re-save it if it fails again: the printed command still
+points at the same input file, so it can't overwrite an unrelated failure that happens to share a
+test name and trace number.
+
+## Running traces in parallel
+
+Traces are independent — each gets its own fresh driver — so nothing about the model-based testing
+itself needs to change to run them concurrently. Two entry points parallelize differently:
+
+- **Generated tests** (`ReplayRunner.traceReplays`, one JUnit `DynamicTest` per trace): enable
+  [JUnit 5's parallel execution](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parallel-execution)
+  for dynamic tests in `src/test/resources/junit-platform.properties`:
+
+  ```properties
+  junit.jupiter.execution.parallel.enabled=true
+  junit.jupiter.execution.parallel.mode.default=same_thread
+  junit.jupiter.execution.parallel.mode.classes.default=same_thread
+  ```
+
+  Dynamic tests read `junit.jupiter.execution.parallel.mode.dynamic.default` for their own
+  parallelism (the two `.default` settings above keep ordinary `@Test` methods and classes
+  sequential, since these properties apply to every test in the module, and a KSP-generated test
+  class has no way to carry its own `@Execution` annotation):
+
+  ```properties
+  junit.jupiter.execution.parallel.mode.dynamic.default=concurrent
+  ```
+
+  `ConsoleReplayListener` buffers each trace's output and flushes it as one block on that trace's
+  completion, so concurrent traces don't interleave their lines.
+
+- **`Runner.runTest`** (the legacy batch path kept for binary compatibility with already-compiled
+  generated code): set `-Pquint.parallelism=<int>` (`quintkonnect.parallelism`, default `1`) to
+  replay traces on a fixed thread pool of that size instead of one at a time. The failure contract
+  is unchanged — if any trace fails, the lowest-index failure is the one thrown and reported —
+  except that every trace now runs to completion first, rather than the sequential loop's
+  stop-at-the-first-failure.
 
 ## Modules
 

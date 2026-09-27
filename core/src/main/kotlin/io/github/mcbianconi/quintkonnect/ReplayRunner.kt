@@ -11,10 +11,21 @@ import io.github.mcbianconi.quintkonnect.trace.replayCommand
 import io.github.mcbianconi.quintkonnect.trace.writeFailureTrace
 import java.io.IOException
 import java.nio.file.Path
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 private val zeroTracesMessage =
     "Trace generation produced zero traces.\n" +
         "Please check your specification and/or your test configuration."
+
+// Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
+// `-Pquint.parallelism` Gradle property. Only affects runTest's own thread pool below;
+// traceReplays' per-trace dynamic tests parallelize through JUnit's own dynamic test execution
+// instead (see README.md's "Running traces in parallel" section).
+internal const val PARALLELISM_PROPERTY: String = "quintkonnect.parallelism"
+
+internal fun resolveParallelism(override: String? = System.getProperty(PARALLELISM_PROPERTY)): Int =
+    override?.toIntOrNull()?.coerceAtLeast(1) ?: 1
 
 /**
  * Generates traces from [generatorConfig] via [traceSource] and replays each one against a fresh
@@ -31,6 +42,16 @@ public class ReplayRunner(
     private val listener: ReplayListener = ConsoleReplayListener(),
 ) {
 
+    /**
+     * Replays every trace against its own fresh driver, sequentially by default. Set the
+     * `quintkonnect.parallelism` system property (the quintkonnect Gradle plugin's
+     * `-Pquint.parallelism` override) above 1 to replay traces on a fixed thread pool of that size
+     * instead: traces are independent (a fresh driver per trace), so this is safe as long as
+     * [listener] and the driver factory are. The failure contract is unchanged either way: if any
+     * trace fails, the lowest-index failure is the one thrown (and the one [listener] is notified
+     * of via [ReplayListener.onRunFinished]) — in parallel, every trace still runs to completion
+     * first, unlike the sequential loop, which stops at the first failure.
+     */
     public fun <D : Driver> runTest(driverFactory: () -> D, testName: String) {
         listener.onRunStarted(testName, generatorConfig)
         val traces = traceSource.generate(generatorConfig)
@@ -39,10 +60,15 @@ public class ReplayRunner(
         try {
             check(traces.isNotEmpty()) { zeroTracesMessage }
 
-            traces.forEachIndexed { traceIdx, trace ->
-                listener.onTraceStarted(traceIdx)
-                replaySteps(traceIdx, trace, driverFactory())
-                listener.onTraceFinished(traceIdx)
+            val parallelism = resolveParallelism()
+            if (parallelism <= 1) {
+                traces.forEachIndexed { traceIdx, trace ->
+                    listener.onTraceStarted(traceIdx)
+                    replaySteps(traceIdx, trace, driverFactory())
+                    listener.onTraceFinished(traceIdx)
+                }
+            } else {
+                runTracesInParallel(traces, driverFactory, parallelism)
             }
         } catch (e: Throwable) {
             failure = e
@@ -50,6 +76,29 @@ public class ReplayRunner(
         } finally {
             listener.onRunFinished(testName, generatorConfig, failure)
         }
+    }
+
+    private fun <D : Driver> runTracesInParallel(traces: List<ItfTrace>, driverFactory: () -> D, parallelism: Int) {
+        val executor = Executors.newFixedThreadPool(parallelism)
+        val failures = try {
+            traces.mapIndexed { traceIdx, trace ->
+                executor.submit(
+                    Callable {
+                        try {
+                            listener.onTraceStarted(traceIdx)
+                            replaySteps(traceIdx, trace, driverFactory())
+                            listener.onTraceFinished(traceIdx)
+                            null
+                        } catch (e: Throwable) {
+                            e
+                        }
+                    },
+                )
+            }.map { it.get() }
+        } finally {
+            executor.shutdown()
+        }
+        failures.firstOrNull { it != null }?.let { throw it }
     }
 
     /**

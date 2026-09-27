@@ -44,7 +44,12 @@ class ConsoleReplayListenerTest {
 
     @Test
     fun `onTraceFailed prints FAIL and the reproduce seed line naming the trace`() {
-        val output = capture { it.onTraceFailed(2, config, AssertionError("boom")) }
+        // onTraceFailureSaved(..., null, null) is the flush trigger a real failing trace always
+        // gets right after onTraceFailed (ReplayRunner.traceReplays), whether or not saving worked.
+        val output = capture {
+            it.onTraceFailed(2, config, AssertionError("boom"))
+            it.onTraceFailureSaved(2, "test", null, null)
+        }
 
         assertTrue(output.contains("[FAIL] trace 3"))
         assertTrue(output.contains("Reproduce this error with `QUINT_SEED=12345`"))
@@ -93,6 +98,7 @@ class ConsoleReplayListenerTest {
         val output = capture(verbosity = 1) {
             it.onTraceStarted(0)
             it.onStep(0, 0, step)
+            it.onTraceFinished(0)
         }
 
         assertTrue(output.contains("[Trace 1]"))
@@ -101,13 +107,46 @@ class ConsoleReplayListenerTest {
     }
 
     @Test
+    fun `buffered trace output is not printed until the trace is flushed`() {
+        val output = capture(verbosity = 1) { it.onTraceStarted(0) }
+
+        assertTrue(output.isEmpty())
+    }
+
+    @Test
+    fun `two in-progress traces buffer independently and each flushes as its own block`() {
+        val step0 = Step("First", NondetPicks.empty(), ItfValue.Record(LinkedHashMap()))
+        val step1 = Step("Second", NondetPicks.empty(), ItfValue.Record(LinkedHashMap()))
+        val full = capture(verbosity = 1) {
+            // Interleaved calls, as if trace 0 and trace 1 ran on different threads at once.
+            it.onTraceStarted(0)
+            it.onTraceStarted(1)
+            it.onStep(1, 0, step1)
+            it.onStep(0, 0, step0)
+            it.onTraceFinished(1)
+            it.onTraceFinished(0)
+        }
+
+        assertTrue(full.contains("[Trace 1]"))
+        assertTrue(full.contains("[Trace 2]"))
+        // Trace 1 (index 1) flushed first: its whole block, not interleaved with trace 0's.
+        assertTrue(full.indexOf("Second") < full.indexOf("First"))
+    }
+
+    @Test
     fun `raw state is hidden below verbosity 2 and printed at verbosity 2`() {
         val rawState = ItfState(linkedMapOf("mbt::actionTaken" to ItfValue.Str("A")))
 
-        val atOne = capture(verbosity = 1) { it.onStepStarted(0, 0, rawState) }
+        val atOne = capture(verbosity = 1) {
+            it.onStepStarted(0, 0, rawState)
+            it.onTraceFinished(0)
+        }
         assertFalse(atOne.contains("Deriving step from"))
 
-        val atTwo = capture(verbosity = 2) { it.onStepStarted(0, 0, rawState) }
+        val atTwo = capture(verbosity = 2) {
+            it.onStepStarted(0, 0, rawState)
+            it.onTraceFinished(0)
+        }
         assertTrue(atTwo.contains("Deriving step from"))
         assertTrue(atTwo.contains("mbt::actionTaken"))
     }

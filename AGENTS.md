@@ -49,6 +49,11 @@ A project applying the Gradle plugin can also override `@QuintRun`/`@QuintTest`'
 `-Pquint.maxSamples=<int>`, `-Pquint.maxSteps=<int>`, `-Pquint.seed=<hex>` and
 `-Pquint.verbose=0|1|2` — see README.md's "Runtime overrides for PR vs nightly CI profiles"
 section for the full precedence and the `quintkonnect.*` system properties they map to.
+`-Pquint.replay=<path>` replays a saved `.itf.json` trace instead of generating new ones (no
+`quint` installation needed; see README.md's "Replaying a saved trace"), and
+`-Pquint.parallelism=<int>` runs `Runner.runTest`'s traces on a thread pool of that size (see
+README.md's "Running traces in parallel"; generated tests parallelize through JUnit's own dynamic
+test execution instead).
 
 `annotations`, `itf`, `core`, `ksp` and `gradle-plugin` (not `example`) build with Kotlin's
 explicit API mode (`quintkonnect.library` convention plugin in `build-logic/`): every public

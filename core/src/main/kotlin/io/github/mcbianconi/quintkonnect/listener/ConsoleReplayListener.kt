@@ -7,6 +7,7 @@ import io.github.mcbianconi.quintkonnect.Step
 import io.github.mcbianconi.quintkonnect.trace.GeneratorConfig
 import java.io.PrintStream
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 
 // Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
 // `-Pquint.verbose` Gradle property, for PR vs nightly CI profiles. Override > QUINT_VERBOSE > 0.
@@ -77,20 +78,43 @@ public class ConsoleReplayListener(
         System.err,
     )
 
+    // Trace-scoped output (onTraceStarted/onStepStarted/onStep/onTraceFailed/onTraceFailureSaved)
+    // is buffered here, one entry per in-progress trace index, instead of printed immediately:
+    // ReplayRunner.traceReplays traces can run on several threads at once (JUnit dynamic test
+    // parallelism), and runTest's own parallel mode (below) always does, so printing line by line
+    // could interleave one trace's lines with another's. Each buffer is flushed as a single
+    // PrintStream call (flush()), so one trace's block always prints contiguously. onTraceFinished
+    // and onTraceFailureSaved flush the trace they're for; onRunFinished flushes anything still
+    // buffered (a trace that failed via runTest's batch path, which never fires either of those).
+    private val buffers = ConcurrentHashMap<Int, StringBuilder>()
+
+    private fun emit(traceIndex: Int?, line: String) {
+        if (traceIndex == null) {
+            err.println(line)
+        } else {
+            buffers.computeIfAbsent(traceIndex) { StringBuilder() }.append(line).append('\n')
+        }
+    }
+
+    private fun flush(traceIndex: Int) {
+        val content = buffers.remove(traceIndex) ?: return
+        if (content.isNotEmpty()) err.print(content)
+    }
+
     private fun wrap(vararg codes: String, text: String): String =
         if (useColor) "${codes.joinToString("")}$text$RESET" else text
 
-    private fun title(msg: String) = err.println(wrap(BOLD, text = "== $msg"))
+    private fun title(msg: String, traceIndex: Int? = null) = emit(traceIndex, wrap(BOLD, text = "== $msg"))
 
-    private fun info(msg: String) = err.println(indent(msg))
+    private fun info(msg: String, traceIndex: Int? = null) = emit(traceIndex, indent(msg))
 
-    private fun success(msg: String) = err.println(wrap(BOLD, GREEN, text = indent(msg)))
+    private fun success(msg: String, traceIndex: Int? = null) = emit(traceIndex, wrap(BOLD, GREEN, text = indent(msg)))
 
-    private fun error(msg: String) = err.println(wrap(BOLD, RED, text = indent(msg)))
+    private fun error(msg: String, traceIndex: Int? = null) = emit(traceIndex, wrap(BOLD, RED, text = indent(msg)))
 
-    private fun trace(level: Int, msg: String) {
+    private fun trace(traceIndex: Int, level: Int, msg: String) {
         if (verbosity >= level) {
-            err.println(wrap(DIM, WHITE, text = indent(msg)))
+            emit(traceIndex, wrap(DIM, WHITE, text = indent(msg)))
         }
     }
 
@@ -100,30 +124,39 @@ public class ConsoleReplayListener(
     }
 
     override fun onTraceStarted(traceIndex: Int) {
-        trace(1, "[Trace ${traceIndex + 1}]")
+        trace(traceIndex, 1, "[Trace ${traceIndex + 1}]")
     }
 
     override fun onStepStarted(traceIndex: Int, stepIndex: Int, rawState: ItfState) {
-        trace(2, "Deriving step from:\n${ItfValue.Record(rawState.value).display()}\n")
+        trace(traceIndex, 2, "Deriving step from:\n${ItfValue.Record(rawState.value).display()}\n")
     }
 
     override fun onStep(traceIndex: Int, stepIndex: Int, step: Step) {
-        trace(1, "[Step $stepIndex]\n$step\n")
+        trace(traceIndex, 1, "[Step $stepIndex]\n$step\n")
     }
 
     override fun onTraceFailed(traceIndex: Int, config: GeneratorConfig, failure: Throwable) {
-        error("[FAIL] trace ${traceIndex + 1}")
-        error("Reproduce this error with `QUINT_SEED=${config.seed}`\n")
+        error("[FAIL] trace ${traceIndex + 1}", traceIndex)
+        error("Reproduce this error with `QUINT_SEED=${config.seed}`\n", traceIndex)
     }
 
     override fun onTraceFailureSaved(traceIndex: Int, testName: String, failureFile: Path?, replayCommand: String?) {
         if (failureFile != null && replayCommand != null) {
-            info("Saved failing trace to $failureFile")
-            info("Replay it with:\n   $replayCommand\n")
+            info("Saved failing trace to $failureFile", traceIndex)
+            info("Replay it with:\n   $replayCommand\n", traceIndex)
         }
+        flush(traceIndex)
+    }
+
+    override fun onTraceFinished(traceIndex: Int) {
+        flush(traceIndex)
     }
 
     override fun onRunFinished(testName: String, config: GeneratorConfig, failure: Throwable?) {
+        // Only ever non-empty for runTest's batch path: traceReplays always flushes each trace via
+        // onTraceFinished/onTraceFailureSaved before this fires (at most once, for the zero-traces case).
+        buffers.keys.sorted().forEach { flush(it) }
+
         if (failure == null) {
             success("[OK] $testName")
         } else {

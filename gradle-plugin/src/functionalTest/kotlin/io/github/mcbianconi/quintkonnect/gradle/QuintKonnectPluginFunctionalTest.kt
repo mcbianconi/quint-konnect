@@ -329,6 +329,44 @@ class QuintKonnectPluginFunctionalTest {
         assertTrue(result.output.contains("-Pquint.verbose must be 0, 1 or 2"))
     }
 
+    @Test
+    fun `an out-of-range -Pquint-parallelism fails the build`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("io.github.mcbianconi.quint-konnect")
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("checkQuint", "-Pquint.parallelism=0").buildAndFail()
+
+        assertTrue(result.output.contains("-Pquint.parallelism must be at least 1"))
+    }
+
+    @Test
+    fun `setting -Pquint-parallelism maps it to quintkonnect-parallelism`() {
+        buildFile.writeText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+                id("io.github.mcbianconi.quint-konnect")
+            }
+
+            tasks.register("printTestJvmArgs") {
+                doLast {
+                    val test = tasks.named("test", org.gradle.api.tasks.testing.Test::class.java).get()
+                    println("testJvmArgs=" + test.jvmArgumentProviders.flatMap { it.asArguments() }.joinToString(","))
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("printTestJvmArgs", "-Pquint.parallelism=4").build()
+
+        assertTrue(result.output.contains("-Dquintkonnect.parallelism=4"))
+    }
+
     private fun runner(vararg args: String): GradleRunner =
         GradleRunner.create()
             .withProjectDir(projectDir)

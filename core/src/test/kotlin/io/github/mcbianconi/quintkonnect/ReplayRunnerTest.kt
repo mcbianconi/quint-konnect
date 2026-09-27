@@ -52,14 +52,15 @@ class ReplayRunnerTest {
         override fun step(step: Step) = onStep(step)
     }
 
+    // synchronizedList: parallel runTest calls these from several threads at once.
     private class RecordingReplayListener : ReplayListener {
-        val events = mutableListOf<String>()
+        val events = java.util.Collections.synchronizedList(mutableListOf<String>())
         var stepFailure: Throwable? = null
         var runFailure: Throwable? = null
         var traceFailure: Throwable? = null
-        val traceFailedSeeds = mutableListOf<String>()
-        val savedFailureFiles = mutableListOf<Path?>()
-        val savedReplayCommands = mutableListOf<String?>()
+        val traceFailedSeeds = java.util.Collections.synchronizedList(mutableListOf<String>())
+        val savedFailureFiles = java.util.Collections.synchronizedList(mutableListOf<Path?>())
+        val savedReplayCommands = java.util.Collections.synchronizedList(mutableListOf<String?>())
 
         override fun onRunStarted(testName: String, config: GeneratorConfig) {
             events += "runStarted"
@@ -548,5 +549,92 @@ class ReplayRunnerTest {
         runner(traces, listener).traceReplays({ FakeDriver() }, "passing trace test").forEach { it.run() }
 
         assertFalse(listener.events.any { it.startsWith("traceFailed") || it.startsWith("runFinished") })
+    }
+
+    @Test
+    fun `resolveParallelism defaults to 1 when unset`() {
+        assertEquals(1, resolveParallelism(override = null))
+    }
+
+    @Test
+    fun `resolveParallelism parses a positive override`() {
+        assertEquals(4, resolveParallelism(override = "4"))
+    }
+
+    @Test
+    fun `resolveParallelism falls back to 1 for a non-numeric or non-positive override`() {
+        assertEquals(1, resolveParallelism(override = "not-a-number"))
+        assertEquals(1, resolveParallelism(override = "0"))
+        assertEquals(1, resolveParallelism(override = "-3"))
+    }
+
+    @Test
+    fun `runTest with parallelism above 1 still runs every trace and reports success`() {
+        val traces = traceWithAction("A") + traceWithAction("B") + traceWithAction("C")
+        val dispatched = java.util.Collections.synchronizedList(mutableListOf<String>())
+        val driverFactory = { FakeDriver { step -> dispatched += step.actionTaken } }
+
+        withParallelism(3) {
+            runner(traces).runTest(driverFactory, "parallel ok test")
+        }
+
+        assertEquals(setOf("A", "B", "C"), dispatched.toSet())
+    }
+
+    @Test
+    fun `runTest with parallelism above 1 runs every trace even when one fails`() {
+        val traces = traceWithAction("A") + traceWithAction("B") + traceWithAction("C")
+        val dispatched = java.util.Collections.synchronizedList(mutableListOf<String>())
+        val driverFactory = {
+            FakeDriver { step ->
+                dispatched += step.actionTaken
+                if (step.actionTaken == "B") throw AssertionError("boom")
+            }
+        }
+
+        withParallelism(3) {
+            assertThrows<AssertionError> { runner(traces).runTest(driverFactory, "parallel failing test") }
+        }
+
+        // Unlike the sequential loop (which stops at the first failure), every trace still ran.
+        assertEquals(setOf("A", "B", "C"), dispatched.toSet())
+    }
+
+    @Test
+    fun `runTest with parallelism above 1 reports the lowest-index failure and fires onRunFinished once with it`() {
+        val traces = traceWithAction("A") + traceWithAction("B") + traceWithAction("C")
+        val listener = RecordingReplayListener()
+        val failures = mapOf("A" to AssertionError("A failed"), "C" to AssertionError("C failed"))
+        val driverFactory = { FakeDriver { step -> failures[step.actionTaken]?.let { throw it } } }
+
+        val thrown = withParallelism(3) {
+            assertThrows<AssertionError> { runner(traces, listener).runTest(driverFactory, "parallel test") }
+        }
+
+        // replaySteps wraps the driver's exception into a new AssertionError naming the trace, so
+        // check the wrapped cause and message rather than the thrown instance itself.
+        assertSame(failures.getValue("A"), thrown.cause)
+        assertTrue(thrown.message!!.contains("trace 1"))
+        assertSame(thrown, listener.runFailure)
+        assertEquals(1, listener.events.count { it.startsWith("runFinished") })
+    }
+
+    @Test
+    fun `runTest with parallelism 1 (the default) behaves exactly as before`() {
+        val traces = traceWithAction("A") + traceWithAction("B")
+        var factoryCalls = 0
+        runner(traces).runTest({ factoryCalls++; FakeDriver() }, "sequential still default")
+
+        assertEquals(2, factoryCalls)
+    }
+
+    private fun <T> withParallelism(parallelism: Int, block: () -> T): T {
+        val previous = System.getProperty(PARALLELISM_PROPERTY)
+        System.setProperty(PARALLELISM_PROPERTY, parallelism.toString())
+        try {
+            return block()
+        } finally {
+            if (previous == null) System.clearProperty(PARALLELISM_PROPERTY) else System.setProperty(PARALLELISM_PROPERTY, previous)
+        }
     }
 }
