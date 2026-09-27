@@ -29,7 +29,10 @@ public abstract class QuintKonnectExtension {
     // to add to it.
     public abstract val quintIrSpecs: ConfigurableFileCollection
 
-    // Opt-in until KSP uses the IR for compile-time checks (qk-75ad): true makes every KSP task
-    // depend on `quintIr` and passes its output to the processor, so compiling tests needs quint.
+    // Opt-in: true makes every KSP task depend on `quintIr` and passes its output to the
+    // processor, which then reports a @QuintAction name/parameter not found in the spec, a
+    // parameter type that clearly doesn't match its nondet's, and a spec action reachable at
+    // runtime with no @QuintAction covering it (qk-75ad) -- but also means compiling tests needs
+    // quint. false (the default) skips all of that, unchanged from before qk-75ad.
     public abstract val readSpecIr: Property<Boolean>
 }
