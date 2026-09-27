@@ -118,15 +118,54 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 project.dependencies.add(configuration.name, "io.github.mcbianconi:quint-konnect-core:$PLUGIN_VERSION")
             }
 
+            // Computed once, independent of generateQuintTraces' own outputDir property (see the
+            // longer comment further below on tracesDirFiles/tracesDirPath, and failuresDir's
+            // identical shape a few lines down): both the task's own outputDir and the Test tasks'
+            // TracesDirArgumentProvider read this same value instead of one deriving from the other.
+            val tracesDir = project.layout.buildDirectory.dir("quint-konnect/traces")
+
+            val generateQuintTraces = project.tasks.register("generateQuintTraces", GenerateQuintTracesTask::class.java) { task ->
+                task.manifests.setFrom(
+                    project.fileTree(project.layout.buildDirectory.dir("generated/ksp")) {
+                        it.include("**/quintkonnect/traces-manifest/**/*.json")
+                    },
+                )
+                // "kspTestKotlin" (KSP2 registers one task per Kotlin compilation) by name, not by
+                // task reference: it may not be registered yet at this point, and a String task name
+                // is resolved lazily against the task container (mirrors wireQuintIr's own comment
+                // about not depending on KSP's internal task type, QuintIrWiring.kt).
+                task.dependsOn("kspTestKotlin")
+                task.projectDirectory.set(project.projectDir.absolutePath)
+                task.quintExecutable.set(quintExecutablePath(project, extension, downloadQuint))
+                task.quintVersion.set(extension.quintVersion)
+                task.maxSamplesOverride.set(project.provider { maxSamplesOverride })
+                task.maxStepsOverride.set(project.provider { maxStepsOverride })
+                task.seedOverride.set(project.provider { seedOverride })
+                task.envSeed.set(project.providers.environmentVariable("QUINT_SEED"))
+                task.outputDir.set(tracesDir)
+                task.dependsOn(checkQuint)
+                task.dependsOn(
+                    extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
+                )
+            }
+
             val projectDir = project.projectDir.absolutePath
             val failuresDir = project.layout.buildDirectory.dir("quint-konnect/failures")
             project.tasks.withType(Test::class.java).configureEach { test ->
                 // Replaying a saved trace needs no quint installation at all: skip checkQuint (and
                 // the download it can depend on) rather than fail a run that never invokes quint.
+                // generateQuintTraces needs quint too, for the same reason.
                 if (replayOverride == null) {
                     test.dependsOn(checkQuint)
                     test.dependsOn(
                         extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
+                    )
+                    test.dependsOn(generateQuintTraces)
+                    test.jvmArgumentProviders.add(
+                        TracesDirArgumentProvider(
+                            tracesDirPath = tracesDir.map { it.asFile.absolutePath },
+                            tracesDirFiles = project.files(generateQuintTraces.map { it.outputDir }),
+                        ),
                     )
                 }
                 test.useJUnitPlatform()

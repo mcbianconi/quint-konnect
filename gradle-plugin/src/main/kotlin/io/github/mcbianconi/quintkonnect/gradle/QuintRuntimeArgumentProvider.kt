@@ -73,3 +73,22 @@ internal const val REPLAY_GRADLE_PROPERTY: String = "quint.replay"
 // (ReplayRunner.traceReplays) parallelize through JUnit's own dynamic test execution instead.
 internal const val PARALLELISM_SYSTEM_PROPERTY: String = "quintkonnect.parallelism"
 internal const val PARALLELISM_GRADLE_PROPERTY: String = "quint.parallelism"
+
+// Mirrors TRACES_DIR_PROPERTY (core/.../trace/TraceSource.kt): generateQuintTraces' output
+// directory (GenerateQuintTracesTask.kt, qk-adm2), set on every Test task unless `-Pquint.replay`
+// is also set (replaying a saved trace needs no generated-traces lookup either, mirroring
+// QuintKonnectPlugin.kt's other `replayOverride == null` guards).
+internal const val TRACES_DIR_SYSTEM_PROPERTY: String = "quintkonnect.tracesDir"
+
+// A separate CommandLineArgumentProvider from the one above: [tracesDirFiles] fingerprints
+// generateQuintTraces' output directory content as a Test task input (so a Test task reruns when
+// the traces it would replay change), while [tracesDirPath] itself stays @Internal (a machine
+// build-dir path); referencing generateQuintTraces' own output property here is also what makes a
+// Test task depend on it, without a separate explicit dependsOn.
+internal class TracesDirArgumentProvider(
+    @get:Internal val tracesDirPath: Provider<String>,
+    @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val tracesDirFiles: FileCollection,
+) : CommandLineArgumentProvider {
+
+    override fun asArguments(): Iterable<String> = listOf("-D$TRACES_DIR_SYSTEM_PROPERTY=${tracesDirPath.get()}")
+}
