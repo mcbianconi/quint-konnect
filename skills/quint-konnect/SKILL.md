@@ -28,15 +28,15 @@ Read `references/gradle-setup.md` for the full snippets (Gradle plugin path and 
 fallback) before writing any build file — it has the exact dependency coordinates, the
 `pluginManagement` block the plugin needs, and the KSP generated-source-dir wiring. In short:
 
-- Prefer applying the Gradle plugin, id `io.github.mcbianconi.quint-konnect`. It applies KSP,
-  adds the `kspTest`/`testImplementation` dependencies, wires the generated test source
-  directory, and adds a `checkQuint` task that fails the build if `quint` is missing.
+- Prefer applying the Gradle plugin, id `io.github.mcbianconi.quint-konnect` version `0.1.0`. It
+  applies KSP, adds the `kspTest`/`testImplementation` dependencies, wires the generated test
+  source directory, and adds a `checkQuint` task that fails the build if `quint` is missing.
 - Without the plugin, apply `com.google.devtools.ksp` yourself, add
-  `kspTest("io.github.mcbianconi:quint-konnect-ksp:<VERSION>")` and
-  `testImplementation("io.github.mcbianconi:quint-konnect-core:<VERSION>")`, and wire
+  `kspTest("io.github.mcbianconi:quint-konnect-ksp:0.1.0")` and
+  `testImplementation("io.github.mcbianconi:quint-konnect-core:0.1.0")`, and wire
   `build/generated/ksp/test/kotlin` into the `test` source set.
-- quint-konnect isn't on Maven Central yet: use `<VERSION>` as a literal placeholder and ask the
-  user what version/local-build mechanism (`includeBuild`, `publishToMavenLocal`) they're using.
+- Current release is `0.1.0` on Maven Central under `io.github.mcbianconi`; the plugin pulls
+  `-ksp`/`-core` at its own version, so only the plugin version needs to be set explicitly.
 - A driver's spec file and its Kotlin driver class both live under `src/test/`, not `src/main/`
   (drivers are test code; only the plugin wires `kspTest`, not `ksp`).
 
@@ -242,8 +242,6 @@ Debugging notes:
 
 ## Known limitations
 
-- Not yet published to Maven Central — every dependency coordinate needs the `<VERSION>`
-  placeholder resolved by hand for now.
 - No Windows support.
 - No compile-time check that a `@QuintAction` name or nondet parameter name actually exists in
   the spec — a typo only surfaces when a trace is replayed.

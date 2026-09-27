@@ -401,6 +401,16 @@ An agent skill lives at [`skills/quint-konnect/`](skills/quint-konnect/SKILL.md)
 agent at it to wire quint-konnect into a Kotlin/Gradle project: Gradle/KSP setup, driver and
 `TypedState` mapping, and debugging with `QUINT_SEED`/`QUINT_VERBOSE`.
 
+Install it:
+
+- **Claude Code**: `/plugin marketplace add mcbianconi/quint-konnect` then
+  `/plugin install quint-konnect@quint-konnect`.
+- **Other agents, via [`npx skills`](https://github.com/vercel-labs/agent-skills)**:
+  `npx skills add mcbianconi/quint-konnect --skill quint-konnect`. The `--skill` filter is
+  required — this repo also has its own dev skills under `.claude/skills/` that `npx skills`
+  would otherwise discover too (see
+  [the decision record](docs/decisions/agent-skill-plugin.md)).
+
 ## Build & test
 
 ```bash
