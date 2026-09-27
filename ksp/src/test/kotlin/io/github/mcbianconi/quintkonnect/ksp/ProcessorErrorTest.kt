@@ -85,6 +85,41 @@ class ProcessorErrorTest {
         assertTrue(result.messages.contains("second"), result.messages)
     }
 
+    // qk-c7z8: before this check, the second kind's generated files collided with the first's.
+    @Test
+    fun `driver with both QuintRun and QuintTest should be rejected by the processor`() {
+        val result = compileWithProcessor(
+            kotlinSource(
+                "BothKindsDriver.kt",
+                """
+                package bothkinds
+
+                import io.github.mcbianconi.quintkonnect.Driver
+                import io.github.mcbianconi.quintkonnect.Step
+                import io.github.mcbianconi.quintkonnect.annotations.QuintAction
+                import io.github.mcbianconi.quintkonnect.annotations.QuintRun
+                import io.github.mcbianconi.quintkonnect.annotations.QuintTest
+
+                @QuintRun(spec = "unused.qnt")
+                @QuintTest(spec = "unused.qnt", test = "t")
+                class BothKindsDriver : Driver {
+                    override fun step(step: Step) = generatedStep(step)
+
+                    @QuintAction("a")
+                    fun a() {}
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(
+            result.messages.contains("BothKindsDriver has both @QuintRun and @QuintTest"),
+            result.messages,
+        )
+        assertTrue(!result.messages.contains("FileAlreadyExists"), result.messages)
+    }
+
     // qk-9lsz: a @QuintAction function must be public, since the generated dispatcher calls it
     // from a separate file.
     @Test

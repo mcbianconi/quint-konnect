@@ -14,8 +14,8 @@ non-plugin consumer keep working unchanged (qk-adm2).
 
 **Manifest:** KSP (`ksp/.../generators/DriverManifestWriter.kt`) writes one JSON resource per driver
 at `build/generated/ksp/<target>/test/resources/quintkonnect/traces-manifest/<package path>/
-<Driver>-<kind>.json` (`kind` is `run` or `test`; the suffix keeps a driver's `@QuintRun` and
-`@QuintTest` manifests from colliding if it somehow has both). It carries `driver` (FQN), `kind`,
+<Driver>-<kind>.json` (`kind` is `run` or `test`; KSP rejects a driver with both `@QuintRun` and
+`@QuintTest`). It carries `driver` (FQN), `kind`,
 `spec`, `main`/`init`/`step`/`test`/`maxSamples`/`maxSteps`/`seed` (whichever apply, omitted when
 blank) and `invariants`. `generateQuintTraces` globs `build/generated/ksp/**/quintkonnect/
 traces-manifest/**/*.json` for its `manifests` input (not a Gradle-computed exact KSP resource

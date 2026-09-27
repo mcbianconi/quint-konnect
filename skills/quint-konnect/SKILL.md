@@ -44,6 +44,8 @@ fallback) before writing any build file — it has the exact dependency coordina
 
 A **driver** is a class implementing `Driver` (from `quint-konnect-core`), annotated with
 `@QuintRun` (traces via `quint run --mbt`) or `@QuintTest` (traces via `quint test --match`).
+One driver takes only one of the two; to cover both, put the `@QuintAction` methods in an abstract
+base class and annotate one subclass with each.
 
 ```kotlin
 import io.github.mcbianconi.quintkonnect.Driver

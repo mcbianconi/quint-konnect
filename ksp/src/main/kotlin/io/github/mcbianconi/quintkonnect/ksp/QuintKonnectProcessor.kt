@@ -36,8 +36,12 @@ internal class QuintKonnectProcessor(
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val deferred = mutableListOf<KSAnnotated>()
 
-        resolver.getSymbolsWithAnnotation(quintRunFqn)
-            .filterIsInstance<KSClassDeclaration>()
+        val runDrivers = resolver.getSymbolsWithAnnotation(quintRunFqn).filterIsInstance<KSClassDeclaration>().toList()
+        val testDrivers = resolver.getSymbolsWithAnnotation(quintTestFqn).filterIsInstance<KSClassDeclaration>().toList()
+        val bothAnnotated = rejectBothAnnotations(runDrivers, testDrivers)
+
+        runDrivers
+            .filterNot { it.qualifiedName!!.asString() in bothAnnotated }
             .forEach { clazz ->
                 val module = loadIr(clazz, "QuintRun")
                 if (module != null && defer(clazz)) { deferred += clazz; return@forEach }
@@ -48,8 +52,8 @@ internal class QuintKonnectProcessor(
                 if (module != null) validateRunDriver(clazz, module)
             }
 
-        resolver.getSymbolsWithAnnotation(quintTestFqn)
-            .filterIsInstance<KSClassDeclaration>()
+        testDrivers
+            .filterNot { it.qualifiedName!!.asString() in bothAnnotated }
             .forEach { clazz ->
                 val module = loadIr(clazz, "QuintTest")
                 if (module != null && defer(clazz)) { deferred += clazz; return@forEach }
@@ -61,6 +65,25 @@ internal class QuintKonnectProcessor(
 
         specTypesGenerator.flush()
         return deferred
+    }
+
+    // Both kinds would generate the same `generatedStep`, `<Driver>QuintSuite` and
+    // `build/quint-konnect/traces/<Driver>/` directory, so one driver takes only one of them.
+    private fun rejectBothAnnotations(
+        runDrivers: List<KSClassDeclaration>,
+        testDrivers: List<KSClassDeclaration>,
+    ): Set<String> {
+        val testFqns = testDrivers.map { it.qualifiedName!!.asString() }.toSet()
+        val both = runDrivers.filter { it.qualifiedName!!.asString() in testFqns }
+        both.forEach { clazz ->
+            logger.error(
+                "quint-konnect: ${clazz.simpleName.asString()} has both @QuintRun and @QuintTest; a driver " +
+                    "takes only one. Move its @QuintAction methods to an abstract base class and annotate " +
+                    "one subclass with @QuintRun and another with @QuintTest.",
+                clazz,
+            )
+        }
+        return both.map { it.qualifiedName!!.asString() }.toSet()
     }
 
     // A driver whose signatures reference a type this processor generates (qk-ixox: a

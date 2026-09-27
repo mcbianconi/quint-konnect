@@ -1,6 +1,8 @@
 package io.github.mcbianconi.quintkonnect.annotations
 
 /**
+ * A driver takes only one of `@QuintRun` and `@QuintTest`; KSP rejects a driver with both.
+ *
  * @param ignore Spec state variables this driver doesn't model. `SpecTypesGenerator` (`ksp`)
  * leaves them out of the `<Module>Spec.<Driver>State` class it generates alongside the full
  * `<Module>Spec.State`, so `TypedState` can be built over that projection instead of a
