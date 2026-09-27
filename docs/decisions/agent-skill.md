@@ -4,7 +4,7 @@ date: 2026-09-26
 ---
 
 quint-konnect publishes a user-facing AI agent skill at `skills/quint-konnect/`, kept separate
-from this repo's own dev skills under `../../.agents/skills/`. It teaches an agent to wire a Kotlin
+from this repo's own dev skills under `../../.claude/skills/`. It teaches an agent to wire a Kotlin
 driver to an existing Quint spec (Gradle/KSP setup, `@QuintRun`/`@QuintTest`/`@QuintAction`,
 `TypedState`, reading `QUINT_SEED`/`QUINT_VERBOSE` failures); it defers spec authoring and the
 Quint language itself to quint-llm-kit's `quint-lang` skill (github.com/quint-co/quint-llm-kit)
