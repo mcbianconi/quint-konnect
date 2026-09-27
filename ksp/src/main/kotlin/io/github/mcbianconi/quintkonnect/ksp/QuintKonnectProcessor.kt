@@ -56,6 +56,7 @@ internal class QuintKonnectProcessor(
                 QuintTestTestGenerator(codeGenerator, logger).generate(clazz)
             }
 
+        specTypesGenerator.flush()
         return deferred
     }
 
@@ -64,8 +65,9 @@ internal class QuintKonnectProcessor(
     // round. Deferring once lets that round resolve it; a driver still invalid after that (a real
     // typo) is processed anyway, as before qk-ixox, and the compiler reports the error. Only a
     // driver with spec IR is deferred: KSP runs another round only when this one wrote files, and
-    // loadIr just wrote that driver's spec types; without IR a driver is invalid at most through
-    // references to its own not-yet-generated `generatedStep`, which never needs a second round.
+    // this round's flush writes that driver's spec types; without IR a driver is invalid at most
+    // through references to its own not-yet-generated `generatedStep`, which never needs a second
+    // round.
     private fun defer(clazz: KSClassDeclaration): Boolean {
         if (clazz.validate(enableNewFeatures = true)) return false
         return deferredOnce.add(clazz.qualifiedName!!.asString())
@@ -93,7 +95,7 @@ internal class QuintKonnectProcessor(
             }
         }
         irByDriver[key] = module
-        if (module != null) specTypesGenerator.generate(clazz, spec!!, module)
+        if (module != null) specTypesGenerator.add(clazz, spec!!, module)
         return module
     }
 

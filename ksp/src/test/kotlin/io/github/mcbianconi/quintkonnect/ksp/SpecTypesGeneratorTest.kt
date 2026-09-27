@@ -2,10 +2,18 @@
 
 package io.github.mcbianconi.quintkonnect.ksp
 
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.sourcesGeneratedBySymbolProcessor
+import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import io.github.mcbianconi.quintkonnect.ksp.ir.IR_DIR_OPTION_NAME
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -143,5 +151,44 @@ class SpecTypesGeneratorTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         assertEquals(1, result.sourcesGeneratedBySymbolProcessor.count { it.name == "SpectypesSpec.kt" })
+    }
+
+    // qk-sr50: KSP's incremental mode reprocesses every originating file of a dirty output, so a
+    // shared <Module>Spec.kt must list each driver using it; with only the first, deleting that
+    // driver would drop the file the second still needs.
+    @Test
+    fun `a shared spec types file lists every driver using it as an originating file`(@TempDir tempDir: File) {
+        val originsByFile = mutableMapOf<String, List<String>>()
+        val provider = SymbolProcessorProvider { env ->
+            val recording = object : CodeGenerator by env.codeGenerator {
+                override fun createNewFile(dependencies: Dependencies, packageName: String, fileName: String, extensionName: String) =
+                    env.codeGenerator.createNewFile(dependencies, packageName, fileName, extensionName).also {
+                        originsByFile[fileName] = dependencies.originatingFiles.map { it.fileName }.sorted()
+                    }
+            }
+            QuintKonnectProcessorProvider().create(
+                SymbolProcessorEnvironment(
+                    env.options, env.kotlinVersion, recording, env.logger, env.apiVersion,
+                    env.compilerVersion, env.platforms, env.kspVersion,
+                ),
+            )
+        }
+        val compilation = KotlinCompilation().apply {
+            sources = listOf(
+                driver("shared", "FirstDriver", "ir/spectypes.qnt", "@QuintAction(\"paint\") fun paint() {}"),
+                driver("shared", "SecondDriver", "ir/spectypes.qnt", "@QuintAction(\"paint\") fun paint() {}"),
+            )
+            inheritClassPath = true
+            jvmTarget = "21"
+            useKsp2()
+            symbolProcessorProviders = mutableListOf(provider)
+            messageOutputStream = System.out
+            kspProcessorOptions = mutableMapOf(IR_DIR_OPTION_NAME to irDirWith(tempDir, "spectypes"))
+        }
+
+        val result = compilation.compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertEquals(listOf("FirstDriver.kt", "SecondDriver.kt"), originsByFile["SpectypesSpec"])
     }
 }
