@@ -1,8 +1,9 @@
 // ktlint through Spotless: https://github.com/diffplug/spotless/tree/main/plugin-gradle#ktlint
 // Spotless rather than ktlint-gradle or kotlinter (qk-fhdg): it takes explicit file targets, so
 // generated sources stay out and the root project can lint build-logic/ and example/ too, and its
-// spotlessInstallGitPrePushHook installs a pre-push hook, which `but push` runs and `but commit`
-// doesn't run pre-commit. Code style and rule settings live in the root .editorconfig.
+// spotlessInstallGitPrePushHook installs a pre-push hook, which suits GitButler: `but commit` runs
+// no git hooks at all, while `but push` and `but pr new` run pre-push (qk-rtgv). Code style and
+// rule settings live in the root .editorconfig.
 // Applied by quintkonnect.kotlin-jvm and the root project; build-logic/ and example/ are separate
 // builds, linted from the root project (see its build.gradle.kts).
 plugins {
