@@ -39,7 +39,9 @@ public object BigIntegerSerializer : KSerializer<BigInteger> {
 
 private fun ItfValue.toBigIntegerValue(path: String): BigInteger = when (this) {
     is ItfValue.Num -> BigInteger.valueOf(value)
+
     is ItfValue.BigInt -> value.toBigInteger()
+
     else -> throw ItfDecodingException(
         "${path.ifEmpty { "<root>" }}: expected an int, got ${this::class.simpleName}: ${display()}",
     )

@@ -11,13 +11,17 @@ class BuggyRockPaperScissorsDriver : Driver {
     override fun step(step: Step) {
         when (step.actionTaken) {
             "init" -> game.init()
+
             "decide_moves" -> {
                 val move1 = step.nondetPicks.decode<MoveSer>("move1")
                 val move2 = step.nondetPicks.decode<MoveSer>("move2")
                 game.decideMoves(move1.toMove(), move2.toMove())
             }
+
             "find_winner" -> game.findWinner()
+
             "restart" -> game.init()
+
             else -> error("Unimplemented action: ${step.actionTaken}")
         }
     }

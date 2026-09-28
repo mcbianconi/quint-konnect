@@ -30,6 +30,7 @@ internal class QuintRunTestGenerator(
         val maxSamples = (args["maxSamples"] as? Int)?.takeIf { it >= 0 }
         val maxSteps = (args["maxSteps"] as? Int)?.takeIf { it >= 0 }
         val seed = (args["seed"] as? String)?.takeIf { it.isNotBlank() }
+
         @Suppress("UNCHECKED_CAST")
         val invariants = (args["invariants"] as? List<String>).orEmpty().filter { it.isNotBlank() }
 

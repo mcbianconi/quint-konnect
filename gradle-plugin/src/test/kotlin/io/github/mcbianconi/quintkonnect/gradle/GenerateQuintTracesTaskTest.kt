@@ -160,7 +160,10 @@ class GenerateQuintTracesTaskTest {
             """{"driver":"pkg.MyDriver","kind":"run","spec":"spec.qnt","seed":"cafe","invariants":[]}""",
         )
         val outDir = File(tempDir, "out")
-        val staleFile = File(File(outDir, "MyDriver"), "run_99.itf.json").apply { parentFile.mkdirs(); writeText("stale") }
+        val staleFile = File(File(outDir, "MyDriver"), "run_99.itf.json").apply {
+            parentFile.mkdirs()
+            writeText("stale")
+        }
         assertTrue(staleFile.exists())
 
         runConfiguredTask(tempDir, manifestDir, outDir, stubQuint(tempDir, File(tempDir, "args.txt")))

@@ -108,5 +108,6 @@ public fun ItfValue.intoOption(): ItfValue? = when {
             else -> this
         }
     }
+
     else -> this
 }

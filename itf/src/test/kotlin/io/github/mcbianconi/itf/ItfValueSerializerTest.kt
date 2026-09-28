@@ -1,6 +1,6 @@
 package io.github.mcbianconi.itf
 
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

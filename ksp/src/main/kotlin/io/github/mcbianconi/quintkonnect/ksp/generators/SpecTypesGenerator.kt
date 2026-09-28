@@ -70,6 +70,7 @@ internal class SpecTypesGenerator(
         val previous = written[key] ?: pending[key]?.spec
         when {
             previous == null -> pending[key] = Pending(spec, module, mutableListOf(clazz))
+
             previous != spec -> {
                 logger.warn(
                     "quint-konnect: not generating $objectName for spec \"$spec\": $key is already " +
@@ -78,6 +79,7 @@ internal class SpecTypesGenerator(
                 )
                 return
             }
+
             else -> pending[key]?.drivers?.add(clazz)
         }
         if (ignore.isNotEmpty()) pending[key]?.ignoreByDriver?.set(clazz, ignore)
@@ -162,7 +164,7 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
             unsupportedReason(type, mutableSetOf())?.let { "var $name: $it" }
         }
         if (reasons.isNotEmpty()) {
-            skipped += "$label (${driverSimpleName}'s state projection), because of:"
+            skipped += "$label ($driverSimpleName's state projection), because of:"
             skipped += reasons.map { "  $it" }
             return
         }
@@ -177,8 +179,11 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
             for (param in action.nondetParams) {
                 if (!seen.add(param.name + "/" + param.type)) continue
                 val reason = unsupportedReason(param.type, mutableSetOf())
-                if (reason != null) skipped += "nondet ${param.name} (action ${action.name}): $reason"
-                else typeName(param.type, param.name)
+                if (reason != null) {
+                    skipped += "nondet ${param.name} (action ${action.name}): $reason"
+                } else {
+                    typeName(param.type, param.name)
+                }
             }
         }
     }
@@ -187,14 +192,19 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
     // holds the typedef names on the current path, so a recursive typedef counts as supported.
     private fun unsupportedReason(type: QuintType, visiting: MutableSet<String>): String? = when (type) {
         QuintType.BoolType, QuintType.IntType, QuintType.StrType -> null
+
         is QuintType.SetType -> unsupportedReason(type.element, visiting)
+
         is QuintType.ListType -> unsupportedReason(type.element, visiting)
+
         is QuintType.FunType -> unsupportedReason(type.arg, visiting) ?: unsupportedReason(type.res, visiting)
+
         is QuintType.TupleType -> when {
             type.elements.isEmpty() -> "the unit tuple () has no Kotlin field shape"
             type.elements.distinct().size > 1 -> "tuple ${render(type)} mixes element types; only a homogeneous tuple decodes (as List)"
             else -> unsupportedReason(type.elements.first(), visiting)
         }
+
         is QuintType.RecordType, is QuintType.SumType -> {
             val named = structuralName(type)?.takeIf { it !in visiting }
             val payload = optionPayload(type)
@@ -203,15 +213,20 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
                     visiting.add(named)
                     unsupportedReason(typeDef(named), visiting).also { visiting.remove(named) }
                 }
+
                 payload != null && optionPayload(resolve(payload)) != null ->
                     "${render(type)} nests Option, which a nullable Kotlin type can't tell apart"
+
                 payload != null -> unsupportedReason(payload, visiting)
+
                 type is QuintType.RecordType -> type.fields.values.firstNotNullOfOrNull { unsupportedReason(it, visiting) }
+
                 else -> (type as QuintType.SumType).variants.values.firstNotNullOfOrNull {
                     if (it.isUnit()) null else unsupportedReason(it, visiting)
                 }
             }
         }
+
         is QuintType.ConstType -> {
             val name = typeDefName(type.name)
             when {
@@ -221,14 +236,20 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
                 else -> unsupportedReason(typeDef(name), visiting).also { visiting.remove(name) }
             }
         }
+
         is QuintType.AppType -> when {
             !isOption(type) -> "${render(type)} applies a generic type; only Option[T] is mapped"
+
             optionPayload(resolve(type.args.single())) != null ->
                 "${render(type)} nests Option, which a nullable Kotlin type can't tell apart"
+
             else -> unsupportedReason(type.args.single(), visiting)
         }
+
         is QuintType.VarType -> "type variable ${type.name} is unresolved"
+
         is QuintType.OperType -> "operator types aren't state or nondet values"
+
         is QuintType.UnknownType -> "quint IR type kind \"${type.kind}\" isn't recognized"
     }
 
@@ -236,12 +257,19 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
     // records/sums (a var, field, variant or nondet name).
     private fun typeName(type: QuintType, context: String): TypeName = when (type) {
         QuintType.BoolType -> BOOLEAN
+
         QuintType.IntType -> LONG
+
         QuintType.StrType -> STRING
+
         is QuintType.SetType -> SET.parameterizedBy(typeName(type.element, context))
+
         is QuintType.ListType -> LIST.parameterizedBy(typeName(type.element, context))
+
         is QuintType.FunType -> MAP.parameterizedBy(typeName(type.arg, context), typeName(type.res, context))
+
         is QuintType.TupleType -> LIST.parameterizedBy(typeName(type.elements.first(), context))
+
         is QuintType.RecordType, is QuintType.SumType -> {
             val name = structuralName(type)
             val payload = optionPayload(type)
@@ -251,12 +279,15 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
                 else -> anonymousType(type, context)
             }
         }
+
         is QuintType.ConstType -> {
             val name = typeDefName(type.name)!!
             val def = typeDef(name)
             if (def.isClassShaped()) namedType(name) else typeName(def, context)
         }
+
         is QuintType.AppType -> typeName(type.args.single(), context).copy(nullable = true)
+
         else -> error("unsupported type reached typeName: $type")
     }
 
@@ -294,15 +325,25 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
 
     private fun unify(pattern: QuintType, type: QuintType, bindings: MutableMap<String, QuintType>): Boolean = when (pattern) {
         is QuintType.VarType -> bindings.getOrPut(pattern.name) { type } == type
+
         is QuintType.SetType -> type is QuintType.SetType && unify(pattern.element, type.element, bindings)
+
         is QuintType.ListType -> type is QuintType.ListType && unify(pattern.element, type.element, bindings)
+
         is QuintType.FunType -> type is QuintType.FunType && unify(pattern.arg, type.arg, bindings) && unify(pattern.res, type.res, bindings)
-        is QuintType.TupleType -> type is QuintType.TupleType && pattern.elements.size == type.elements.size &&
-            pattern.elements.zip(type.elements).all { (p, t) -> unify(p, t, bindings) }
-        is QuintType.RecordType -> type is QuintType.RecordType && pattern.fields.keys == type.fields.keys &&
-            pattern.fields.all { (k, p) -> unify(p, type.fields.getValue(k), bindings) }
-        is QuintType.SumType -> type is QuintType.SumType && pattern.variants.keys == type.variants.keys &&
-            pattern.variants.all { (k, p) -> unify(p, type.variants.getValue(k), bindings) }
+
+        is QuintType.TupleType ->
+            type is QuintType.TupleType && pattern.elements.size == type.elements.size &&
+                pattern.elements.zip(type.elements).all { (p, t) -> unify(p, t, bindings) }
+
+        is QuintType.RecordType ->
+            type is QuintType.RecordType && pattern.fields.keys == type.fields.keys &&
+                pattern.fields.all { (k, p) -> unify(p, type.fields.getValue(k), bindings) }
+
+        is QuintType.SumType ->
+            type is QuintType.SumType && pattern.variants.keys == type.variants.keys &&
+                pattern.variants.all { (k, p) -> unify(p, type.variants.getValue(k), bindings) }
+
         else -> pattern == type
     }
 
@@ -375,8 +416,10 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
     // `type Option[a] = Some(a) | None`, already expanded into that sum; both decode as `T?`.
     private fun optionPayload(type: QuintType): QuintType? = when {
         type is QuintType.AppType && isOption(type) -> type.args.single()
+
         type is QuintType.SumType && type.variants.keys == setOf("Some", "None") &&
             type.variants.getValue("None").isUnit() -> type.variants.getValue("Some")
+
         else -> null
     }
 
@@ -406,16 +449,27 @@ private class SpecTypeMapper(private val module: QuintModuleIr, private val wrap
     private fun expand(type: QuintType, visiting: MutableSet<String>): QuintType = when (type) {
         is QuintType.ConstType -> {
             val name = typeDefName(type.name)
-            if (name == null || name in module.typeDefParams || !visiting.add(name)) type
-            else expand(typeDef(name), visiting).also { visiting.remove(name) }
+            if (name == null || name in module.typeDefParams || !visiting.add(name)) {
+                type
+            } else {
+                expand(typeDef(name), visiting).also { visiting.remove(name) }
+            }
         }
+
         is QuintType.SetType -> QuintType.SetType(expand(type.element, visiting))
+
         is QuintType.ListType -> QuintType.ListType(expand(type.element, visiting))
+
         is QuintType.FunType -> QuintType.FunType(expand(type.arg, visiting), expand(type.res, visiting))
+
         is QuintType.TupleType -> QuintType.TupleType(type.elements.map { expand(it, visiting) })
+
         is QuintType.RecordType -> QuintType.RecordType(type.fields.mapValues { expand(it.value, visiting) })
+
         is QuintType.SumType -> QuintType.SumType(type.variants.mapValues { expand(it.value, visiting) })
+
         is QuintType.AppType -> QuintType.AppType(type.ctor, type.args.map { expand(it, visiting) })
+
         else -> type
     }
 

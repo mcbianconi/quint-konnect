@@ -125,15 +125,23 @@ private fun classifyKotlin(type: KSType): TypeClass? {
 // successful typecheck, but a malformed/partial IR shouldn't infinite-loop here either).
 private fun classifyQuint(type: QuintType, typeDefs: Map<String, QuintType>, visitedConstNames: MutableSet<String>): TypeClass? = when (type) {
     is QuintType.BoolType -> TypeClass.BOOL
+
     is QuintType.IntType -> TypeClass.INT
+
     is QuintType.StrType -> TypeClass.STR
+
     is QuintType.SetType -> TypeClass.SET
+
     is QuintType.ListType -> TypeClass.LIST
+
     is QuintType.TupleType -> TypeClass.LIST
+
     is QuintType.FunType -> TypeClass.MAP
+
     is QuintType.ConstType ->
         typeDefs[type.name]?.takeIf { visitedConstNames.add(type.name) }?.let { classifyQuint(it, typeDefs, visitedConstNames) }
+
     is QuintType.RecordType, is QuintType.SumType, is QuintType.VarType, is QuintType.OperType,
     is QuintType.AppType, is QuintType.UnknownType,
-        -> null
+    -> null
 }

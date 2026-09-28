@@ -14,13 +14,21 @@ public class Step internal constructor(
         val nondets = if (nondetPicks.isEmpty()) "<none>" else "\n$nondetPicks"
         val stateStr = when (state) {
             is ItfValue.Record -> {
-                if (state.fields.isEmpty()) " <none>"
-                else state.fields.entries.joinToString("") { (k, v) -> "\n+ $k: ${v.display()}" }
+                if (state.fields.isEmpty()) {
+                    " <none>"
+                } else {
+                    state.fields.entries.joinToString("") { (k, v) -> "\n+ $k: ${v.display()}" }
+                }
             }
+
             is ItfValue.Map -> {
-                if (state.entries.isEmpty()) " <none>"
-                else state.entries.joinToString("") { (k, v) -> "\n+ ${k.display()}: ${v.display()}" }
+                if (state.entries.isEmpty()) {
+                    " <none>"
+                } else {
+                    state.entries.joinToString("") { (k, v) -> "\n+ ${k.display()}: ${v.display()}" }
+                }
             }
+
             else -> " ${state.display()}"
         }
         return "Action taken: $action\nNondet picks:$nondets\nNext state:$stateStr"
@@ -45,7 +53,7 @@ private fun extractFromMbtVars(state: LinkedHashMap<String, ItfValue>, statePath
             "Missing `mbt::actionTaken` variable in the trace. If this trace came from " +
                 "`quint test` (which has no `--mbt`), model the action taken as a " +
                 "sum-type variable in the spec instead and set DriverConfig.nondetPath " +
-                "to it (see docs/decisions/quint-test-needs-nondet-path.md)."
+                "to it (see docs/decisions/quint-test-needs-nondet-path.md).",
         )
 
     val nondetValue = state.remove("mbt::nondetPicks")
@@ -66,12 +74,17 @@ private fun extractFromSumType(
         ?: error("Expected action to be a sum type variant. Value found: ${ItfValue.Record(sumRecord).display()}")
 
     val nondetPicks = when (val v = sumRecord["value"]) {
-        is ItfValue.Tup    -> if (v.values.isEmpty()) NondetPicks.empty()
-                              else error("Expected empty tuple for unit sum type variant")
+        is ItfValue.Tup -> if (v.values.isEmpty()) {
+            NondetPicks.empty()
+        } else {
+            error("Expected empty tuple for unit sum type variant")
+        }
+
         is ItfValue.Record -> NondetPicks.fromRecord(v.fields)
+
         else -> error(
             "Expected nondet picks to be a sum type variant value as a record.\n" +
-                "Value found: ${ItfValue.Record(sumRecord).display()}"
+                "Value found: ${ItfValue.Record(sumRecord).display()}",
         )
     }
 
@@ -103,7 +116,7 @@ private fun findRecordAtPath(
         current = (next as? ItfValue.Record)?.fields
             ?: error(
                 "Cannot find a Record at '$segment' in path: $path\n" +
-                    "Current state: ${ItfValue.Record(current).display()}"
+                    "Current state: ${ItfValue.Record(current).display()}",
             )
     }
     return current

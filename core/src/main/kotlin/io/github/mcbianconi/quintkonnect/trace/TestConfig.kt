@@ -14,14 +14,23 @@ public data class TestConfig(
     override val nTraces: Int get() = maxSamplesOverride() ?: maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
-        add(quintExecutable()); add("test")
+        add(quintExecutable())
+        add("test")
         add(resolveSpec(spec))
-        add("--seed"); add(seed)
-        add("--match"); add("^${escapeRegex(test)}$")
-        add("--max-samples"); add(nTraces.toString())
-        add("--out-itf"); add(tmpDir.resolve("test_{seq}.itf.json").toString())
-        add("--verbosity"); add("0")
-        main?.let { add("--main"); add(it) }
+        add("--seed")
+        add(seed)
+        add("--match")
+        add("^${escapeRegex(test)}$")
+        add("--max-samples")
+        add(nTraces.toString())
+        add("--out-itf")
+        add(tmpDir.resolve("test_{seq}.itf.json").toString())
+        add("--verbosity")
+        add("0")
+        main?.let {
+            add("--main")
+            add(it)
+        }
     }
 }
 

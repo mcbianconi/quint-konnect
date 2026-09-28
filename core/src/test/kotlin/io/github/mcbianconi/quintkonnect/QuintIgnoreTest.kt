@@ -137,7 +137,10 @@ class QuintIgnoreTest {
         val state = TypedStateOf(
             Nested.serializer(),
             Nested(CounterWithIgnoredLabel(1, "impl-label")),
-            compare = { path, _, _ -> seen += path; null },
+            compare = { path, _, _ ->
+                seen += path
+                null
+            },
         )
 
         state.check(FakeDriver(), ItfValue.Record(linkedMapOf("counter" to specCounter(1, "spec-label"))))

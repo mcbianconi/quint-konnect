@@ -168,8 +168,14 @@ class SpecTypesGeneratorTest {
             }
             QuintKonnectProcessorProvider().create(
                 SymbolProcessorEnvironment(
-                    env.options, env.kotlinVersion, recording, env.logger, env.apiVersion,
-                    env.compilerVersion, env.platforms, env.kspVersion,
+                    env.options,
+                    env.kotlinVersion,
+                    recording,
+                    env.logger,
+                    env.apiVersion,
+                    env.compilerVersion,
+                    env.platforms,
+                    env.kspVersion,
                 ),
             )
         }

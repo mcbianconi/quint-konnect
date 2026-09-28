@@ -30,12 +30,15 @@ internal sealed class DiffValue {
 
 internal fun DiffValue.render(): String = when (this) {
     is DiffValue.Leaf -> text
+
     is DiffValue.Seq -> if (ordered) {
         "(${items.joinToString(", ") { it.render() }})"
     } else {
         "Set(${items.joinToString(", ") { it.render() }})"
     }
+
     is DiffValue.MapNode -> "Map(${entries.joinToString(", ") { (k, v) -> "${k.render()} -> ${v.render()}" }})"
+
     is DiffValue.Struct -> "{ ${fields.entries.joinToString(", ") { (k, v) -> "$k: ${v.render()}" }} }"
 }
 

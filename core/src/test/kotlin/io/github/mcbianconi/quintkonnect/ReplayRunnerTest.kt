@@ -370,9 +370,15 @@ class ReplayRunnerTest {
     fun `traceReplays generates traces once and calls the driver factory once per run`() {
         var generateCalls = 0
         val traces = traceWithAction("A") + traceWithAction("B")
-        val source = TraceSource { generateCalls++; traces }
+        val source = TraceSource {
+            generateCalls++
+            traces
+        }
         var factoryCalls = 0
-        val driverFactory = { factoryCalls++; FakeDriver() }
+        val driverFactory = {
+            factoryCalls++
+            FakeDriver()
+        }
 
         val replays = ReplayRunner(fakeConfig, source, silentListener).traceReplays(driverFactory, "gen once")
         assertEquals(1, generateCalls)
@@ -626,7 +632,10 @@ class ReplayRunnerTest {
     fun `runTest with parallelism 1 (the default) behaves exactly as before`() {
         val traces = traceWithAction("A") + traceWithAction("B")
         var factoryCalls = 0
-        runner(traces).runTest({ factoryCalls++; FakeDriver() }, "sequential still default")
+        runner(traces).runTest({
+            factoryCalls++
+            FakeDriver()
+        }, "sequential still default")
 
         assertEquals(2, factoryCalls)
     }

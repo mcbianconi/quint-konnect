@@ -1,14 +1,14 @@
 package io.github.mcbianconi.itf
 
 public fun ItfValue.display(): String = when (this) {
-    is ItfValue.Bool   -> value.toString()
-    is ItfValue.Num    -> value.toString()
-    is ItfValue.Str    -> "\"$value\""
+    is ItfValue.Bool -> value.toString()
+    is ItfValue.Num -> value.toString()
+    is ItfValue.Str -> "\"$value\""
     is ItfValue.BigInt -> value
-    is ItfValue.List   -> "List(${values.joinToString(", ") { it.display() }})"
-    is ItfValue.Tup    -> "(${values.joinToString(", ") { it.display() }})"
-    is ItfValue.Set    -> "Set(${values.joinToString(", ") { it.display() }})"
-    is ItfValue.Map    -> "Map(${entries.joinToString(", ") { (k, v) -> "${k.display()} -> ${v.display()}" }})"
+    is ItfValue.List -> "List(${values.joinToString(", ") { it.display() }})"
+    is ItfValue.Tup -> "(${values.joinToString(", ") { it.display() }})"
+    is ItfValue.Set -> "Set(${values.joinToString(", ") { it.display() }})"
+    is ItfValue.Map -> "Map(${entries.joinToString(", ") { (k, v) -> "${k.display()} -> ${v.display()}" }})"
     is ItfValue.Record -> displayRecord(fields)
     is ItfValue.Unserializable -> value
 }

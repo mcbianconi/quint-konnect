@@ -19,31 +19,53 @@ import java.io.File
 import java.math.BigInteger
 
 @Serializable private data class IntRow(val v: Long)
+
 @Serializable private data class BigNumRow(val v: @Contextual BigInteger)
+
 @Serializable private data class BoolRow(val v: Boolean)
+
 @Serializable private data class StrRow(val v: String)
+
 @Serializable private data class TupleRow(val v: List<Long>)
+
 @Serializable private data class IntMapRow(val v: Map<Long, String>)
+
 @Serializable private data class TupleMapRow(val v: Map<List<Long>, String>)
+
 @Serializable private data class RecordKey(val x: Long, val y: Long)
+
 @Serializable private data class RecordMapRow(val v: Map<RecordKey, String>)
+
 @Serializable private data class SetRow(val v: Set<Long>)
+
 @Serializable private data class OptionRow(val v: Long?)
 
 @Serializable
 @JsonClassDiscriminator("tag")
 private sealed class P {
-    @Serializable @SerialName("X") data object X : P()
-    @Serializable @SerialName("O") data object O : P()
+    @Serializable
+    @SerialName("X")
+    data object X : P()
+
+    @Serializable
+    @SerialName("O")
+    data object O : P()
 }
+
 @Serializable private data class SumSimpleRow(val v: P)
 
 @Serializable
 @JsonClassDiscriminator("tag")
 private sealed class S {
-    @Serializable @SerialName("Foo") data class Foo(val value: Long) : S()
-    @Serializable @SerialName("Bar") data object Bar : S()
+    @Serializable
+    @SerialName("Foo")
+    data class Foo(val value: Long) : S()
+
+    @Serializable
+    @SerialName("Bar")
+    data object Bar : S()
 }
+
 @Serializable private data class SumPayloadRow(val v: S)
 
 private inline fun <reified T> decodeExample(json: String): T =
@@ -152,11 +174,13 @@ class TypesMdDocTest {
         assertTrue(orphanExamples.isEmpty(), "'## Examples' entries with no matching table row id: $orphanExamples")
 
         assertEquals(
-            examples.keys, exampleCases.keys,
+            examples.keys,
+            exampleCases.keys,
             "exampleCases in TypesMdDocTest.kt must match types.md's '## Examples' ids exactly",
         )
         assertEquals(
-            rowIds, rowKotlinTypeSubstring.keys,
+            rowIds,
+            rowKotlinTypeSubstring.keys,
             "rowKotlinTypeSubstring in TypesMdDocTest.kt must match types.md's row ids exactly",
         )
 

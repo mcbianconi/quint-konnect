@@ -1,6 +1,5 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
-import org.gradle.api.tasks.testing.Test as TestTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.testfixtures.ProjectBuilder
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.gradle.api.tasks.testing.Test as TestTask
 
 class QuintKonnectPluginTest {
 

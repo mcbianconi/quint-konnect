@@ -22,8 +22,7 @@ import kotlin.collections.List as KList
  * the supertype [SerializationException] (see `checkKotlinAbi` in AGENTS.md — a new public class
  * here would be an API change).
  */
-internal class ItfDecodingException(message: String, cause: Throwable? = null) :
-    SerializationException(message, cause)
+internal class ItfDecodingException(message: String, cause: Throwable? = null) : SerializationException(message, cause)
 
 private fun fail(path: String, expected: String, actual: ItfValue): Nothing =
     throw ItfDecodingException(
@@ -85,7 +84,9 @@ internal class ItfValueDecoder(
         val record = value as? ItfValue.Record ?: return true
         return when (val unwrapped = record.intoOption()) {
             null -> false
+
             record -> true
+
             else -> {
                 value = unwrapped
                 true
@@ -153,18 +154,22 @@ internal class ItfValueDecoder(
             val record = value as? ItfValue.Record ?: fail(path, "a sum type variant record", value)
             ItfSealedDecoder(record, path, serializersModule)
         }
+
         descriptor.kind == StructureKind.LIST -> {
             val children = value.asOrderedChildren() ?: fail(path, "a list, tuple or set", value)
             ItfListDecoder(children, path, serializersModule)
         }
+
         descriptor.kind == StructureKind.MAP -> {
             val entries = (value as? ItfValue.Map)?.entries ?: fail(path, "a map", value)
             ItfMapDecoder(entries, path, serializersModule)
         }
+
         descriptor.kind == StructureKind.CLASS || descriptor.kind == StructureKind.OBJECT -> {
             val fields = (value as? ItfValue.Record)?.fields ?: fail(path, "a record", value)
             ItfClassDecoder(fields, path, serializersModule)
         }
+
         else -> throw ItfDecodingException("${path.ifEmpty { "<root>" }}: unsupported descriptor kind ${descriptor.kind}")
     }
 

@@ -88,7 +88,10 @@ internal class StepMethodGenerator(
                 val decodeMemberName = if (resolvedType.isMarkedNullable) decodeOrNullMember else decodeMember
                 whenBlock.addStatement(
                     "val %N = step.nondetPicks.%M<%T>(%S)",
-                    paramName, decodeMemberName, typeName, paramName,
+                    paramName,
+                    decodeMemberName,
+                    typeName,
+                    paramName,
                 )
             }
             val args = fn.parameters.map { CodeBlock.of("%N", it.name!!.asString()) }.joinToCode(", ")
