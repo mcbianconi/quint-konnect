@@ -1,5 +1,10 @@
 # https://editorconfig.org, read by ktlint (quintkonnect.ktlint convention plugin) and IntelliJ:
 # https://pinterest.github.io/ktlint/latest/rules/configuration-ktlint/
+#
+# After editing this file, run `./gradlew --stop`, then `./gradlew spotlessApply --rerun-tasks`.
+# ktlint keeps parsed .editorconfig files in a static cache that lives as long as the Gradle daemon,
+# so a Spotless run in the same daemon still applies the old settings, and a later run in a new
+# daemon reuses that run's result as up to date.
 root = true
 
 [*.{kt,kts}]

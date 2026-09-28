@@ -93,7 +93,7 @@ Use the single-file form when other work is in progress in the same checkout (pa
 one GitButler workspace), since plain `spotlessApply` rewrites their uncommitted files too.
 
 Style settings live in `.editorconfig` (`intellij_idea` code style, `function-signature` rule
-disabled; the comments there say why).
+disabled); its comments say why, and what to run after editing it so the change takes effect.
 
 The pre-push hook (`.git/hooks/pre-push`; the installer appends to an existing hook) runs
 `spotlessCheck`, and on a violation runs `spotlessApply` and fails the push, leaving the fixes in
