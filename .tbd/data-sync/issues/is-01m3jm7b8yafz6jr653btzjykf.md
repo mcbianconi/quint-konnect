@@ -3,9 +3,9 @@ type: is
 id: is-01m3jm7b8yafz6jr653btzjykf
 title: "[epic] Kotlin lint/format tooling: local hook and CI gate"
 kind: epic
-status: open
+status: closed
 priority: 2
-version: 8
+version: 9
 labels:
   - roadmap
 dependencies: []
@@ -16,7 +16,11 @@ child_order_hints:
   - is-01m3jm95saj2s5c0gh6d9vmgat
   - is-01m3jm960y58d5swkkv3aw8e9p
 created_at: 2026-09-27T23:46:52.829Z
-updated_at: 2026-09-27T23:48:05.749Z
+updated_at: 2026-09-28T11:53:36.796Z
+closed_at: 2026-09-28T11:53:36.795Z
+close_reason: "All five children closed: Spotless 8.10.3 + ktlint 1.8.0 via build-logic's quintkonnect.ktlint (qk-fhdg), repo-wide reformat (qk-lafs), spotlessCheck in check (qk-j0xn), pre-push hook via spotlessInstallGitPrePushHook (qk-rtgv), docs (qk-umvz). CI green on PR #13 (fe00809)."
+resolution: null
+duplicate_of: null
 ---
 Add ktlint as the linter/formatter for all Kotlin and Gradle Kotlin DSL sources, enforce it locally via a git hook, and gate CI on it failing the build on violations.
 
