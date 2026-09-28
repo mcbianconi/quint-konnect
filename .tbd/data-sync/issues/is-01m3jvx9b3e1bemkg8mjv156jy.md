@@ -3,10 +3,11 @@ type: is
 id: is-01m3jvx9b3e1bemkg8mjv156jy
 title: "generateQuintTraces ignores spec content: stale traces with a pinned seed"
 kind: bug
-status: open
+status: in_progress
 priority: 1
-version: 3
+version: 4
 spec_path: docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md
+delegate: claude-code@vm
 labels:
   - roadmap
   - assessment
@@ -16,8 +17,11 @@ dependencies:
   - type: blocks
     target: is-01m3jvxakc7desgmn98yrhs2r8
 parent_id: is-01m3jvwgzvywep10dcef17jwd3
+hold: null
+hold_until: null
 created_at: 2026-09-28T02:01:11.778Z
-updated_at: 2026-09-28T02:01:13.068Z
+updated_at: 2026-09-28T02:17:47.853Z
+started_at: 2026-09-28T02:17:47.853Z
 ---
 Spec section B1 (docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md).
 Problem: GenerateQuintTracesTask inputs are the KSP manifests (spec path only), quintVersion, overrides and QUINT_SEED (gradle-plugin/.../GenerateQuintTracesTask.kt:96-123). The task is @CacheableTask (:89). With a pinned seed, a spec change does not generate new traces; the build cache can also send old traces to other machines. Imported .qnt files are not inputs either. Closed bead qk-adm2 said the spec is an input.
