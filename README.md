@@ -464,6 +464,7 @@ Install it:
 ./gradlew -p example build           # Build the example (a separate build applying the plugin) + run its tests (requires quint in PATH)
 ./gradlew :integration-tests:test    # Run regression tests against real quint (requires quint in PATH)
 ./gradlew build                      # Build all modules
+./gradlew spotlessApply              # Format Kotlin sources with ktlint (`build` fails on unformatted code)
 ```
 
 ## License
