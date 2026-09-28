@@ -69,6 +69,12 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
     // The fixture project applies kotlin.jvm itself (with a version, resolved normally); keep it
     // in step with this project's own `kotlin` catalog version instead of hardcoding it in the test.
     systemProperty("quintkonnect.fixtureKotlinVersion", libs.versions.kotlin.get())
+    // Overrides quintkonnect.kotlin-jvm.gradle.kts's maxParallelForks (qk-5cpb): TestKit's
+    // GradleRunner reuses one Gradle User Home across builds by default
+    // (https://docs.gradle.org/current/userguide/test_kit.html#sec:controlling_the_build_environment),
+    // and neither that page nor the DefaultGradleRunner/ConstantTestKitDirProvider source confirm
+    // concurrent GradleRunner builds sharing it are safe, so keep this at one fork.
+    maxParallelForks = 1
 }
 
 tasks.named("check") {
