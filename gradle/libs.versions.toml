@@ -24,6 +24,12 @@ kctfork           = "0.14.0"
 kotlinpoet        = "2.4.0"
 # latest stable: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/maven-metadata.xml
 kotlinx-coroutines = "1.11.0"
+# Runs ktlint (quintkonnect.ktlint convention plugin). Latest stable:
+# https://repo1.maven.org/maven2/com/diffplug/spotless/spotless-plugin-gradle/maven-metadata.xml
+spotless          = "8.10.3"
+# The formatter Spotless runs; latest stable:
+# https://repo1.maven.org/maven2/com/pinterest/ktlint/ktlint-cli/maven-metadata.xml
+ktlint            = "1.8.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serial" }
@@ -51,3 +57,4 @@ kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm",                  versi
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin" }
 ksp                  = { id = "com.google.devtools.ksp",                    version.ref = "ksp" }
 vanniktech-publish   = { id = "com.vanniktech.maven.publish.base",         version.ref = "vanniktech-publish" }
+spotless             = { id = "com.diffplug.spotless",                      version.ref = "spotless" }

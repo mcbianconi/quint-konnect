@@ -1,0 +1,11 @@
+# https://editorconfig.org, read by ktlint (quintkonnect.ktlint convention plugin) and IntelliJ:
+# https://pinterest.github.io/ktlint/latest/rules/configuration-ktlint/
+root = true
+
+[*.{kt,kts}]
+# The Kotlin coding conventions IntelliJ formats to, which this code was written in; ktlint's own
+# default (ktlint_official) would rewrite most function signatures and wrapped expressions.
+ktlint_code_style = intellij_idea
+# With no max_line_length set, this rule joins every expression body that starts on the line after
+# its signature back onto it, however long the result; this code wraps them on purpose.
+ktlint_standard_function-signature = disabled

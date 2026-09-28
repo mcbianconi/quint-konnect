@@ -1,5 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    id("quintkonnect.ktlint")
 }
 
 // io.github.mcbianconi is the verified namespace on central.sonatype.com (qk-j02b):
