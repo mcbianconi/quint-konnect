@@ -204,7 +204,41 @@ One PR per phase, through the normal CI. No release is involved: nothing publish
 
 ## Results
 
-(Filled in by Phase 1: baseline and post-change durations per `Test` task, local and CI.)
+### Baseline (qk-ef4s, 2026-09-27)
+
+Local: `build --rerun-tasks`, macOS, 8 cores / 16 GB, Gradle MCP build `b-16`.
+
+| Test task | Duration | Test classes |
+| --- | --- | --- |
+| `:itf:test` | 1.061s | 4 |
+| `:core:test` | 1.452s | 15 |
+| `:ksp:test` | 24.65s | 13 |
+| `:gradle-plugin:test` | 5.324s | 6 |
+| `:gradle-plugin:functionalTest` | 24.73s | 3 |
+| `:integration-tests:test` | 3.088s | 3 |
+| **Total build** | **1m 23s** | — |
+
+`:ksp:test` and `:gradle-plugin:functionalTest` are tied for critical path, each about 30% of
+total wall time; every other `Test` task is small by comparison. 389 tests passed, 0 failed.
+
+Memory: no evidence of pressure on `:ksp:test`. It ran as a single fork on the default 512m
+heap; the console has no `OutOfMemory`/GC-overhead output, and its 82 tests each finished in
+under 1.3s (cumulative 24.65s is kotlin-compile-testing/KSP2 compilation cost per test, not GC
+thrashing).
+
+CI: `./gradlew build` (no `--rerun-tasks`, but a fresh checkout each run), `ubuntu-latest`
+(4 vCPU), the "Build" step of the 3 most recent green `main` runs:
+
+| Run | Duration |
+| --- | --- |
+| 36368608597 | 2m48s |
+| 36367574782 | 2m45s |
+| 36360182308 | 2m51s |
+| **Average** | **~2m48s (168s)** |
+
+### Post-change (qk-f3fi, 2026-09-27)
+
+(Filled in after Phase 1's config changes: re-measured durations next to the baseline above.)
 
 ## References
 
