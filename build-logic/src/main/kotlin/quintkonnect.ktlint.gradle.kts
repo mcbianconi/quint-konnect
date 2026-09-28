@@ -15,9 +15,6 @@ val ktlintVersion = extensions.getByType<VersionCatalogsExtension>().named("libs
     .findVersion("ktlint").get().requiredVersion
 
 spotless {
-    // Off until the repo-wide reformat (qk-lafs) lands, so `check` stays green meanwhile.
-    isEnforceCheck = false
-
     kotlin {
         // Only files under src/: KSP's output and gradle-plugin's PluginVersion.kt are generated
         // under build/ and registered as source dirs, so a source-set-based target would lint them.
