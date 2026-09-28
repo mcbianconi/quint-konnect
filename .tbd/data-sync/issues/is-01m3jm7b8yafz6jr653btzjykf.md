@@ -5,14 +5,18 @@ title: "[epic] Kotlin lint/format tooling: local hook and CI gate"
 kind: epic
 status: open
 priority: 2
-version: 2
+version: 8
 labels:
   - roadmap
 dependencies: []
 child_order_hints:
   - is-01m3jm7m8cfhwqzd7ma9a8e8n3
+  - is-01m3jm8wrx99q66pvaq0x5e6d2
+  - is-01m3jm8x0j7b257b8s96c5ta8d
+  - is-01m3jm95saj2s5c0gh6d9vmgat
+  - is-01m3jm960y58d5swkkv3aw8e9p
 created_at: 2026-09-27T23:46:52.829Z
-updated_at: 2026-09-27T23:47:02.027Z
+updated_at: 2026-09-27T23:48:05.749Z
 ---
 Add ktlint as the linter/formatter for all Kotlin and Gradle Kotlin DSL sources, enforce it locally via a git hook, and gate CI on it failing the build on violations.
 
