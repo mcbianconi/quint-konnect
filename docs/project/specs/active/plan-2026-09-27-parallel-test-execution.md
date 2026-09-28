@@ -236,6 +236,14 @@ CI: `./gradlew build` (no `--rerun-tasks`, but a fresh checkout each run), `ubun
 | 36360182308 | 2m51s |
 | **Average** | **~2m48s (168s)** |
 
+### ksp heap decision (qk-nbrz, 2026-09-27)
+
+No `maxHeapSize` set on `:ksp:test`. With `maxParallelForks` (qk-5cpb) at the default 512m
+heap per fork: 4 forks locally is 2GB against 16GB RAM, 2 forks on CI is 1GB against
+`ubuntu-latest`'s 16GB. Neither approaches the runner's memory, and the baseline above already
+found no GC/OOM signal at a single fork. Closed without a heap change; revisit if `qk-f3fi`'s
+stability runs show OOM or GC-bound slowdowns.
+
 ### Post-change (qk-f3fi, 2026-09-27)
 
 (Filled in after Phase 1's config changes: re-measured durations next to the baseline above.)
