@@ -3,9 +3,10 @@ type: is
 id: is-01m3jm7m8cfhwqzd7ma9a8e8n3
 title: Add ktlint as a build-logic convention plugin
 kind: task
-status: open
+status: in_progress
 priority: 2
-version: 4
+version: 5
+delegate: claude-code@vm
 labels:
   - roadmap
 dependencies:
@@ -16,8 +17,11 @@ dependencies:
   - type: blocks
     target: is-01m3jm95saj2s5c0gh6d9vmgat
 parent_id: is-01m3jm7b8yafz6jr653btzjykf
+hold: null
+hold_until: null
 created_at: 2026-09-27T23:47:02.027Z
-updated_at: 2026-09-27T23:47:52.745Z
+updated_at: 2026-09-28T11:10:19.825Z
+started_at: 2026-09-28T11:10:19.825Z
 ---
 Pick ktlint-gradle vs kotlinter-gradle vs Spotless+ktlint; verify the current stable version against Maven Central (don't trust the Gradle Plugin Portal page alone).
 
