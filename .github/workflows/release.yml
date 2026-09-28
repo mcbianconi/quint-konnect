@@ -41,6 +41,21 @@ jobs:
         # deliberately and recheck those flags when moving this pin.
         run: npm install -g @informalsystems/quint@0.32.0
 
+      - name: Fetch quint's Rust evaluator
+        # `quint run` downloads this binary to ~/.quint on first use, with no lock between
+        # processes, and the build runs test classes in parallel forks (maxParallelForks in
+        # build-logic's quintkonnect.kotlin-jvm), so two first-time runs could race on that
+        # download and one would fail (qk-0lpw). Fetch it once here instead.
+        run: |
+          cat > "$RUNNER_TEMP/warmup.qnt" <<'EOF'
+          module warmup {
+            var x: int
+            action init = x' = 0
+            action step = x' = x
+          }
+          EOF
+          quint run "$RUNNER_TEMP/warmup.qnt" --max-samples 1 --max-steps 1
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
