@@ -3,17 +3,21 @@ type: is
 id: is-01m3jvxbra50zc3hhfsm1fgvqn
 title: Small doc and comment fixes from the assessment
 kind: chore
-status: open
+status: in_progress
 priority: 3
-version: 1
+version: 2
 spec_path: docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md
+delegate: claude-code@vm
 labels:
   - roadmap
   - assessment
 dependencies: []
 parent_id: is-01m3jvwgzvywep10dcef17jwd3
+hold: null
+hold_until: null
 created_at: 2026-09-28T02:01:14.250Z
-updated_at: 2026-09-28T02:01:14.250Z
+updated_at: 2026-09-28T02:17:47.858Z
+started_at: 2026-09-28T02:17:47.858Z
 ---
 Spec section B7 (docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md).
 - README.md:15 says quint runs 'at test runtime'; with the plugin, generateQuintTraces runs it before the tests.
