@@ -16,7 +16,9 @@ internal fun detectQuintPlatform(
 ): QuintPlatform {
     val os = when {
         osName.contains("mac", ignoreCase = true) || osName.contains("darwin", ignoreCase = true) -> "macos"
+
         osName.contains("linux", ignoreCase = true) -> "linux"
+
         else -> throw GradleException(
             "quintKonnect.downloadQuint does not support OS \"$osName\": quint-konnect doesn't target Windows " +
                 "(docs/decisions/no-windows-support.md). Install quint manually and leave downloadQuint disabled.",

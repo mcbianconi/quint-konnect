@@ -196,26 +196,54 @@ public abstract class GenerateQuintTracesTask : DefaultTask() {
             if (manifest.kind == "test") {
                 add("test")
                 add(spec)
-                add("--seed"); add(seed)
-                add("--match"); add("^${escapeTestRegex(manifest.test!!)}$")
-                add("--max-samples"); add(nTraces.toString())
-                add("--out-itf"); add(File(driverDir, "test_{seq}.itf.json").absolutePath)
-                add("--verbosity"); add("0")
-                manifest.main?.let { add("--main"); add(it) }
+                add("--seed")
+                add(seed)
+                add("--match")
+                add("^${escapeTestRegex(manifest.test!!)}$")
+                add("--max-samples")
+                add(nTraces.toString())
+                add("--out-itf")
+                add(File(driverDir, "test_{seq}.itf.json").absolutePath)
+                add("--verbosity")
+                add("0")
+                manifest.main?.let {
+                    add("--main")
+                    add(it)
+                }
             } else {
                 add("run")
                 add(spec)
-                add("--seed"); add(seed)
-                add("--max-samples"); add(nTraces.toString())
-                add("--n-traces"); add(nTraces.toString())
-                add("--out-itf"); add(File(driverDir, "run_{seq}.itf.json").absolutePath)
+                add("--seed")
+                add(seed)
+                add("--max-samples")
+                add(nTraces.toString())
+                add("--n-traces")
+                add(nTraces.toString())
+                add("--out-itf")
+                add(File(driverDir, "run_{seq}.itf.json").absolutePath)
                 add("--mbt")
-                manifest.invariants.forEach { add("--invariants"); add(it) }
-                add("--verbosity"); add(if (manifest.invariants.isEmpty()) "0" else "1")
-                manifest.main?.let { add("--main"); add(it) }
-                manifest.init?.let { add("--init"); add(it) }
-                manifest.step?.let { add("--step"); add(it) }
-                (maxStepsOverride.orNull ?: manifest.maxSteps)?.let { add("--max-steps"); add(it.toString()) }
+                manifest.invariants.forEach {
+                    add("--invariants")
+                    add(it)
+                }
+                add("--verbosity")
+                add(if (manifest.invariants.isEmpty()) "0" else "1")
+                manifest.main?.let {
+                    add("--main")
+                    add(it)
+                }
+                manifest.init?.let {
+                    add("--init")
+                    add(it)
+                }
+                manifest.step?.let {
+                    add("--step")
+                    add(it)
+                }
+                (maxStepsOverride.orNull ?: manifest.maxSteps)?.let {
+                    add("--max-steps")
+                    add(it.toString())
+                }
             }
         }
     }

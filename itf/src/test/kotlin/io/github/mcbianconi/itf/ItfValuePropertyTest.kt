@@ -19,8 +19,13 @@ private data class PPoint(val x: Long, val y: Long)
 @Serializable
 @JsonClassDiscriminator("tag")
 private sealed class PShape {
-    @Serializable @SerialName("Circle") data class Circle(val value: Long) : PShape()
-    @Serializable @SerialName("Square") data object Square : PShape()
+    @Serializable
+    @SerialName("Circle")
+    data class Circle(val value: Long) : PShape()
+
+    @Serializable
+    @SerialName("Square")
+    data object Square : PShape()
 }
 
 @Serializable
@@ -80,12 +85,19 @@ class ItfValuePropertyTest {
         val choiceBound = if (depth <= 0) 4 else 8
         return when (random.nextInt(choiceBound)) {
             0 -> ItfValue.Bool(random.nextBoolean())
+
             1 -> ItfValue.Num(genEdgeLong(random))
+
             2 -> ItfValue.Str(genRawString(random))
+
             3 -> ItfValue.BigInt(genBigIntString(random))
+
             4 -> ItfValue.List(genItfChildren(random, depth))
+
             5 -> ItfValue.Tup(genItfChildren(random, depth))
+
             6 -> ItfValue.Set(genItfChildren(random, depth))
+
             else -> if (random.nextBoolean()) {
                 ItfValue.Map(genItfChildren(random, depth).map { genItfValue(random, depth - 1) to it })
             } else {

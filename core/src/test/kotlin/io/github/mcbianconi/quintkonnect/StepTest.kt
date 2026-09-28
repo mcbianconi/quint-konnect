@@ -42,7 +42,7 @@ class StepTest {
             linkedMapOf(
                 "tag" to ItfValue.Str("SumAction"),
                 "value" to ItfValue.Tup(emptyList()),
-            )
+            ),
         )
         val state = state("action" to sumRecord, "x" to ItfValue.Num(5))
         val step = Step.fromState(state, DriverConfig(nondetPath = listOf("action")))
@@ -56,7 +56,7 @@ class StepTest {
             linkedMapOf(
                 "tag" to ItfValue.Str("A"),
                 "value" to ItfValue.Tup(emptyList()),
-            )
+            ),
         )
         val state = state(
             "action" to sumRecord,

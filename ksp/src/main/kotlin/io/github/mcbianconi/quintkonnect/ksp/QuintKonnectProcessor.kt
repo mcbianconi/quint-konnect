@@ -1,7 +1,11 @@
 package io.github.mcbianconi.quintkonnect.ksp
 
-import com.google.devtools.ksp.processing.*
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.validate
 import io.github.mcbianconi.quintkonnect.ksp.generators.QuintRunTestGenerator
 import io.github.mcbianconi.quintkonnect.ksp.generators.QuintTestTestGenerator
@@ -23,7 +27,7 @@ internal class QuintKonnectProcessor(
     private val adapterOption: String?,
 ) : SymbolProcessor {
 
-    private val quintRunFqn  = "io.github.mcbianconi.quintkonnect.annotations.QuintRun"
+    private val quintRunFqn = "io.github.mcbianconi.quintkonnect.annotations.QuintRun"
     private val quintTestFqn = "io.github.mcbianconi.quintkonnect.annotations.QuintTest"
 
     private val specTypesGenerator = SpecTypesGenerator(codeGenerator, logger)
@@ -44,7 +48,10 @@ internal class QuintKonnectProcessor(
             .filterNot { it.qualifiedName!!.asString() in bothAnnotated }
             .forEach { clazz ->
                 val module = loadIr(clazz, "QuintRun")
-                if (module != null && defer(clazz)) { deferred += clazz; return@forEach }
+                if (module != null && defer(clazz)) {
+                    deferred += clazz
+                    return@forEach
+                }
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
@@ -56,7 +63,10 @@ internal class QuintKonnectProcessor(
             .filterNot { it.qualifiedName!!.asString() in bothAnnotated }
             .forEach { clazz ->
                 val module = loadIr(clazz, "QuintTest")
-                if (module != null && defer(clazz)) { deferred += clazz; return@forEach }
+                if (module != null && defer(clazz)) {
+                    deferred += clazz
+                    return@forEach
+                }
                 if (validateNoArgConstructor(clazz, logger)) return@forEach
                 if (validateQuintStateType(clazz, resolver, logger)) return@forEach
                 StepMethodGenerator(codeGenerator, logger).generate(clazz, resolver)
@@ -109,11 +119,13 @@ internal class QuintKonnectProcessor(
         val args = annotationArgs(clazz, annotationShortName)
         val spec = args["spec"] as? String
         val main = (args["main"] as? String)?.takeIf { it.isNotBlank() }
+
         @Suppress("UNCHECKED_CAST")
         val ignore = (args["ignore"] as? List<String>).orEmpty().filter { it.isNotBlank() }
 
         val module = when {
             spec == null -> null
+
             else -> try {
                 loadQuintIrModule(dir, spec, main)
                     .also { if (it == null) logger.warn("quint-konnect: no quint IR found for spec \"$spec\" under $dir", clazz) }

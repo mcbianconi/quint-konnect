@@ -20,10 +20,18 @@ import java.math.BigInteger
 private data class Counter(val count: Long, val label: String)
 
 @Serializable
-private data class HugeCount(val n: @Serializable(with = BigIntegerSerializer::class) BigInteger)
+private data class HugeCount(
+    val n:
+    @Serializable(with = BigIntegerSerializer::class)
+    BigInteger,
+)
 
 @Serializable
-private data class SmallCount(val n: @Serializable(with = BigIntegerSerializer::class) BigInteger)
+private data class SmallCount(
+    val n:
+    @Serializable(with = BigIntegerSerializer::class)
+    BigInteger,
+)
 
 @Serializable
 private data class ContextualHugeCount(val n: @Contextual BigInteger)
@@ -37,8 +45,13 @@ private data class Point(val x: Long, val y: Long)
 @Serializable
 @JsonClassDiscriminator("tag")
 private sealed class ColorSer {
-    @Serializable @SerialName("Red") data object Red : ColorSer()
-    @Serializable @SerialName("Blue") data object Blue : ColorSer()
+    @Serializable
+    @SerialName("Red")
+    data object Red : ColorSer()
+
+    @Serializable
+    @SerialName("Blue")
+    data object Blue : ColorSer()
 }
 
 @Serializable
@@ -47,8 +60,13 @@ private data class NullablePoint(val p: Point?)
 @Serializable
 @JsonClassDiscriminator("tag")
 private sealed class MaybeSer {
-    @Serializable @SerialName("Some") data class Some(val value: Long) : MaybeSer()
-    @Serializable @SerialName("None") data object None : MaybeSer()
+    @Serializable
+    @SerialName("Some")
+    data class Some(val value: Long) : MaybeSer()
+
+    @Serializable
+    @SerialName("None")
+    data object None : MaybeSer()
 }
 
 @Serializable
@@ -84,7 +102,7 @@ class ItfValueDecodeTest {
         val value = ItfValue.Record(
             linkedMapOf(
                 "n" to ItfValue.Record(linkedMapOf("tag" to ItfValue.Str("Some"), "value" to ItfValue.Num(7))),
-            )
+            ),
         )
 
         assertEquals(NullableCount(7L), value.decode<NullableCount>())
@@ -201,7 +219,7 @@ class ItfValueDecodeTest {
             listOf(
                 ItfValue.Tup(listOf(ItfValue.Num(1), ItfValue.Num(2))) to ItfValue.Str("a"),
                 ItfValue.Tup(listOf(ItfValue.Num(3), ItfValue.Num(4))) to ItfValue.Str("b"),
-            )
+            ),
         )
 
         assertEquals(mapOf(listOf(1L, 2L) to "a", listOf(3L, 4L) to "b"), map.decode<Map<List<Long>, String>>())
@@ -222,7 +240,7 @@ class ItfValueDecodeTest {
             listOf(
                 point(1, 2) to ItfValue.Str("near"),
                 point(3, 4) to ItfValue.Str("far"),
-            )
+            ),
         )
 
         assertEquals(mapOf(Point(1, 2) to "near", Point(3, 4) to "far"), map.decode<Map<Point, String>>())
@@ -234,7 +252,7 @@ class ItfValueDecodeTest {
             listOf(
                 unitVariant("Red") to ItfValue.Num(1),
                 unitVariant("Blue") to ItfValue.Num(2),
-            )
+            ),
         )
 
         assertEquals(mapOf(ColorSer.Red to 1L, ColorSer.Blue to 2L), map.decode<Map<ColorSer, Long>>())

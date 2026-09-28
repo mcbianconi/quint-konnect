@@ -28,18 +28,39 @@ public data class RunConfig(
     override val nTraces: Int get() = maxSamplesOverride() ?: maxSamples ?: DEFAULT_TRACES
 
     override fun toCommand(tmpDir: Path): List<String> = buildList {
-        add(quintExecutable()); add("run")
+        add(quintExecutable())
+        add("run")
         add(resolveSpec(spec))
-        add("--seed"); add(seed)
-        add("--max-samples"); add(nTraces.toString())
-        add("--n-traces"); add(nTraces.toString())
-        add("--out-itf"); add(tmpDir.resolve("run_{seq}.itf.json").toString())
+        add("--seed")
+        add(seed)
+        add("--max-samples")
+        add(nTraces.toString())
+        add("--n-traces")
+        add(nTraces.toString())
+        add("--out-itf")
+        add(tmpDir.resolve("run_{seq}.itf.json").toString())
         add("--mbt")
-        invariants.forEach { add("--invariants"); add(it) }
-        add("--verbosity"); add(if (invariants.isEmpty()) "0" else "1")
-        main?.let { add("--main"); add(it) }
-        init?.let { add("--init"); add(it) }
-        step?.let { add("--step"); add(it) }
-        (maxStepsOverride() ?: maxSteps)?.let { add("--max-steps"); add(it.toString()) }
+        invariants.forEach {
+            add("--invariants")
+            add(it)
+        }
+        add("--verbosity")
+        add(if (invariants.isEmpty()) "0" else "1")
+        main?.let {
+            add("--main")
+            add(it)
+        }
+        init?.let {
+            add("--init")
+            add(it)
+        }
+        step?.let {
+            add("--step")
+            add(it)
+        }
+        (maxStepsOverride() ?: maxSteps)?.let {
+            add("--max-steps")
+            add(it.toString())
+        }
     }
 }

@@ -74,6 +74,33 @@ Reified inline functions (`NondetPicks.decode`/`decodeOrNull`, `ItfValue.decode(
 appear in the ABI dump, so `checkKotlinAbi` doesn't guard their signatures; review those
 by hand.
 
+## Formatting (ktlint)
+
+Kotlin sources and `*.gradle.kts` scripts are formatted with ktlint, run through Spotless
+(`quintkonnect.ktlint` convention plugin in `build-logic/`, versions in
+`gradle/libs.versions.toml`). It covers each module's `src/` and build script plus the root
+scripts; `build-logic/` and `example/` are separate builds, so the root project lints their files.
+Generated sources under `build/` aren't checked.
+
+```bash
+./gradlew spotlessApply                     # Format every covered file in place
+./gradlew spotlessCheck                     # Check only; part of `check`, so `build` and CI fail on unformatted code
+./gradlew spotlessApply -PspotlessIdeHook=<absolute path>  # Format one file, leaving everything else alone
+./gradlew spotlessInstallGitPrePushHook     # Once per clone: run spotlessCheck before each push
+```
+
+Use the single-file form when other work is in progress in the same checkout (parallel agents in
+one GitButler workspace), since plain `spotlessApply` rewrites their uncommitted files too.
+
+Style settings live in `.editorconfig` (`intellij_idea` code style, `function-signature` rule
+disabled); its comments say why, and what to run after editing it so the change takes effect.
+
+The pre-push hook (`.git/hooks/pre-push`; the installer appends to an existing hook) runs
+`spotlessCheck`, and on a violation runs `spotlessApply` and fails the push, leaving the fixes in
+the working tree to commit before pushing again. It runs on `git push`, `but push` and
+`but pr new`. GitButler's `but commit` and `but land` run no git hooks, so under GitButler the
+check happens on push, and `/ship-it` relies on the `build` it runs before landing.
+
 ## Releasing
 
 `annotations`, `itf`, `core`, `ksp` and `gradle-plugin` publish to Maven Central under

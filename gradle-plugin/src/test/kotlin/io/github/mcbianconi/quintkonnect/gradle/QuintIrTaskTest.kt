@@ -41,7 +41,10 @@ class QuintIrTaskTest {
     @Test
     fun `writes one IR file per spec, named by its path relative to the project directory`(@TempDir tempDir: File) {
         val specDir = File(tempDir, "src/test/resources").apply { mkdirs() }
-        val spec = File(specDir, "nested/example.qnt").apply { parentFile.mkdirs(); writeText("module example {}") }
+        val spec = File(specDir, "nested/example.qnt").apply {
+            parentFile.mkdirs()
+            writeText("module example {}")
+        }
         val outDir = File(tempDir, "out")
 
         val task = newTask(tempDir)

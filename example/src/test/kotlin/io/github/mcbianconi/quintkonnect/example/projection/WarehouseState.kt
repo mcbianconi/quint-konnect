@@ -2,9 +2,9 @@ package io.github.mcbianconi.quintkonnect.example.projection
 
 import io.github.mcbianconi.quintkonnect.TypedState
 import io.github.mcbianconi.quintkonnect.annotations.QuintIgnore
-import kotlin.math.abs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
+import kotlin.math.abs
 
 // The spec tracks bin placement (`binOf`) and a growing reservation history (`reservationLog`)
 // that this driver never models. `@QuintIgnore`d fields still need a value to build this class,

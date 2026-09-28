@@ -1,6 +1,5 @@
 package io.github.mcbianconi.quintkonnect.integrationtests.shrink
 
-
 class BuggyRockPaperScissors {
     var p1Move: Move = Move.INIT
     var p2Move: Move = Move.INIT

@@ -20,7 +20,10 @@ kotlin {
 // which the spec IR check (qk-75ad) would reject.
 val quintIrDir = layout.buildDirectory.dir("quint-konnect/ir")
 val quintIr = tasks.register("quintIr")
-fileTree("src/test/resources") { include("**/*.qnt"); exclude("escaping/**") }.forEach { spec ->
+fileTree("src/test/resources") {
+    include("**/*.qnt")
+    exclude("escaping/**")
+}.forEach { spec ->
     val relativePath = spec.relativeTo(projectDir).path
     val out = quintIrDir.get().file("$relativePath.json").asFile
     val task = tasks.register<Exec>("quintIr_" + relativePath.replace(Regex("[^A-Za-z0-9]"), "_")) {

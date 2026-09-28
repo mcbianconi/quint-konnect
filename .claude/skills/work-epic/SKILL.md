@@ -36,6 +36,9 @@ background. Each brief contains:
 - keep public call sites source-compatible (overloads or default parameters);
 - tests through the Gradle MCP, scoped to the module and own classes
   (`:core:test --tests Foo`); if a file it doesn't own fails to compile, wait and retry;
+- before each commit, format each file it changed with
+  `spotlessApply -PspotlessIdeHook=<absolute path>` (one file per run): `build` fails on
+  unformatted code, and a plain `spotlessApply` rewrites other agents' uncommitted files;
 - load the `gitbutler` skill; commit with explicit IDs only,
   `but commit -b <branch> -m "type(scope): summary" <ids>`, one commit per bead (edit in
   stages when beads share a file), with the Co-Authored-By trailer; never commit without

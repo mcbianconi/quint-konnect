@@ -228,12 +228,16 @@ private fun collectNondets(
             collectNondets(opdef.getObject("expr"), types, table, visited, out)
             collectNondets(expr.getObject("expr"), types, table, visited, out)
         }
+
         "lambda" -> collectNondets(expr.getObject("expr"), types, table, visited, out)
+
         "app" -> {
             resolveCallable(expr, table)?.let { recurseIntoDef(it, types, table, visited, out) }
             expr["args"]?.jsonArray.orEmpty().forEach { collectNondets(it.jsonObject, types, table, visited, out) }
         }
+
         "name" -> resolveCallable(expr, table)?.let { recurseIntoDef(it, types, table, visited, out) }
+
         else -> {}
     }
 }
@@ -263,24 +267,37 @@ private fun recurseIntoDef(
 
 private fun parseType(type: JsonObject): QuintType = when (type["kind"]?.jsonPrimitive?.contentOrNull) {
     "bool" -> QuintType.BoolType
+
     "int" -> QuintType.IntType
+
     "str" -> QuintType.StrType
+
     "const" -> QuintType.ConstType(type.name())
+
     "var" -> QuintType.VarType(type.name())
+
     "set" -> QuintType.SetType(parseType(type.getObject("elem")))
+
     "list" -> QuintType.ListType(parseType(type.getObject("elem")))
+
     "fun" -> QuintType.FunType(parseType(type.getObject("arg")), parseType(type.getObject("res")))
+
     "oper" -> QuintType.OperType(
         type["args"]?.jsonArray.orEmpty().map { parseType(it.jsonObject) },
         parseType(type.getObject("res")),
     )
+
     "tup" -> QuintType.TupleType(parseRow(type.getObject("fields")).values.toList())
+
     "rec" -> QuintType.RecordType(parseRow(type.getObject("fields")))
+
     "sum" -> QuintType.SumType(parseRow(type.getObject("fields")))
+
     "app" -> QuintType.AppType(
         type.getObject("ctor").name(),
         type["args"]?.jsonArray.orEmpty().map { parseType(it.jsonObject) },
     )
+
     else -> QuintType.UnknownType(type["kind"]?.jsonPrimitive?.contentOrNull ?: "?")
 }
 

@@ -19,6 +19,7 @@ dependencies {
     // sources jar), so it must resolve the Kotlin Gradle plugin from this same
     // classpath/classloader as kotlin.jvm above too.
     implementation(plugin(libs.plugins.vanniktech.publish))
+    implementation(plugin(libs.plugins.spotless))
 }
 
 fun DependencyHandlerScope.plugin(plugin: Provider<PluginDependency>) =

@@ -26,7 +26,10 @@ class QuintIrWiringTest {
         val spec = File(project.projectDir, "src/test/resources/nested/example.qnt")
         spec.parentFile.mkdirs()
         spec.writeText("module example {}")
-        File(project.projectDir, "src/test/resources/not-a-spec.txt").apply { parentFile.mkdirs(); writeText("x") }
+        File(project.projectDir, "src/test/resources/not-a-spec.txt").apply {
+            parentFile.mkdirs()
+            writeText("x")
+        }
 
         val quintIr = project.tasks.getByName("quintIr") as QuintIrTask
         assertEquals(setOf(spec), quintIr.specs.files)
