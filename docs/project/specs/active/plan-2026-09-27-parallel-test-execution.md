@@ -246,7 +246,36 @@ stability runs show OOM or GC-bound slowdowns.
 
 ### Post-change (qk-f3fi, 2026-09-27)
 
-(Filled in after Phase 1's config changes: re-measured durations next to the baseline above.)
+Local: `build --rerun-tasks`, same machine, Gradle MCP build `b-18` (first of 5 stability runs).
+
+| Test task | Baseline | Post-change | Delta |
+| --- | --- | --- | --- |
+| `:itf:test` | 1.061s | 2.775s | +1.7s |
+| `:core:test` | 1.452s | 3.639s | +2.2s |
+| `:ksp:test` | 24.65s | 39.183s | +14.5s |
+| `:gradle-plugin:test` | 5.324s | 5.091s | -0.2s |
+| `:gradle-plugin:functionalTest` | 24.73s | 49.021s | +24.3s |
+| `:integration-tests:test` | 3.088s | 10.743s | +7.7s |
+| **Total build** | **1m 23s** | **1m 6s** | **-17s (-20%)** |
+
+Every `Test` task's own duration got *worse*, `:gradle-plugin:functionalTest` nearly doubling
+despite staying pinned at 1 fork. This is CPU contention, not a config error:
+`org.gradle.parallel=true` now runs `:ksp:test`'s forks, `:gradle-plugin:functionalTest`'s
+TestKit daemons, and other modules' compilation concurrently on the same 8 cores, so each one
+individually waits more for CPU even though the build finishes sooner overall. Total wall time
+(the actual goal) is still down 20%. 389/389 tests passed on every run.
+
+Stability (5 consecutive local `build --rerun-tasks` runs, builds `b-18`-`b-22`): 66s, 61s, 58s,
+1m0s, 56s, all green, 389/389 tests passing every time, 0 failures. Gate met.
+
+`./gradlew -p example build` (build `b-23`): unaffected, `BUILD SUCCESSFUL`, 85/85 tests passed
+in 19s — expected, since `example` has its own `settings.gradle.kts` and doesn't see the root's
+`gradle.properties` or `build-logic` changes.
+
+CI: not re-measured — this session cannot push. The local contention pattern above suggests CI
+(4 vCPU vs. 8 local) will see proportionally *more* per-task contention and a *smaller* total-time
+win, since there is less spare CPU for tasks to overlap into. This should be confirmed on the
+first real CI run once this branch merges.
 
 ## References
 
