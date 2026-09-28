@@ -3,9 +3,9 @@ type: is
 id: is-01m3jwgy900me6x6prh4pvdxjc
 title: Parallel test execution for this repo's own build
 kind: epic
-status: open
+status: closed
 priority: 2
-version: 10
+version: 11
 spec_path: docs/project/specs/active/plan-2026-09-27-parallel-test-execution.md
 labels: []
 dependencies: []
@@ -20,5 +20,9 @@ child_order_hints:
   - is-01m3jwk98q7d9ks9s3gr11qc27
   - is-01m3jwk9g8b77d7wh6fp6a3atr
 created_at: 2026-09-28T02:11:55.807Z
-updated_at: 2026-09-28T02:13:12.839Z
+updated_at: 2026-09-28T11:06:22.880Z
+closed_at: 2026-09-28T11:06:22.876Z
+close_reason: "Landed on main: test-parallelism stack (parallel project execution, CPU-derived maxParallelForks, ksp heap decision, Phase 1 timings recorded); CI green on main."
+resolution: null
+duplicate_of: null
 ---
