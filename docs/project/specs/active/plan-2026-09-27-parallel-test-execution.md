@@ -277,6 +277,15 @@ CI: not re-measured — this session cannot push. The local contention pattern a
 win, since there is less spare CPU for tasks to overlap into. This should be confirmed on the
 first real CI run once this branch merges.
 
+### Phase 2 decision (qk-u9kj, 2026-09-28)
+
+Skipped. After Phase 1 the build is CPU-bound: every `Test` task got slower under
+`org.gradle.parallel` while total time dropped 20%. The longest task, `:gradle-plugin:functionalTest`
+(49s), is pinned to one fork and JUnit class concurrency doesn't apply to it. `:ksp:test` (39s) is
+mostly KSP2 compile cost and already spreads across forks, so in-JVM threads would compete for the
+same cores, with less headroom on CI's 4 vCPUs. The remaining lever is whether concurrent
+`GradleRunner` use is safe (see Open Questions). qk-f4yb, qk-a5id and qk-i160 closed as not needed.
+
 ## References
 
 - JUnit parallel execution:
