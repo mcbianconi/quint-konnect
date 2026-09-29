@@ -95,6 +95,13 @@ public abstract class GenerateQuintTracesTask : DefaultTask() {
     @get:IgnoreEmptyDirectories
     public abstract val manifests: ConfigurableFileCollection
 
+    // The spec files' content (a manifest holds only the spec path): without this, a spec change
+    // with a pinned seed left the task UP-TO-DATE/FROM-CACHE and replayed stale traces (qk-q5z8).
+    // Set from quintIrSpecs (which also covers imported .qnt files) and each manifest's spec.
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    public abstract val specs: ConfigurableFileCollection
+
     // Only used to resolve a relative manifest `spec` the same way a relative `spec` resolves
     // elsewhere (QuintIrTask.kt); not a build input in its own right.
     @get:Internal
@@ -250,10 +257,12 @@ public abstract class GenerateQuintTracesTask : DefaultTask() {
 }
 
 // Mirrors resolveSpec (core/.../trace/GeneratorConfig.kt).
-private fun resolveManifestSpec(spec: String, root: File): String {
+internal fun resolveSpecFile(spec: String, root: File): File {
     val specFile = File(spec)
-    return if (specFile.isAbsolute) spec else File(root, spec).path
+    return if (specFile.isAbsolute) specFile else File(root, spec)
 }
+
+private fun resolveManifestSpec(spec: String, root: File): String = resolveSpecFile(spec, root).path
 
 // Mirrors escapeRegex (core/.../trace/TestConfig.kt): quint builds `new RegExp(match)` (no "u"
 // flag) from this value, so only the ECMAScript SyntaxCharacters need a backslash.

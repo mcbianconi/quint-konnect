@@ -23,6 +23,13 @@ path, which differs across KSP/Kotlin versions and target names — see "Problem
 implementing agent's report) and depends on `kspTestKotlin` by name (mirrors `wireQuintIr`'s own
 reasoning for not depending on KSP's internal task type).
 
+**Spec files are task inputs (qk-q5z8):** a manifest holds the spec *path*, not its content, so
+the `specs` `@InputFiles` (`RELATIVE` path sensitivity) carries the content: `quintKonnect.quintIrSpecs`
+(default `src/test/resources/**/*.qnt`, which also covers imported files there) plus each manifest's
+resolved `spec`, read lazily from the `manifests` elements after `kspTestKotlin` ran. Without it, a
+spec change with a pinned seed left the task UP-TO-DATE/FROM-CACHE and replayed stale traces (the
+build cache could also hand them to other machines).
+
 **Output directory is keyed by the driver's simple class name** (`DriverManifest.simpleName`),
 matching `ReplayRunner`'s existing `testName` (the driver's simple name, unchanged by this work).
 Two same-named drivers in different packages collide on this directory the same way they already

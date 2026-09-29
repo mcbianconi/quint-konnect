@@ -62,6 +62,7 @@ class GenerateQuintTracesFunctionalTest {
 
             tasks.register<io.github.mcbianconi.quintkonnect.gradle.GenerateQuintTracesTask>("genTraces") {
                 manifests.setFrom(fileTree("manifests") { include("*.json") })
+                specs.from(file("spec.qnt"))
                 projectDirectory.set(projectDir.absolutePath)
                 quintExecutable.set("${quintStub.absolutePath}")
                 quintVersion.set("0.32.0")
@@ -97,6 +98,18 @@ class GenerateQuintTracesFunctionalTest {
 
         runner("genTraces").build()
         val second = runner("genTraces").build()
+
+        assertEquals(TaskOutcome.SUCCESS, second.task(":genTraces")?.outcome)
+    }
+
+    @Test
+    fun `changing the spec reruns even with a pinned seed`() {
+        writeManifest("PinnedDriver", seed = "cafe")
+        val spec = File(projectDir, "spec.qnt").apply { writeText("module m { var n: int }") }
+
+        runner("genTraces", "--build-cache").build()
+        spec.writeText("module m { var n: int  val k = 1 }")
+        val second = runner("genTraces", "--build-cache").build()
 
         assertEquals(TaskOutcome.SUCCESS, second.task(":genTraces")?.outcome)
     }

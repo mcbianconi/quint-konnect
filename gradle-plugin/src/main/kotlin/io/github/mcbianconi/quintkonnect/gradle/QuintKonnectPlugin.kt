@@ -131,6 +131,14 @@ public class QuintKonnectPlugin : Plugin<Project> {
                 task.manifests.setFrom(
                     project.fileTree(project.layout.buildDirectory.dir("generated/ksp")) {
                         it.include("**/quintkonnect/traces-manifest/**/*.json")
+                        it.builtBy("kspTestKotlin")
+                    },
+                )
+                val projectDir = project.projectDir
+                task.specs.from(extension.quintIrSpecs)
+                task.specs.from(
+                    task.manifests.elements.map { files ->
+                        files.filter { it.asFile.isFile }.map { resolveSpecFile(parseDriverManifest(it.asFile).spec, projectDir) }
                     },
                 )
                 // "kspTestKotlin" (KSP2 registers one task per Kotlin compilation) by name, not by

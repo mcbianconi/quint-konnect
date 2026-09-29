@@ -31,6 +31,7 @@ public abstract class io/github/mcbianconi/quintkonnect/gradle/GenerateQuintTrac
 	public abstract fun getQuintExecutable ()Lorg/gradle/api/provider/Property;
 	public abstract fun getQuintVersion ()Lorg/gradle/api/provider/Property;
 	public abstract fun getSeedOverride ()Lorg/gradle/api/provider/Property;
+	public abstract fun getSpecs ()Lorg/gradle/api/file/ConfigurableFileCollection;
 	public final fun run ()V
 }
 

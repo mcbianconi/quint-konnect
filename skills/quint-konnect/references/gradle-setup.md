@@ -66,7 +66,8 @@ Applying the plugin to a Kotlin JVM module:
   `quintKonnect.quintVersion` (default `"0.32.0"`).
 - registers `generateQuintTraces`, which runs `quint` once per driver into
   `build/quint-konnect/traces/` before `test`, so `Test` tasks replay those files (cached when
-  every driver's seed is pinned);
+  every driver's seed is pinned; the spec files, including `quintIrSpecs` and imports, are inputs,
+  so a spec change reruns it);
 - registers `shrinkQuintTraces`, a `Test` task over `test`'s classes that reruns `quint` with the
   same seed and smaller `--max-steps` to find a shorter failing trace
   (`./gradlew shrinkQuintTraces --tests '*MyDriver*' -Pquint.seed=<seed>`).
