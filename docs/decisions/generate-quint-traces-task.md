@@ -30,12 +30,14 @@ resolved `spec`, read lazily from the `manifests` elements after `kspTestKotlin`
 spec change with a pinned seed left the task UP-TO-DATE/FROM-CACHE and replayed stale traces (the
 build cache could also hand them to other machines).
 
-**Output directory is keyed by the driver's simple class name** (`DriverManifest.simpleName`),
-matching `ReplayRunner`'s existing `testName` (the driver's simple name, unchanged by this work).
-Two same-named drivers in different packages collide on this directory the same way they already
-collide on saved-failure file names and `replayCommand`'s `--tests '*testName*'` guess (see that
-function's own doc comment in `core/.../trace/FailureTraceWriter.kt`); this wasn't made worse or
-better here. A driver's own trace directory also carries `seed.txt` (the seed `quint` actually ran
+**Output directory is keyed by the driver's fully qualified class name** (`DriverManifest.driver`,
+qk-q6av). The generated `<Driver>QuintSuite` passes that name as `ReplayRunner`'s `testName`, and
+`defaultTraceSource` looks up `<tracesDir>/<testName>/`. Keyed by the simple name (the first
+version), drivers `a.Foo` and `b.Foo` replayed each other's traces and failed for no reason; before
+this task existed the collision only merged saved-failure file names. The same `testName` names
+saved failure files (`<package.Driver>-trace<N>.itf.json`), so `QuintSuite.name`, the console
+titles and `replayCommand`'s `--tests '*<testName>*'` guess now carry the qualified name too
+(the wildcard still matches the generated test class). A driver's own trace directory also carries `seed.txt` (the seed `quint` actually ran
 with) and, on a non-zero `quint` exit, `error.txt` instead of trace files.
 
 **Why `quint` failures don't fail the task:** an invariant violation, or any other non-zero

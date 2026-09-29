@@ -40,12 +40,7 @@ internal data class DriverManifest(
     val maxSteps: Int?,
     val seed: String?,
     val invariants: List<String>,
-) {
-    // Matches ReplayRunner's testName (the driver's simple class name, core's Runner/ReplayRunner.kt):
-    // generateQuintTraces' own output directory is looked up the same way at test time
-    // (TracesDirTraceSource, core/.../trace/TraceSource.kt).
-    val simpleName: String get() = driver.substringAfterLast('.')
-}
+)
 
 internal fun parseDriverManifest(file: File): DriverManifest {
     val root = Json.parseToJsonElement(file.readText()).jsonObject
@@ -65,12 +60,12 @@ internal fun parseDriverManifest(file: File): DriverManifest {
 }
 
 // "/" is the only character sanitized here too (mirrors FailureTraceWriter.kt's sanitizeFileName):
-// a driver's simple class name shouldn't be able to escape the output directory.
+// a driver's class name shouldn't be able to escape the output directory.
 private fun sanitizeFileName(name: String): String = name.replace("/", "_")
 
 /**
  * Runs `quint` once per `@QuintRun`/`@QuintTest` driver (from KSP's per-driver [manifests]) into
- * `<[outputDir]>/<driver's simple class name>/`, so Test tasks can replay saved traces
+ * `<[outputDir]>/<driver's fully qualified class name>/`, so Test tasks can replay saved traces
  * ([io.github.mcbianconi.quintkonnect.trace.TracesDirTraceSource] in `core`, wired in by
  * [QuintKonnectPlugin]) instead of invoking `quint` themselves (qk-adm2).
  *
@@ -165,7 +160,9 @@ public abstract class GenerateQuintTracesTask : DefaultTask() {
     }
 
     private fun runDriver(manifest: DriverManifest, outDir: File, root: File) {
-        val driverDir = File(outDir, sanitizeFileName(manifest.simpleName))
+        // The fully qualified name matches the generated suite's testName, which
+        // defaultTraceSource (core/.../trace/TraceSource.kt) looks up the same way at test time.
+        val driverDir = File(outDir, sanitizeFileName(manifest.driver))
         driverDir.mkdirs()
 
         val seed = seedOverride.orNull

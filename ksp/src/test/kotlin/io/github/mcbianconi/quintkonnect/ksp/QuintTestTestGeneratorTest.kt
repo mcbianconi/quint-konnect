@@ -117,7 +117,7 @@ class QuintTestTestGeneratorTest {
 
         val suiteClass = result.classLoader.loadClass("test1.TestDriverQuintSuite")
         val suite = suiteClass.getField("INSTANCE").get(null) as QuintSuite
-        assertEquals("TestDriver", suite.name)
+        assertEquals("test1.TestDriver", suite.name)
     }
 
     @Test

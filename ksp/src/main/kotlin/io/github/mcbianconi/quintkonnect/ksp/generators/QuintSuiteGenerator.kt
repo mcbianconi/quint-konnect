@@ -61,8 +61,9 @@ internal class QuintSuiteGenerator(
         val packageName = clazz.packageName.asString()
         val className = clazz.simpleName.asString()
         val suiteOutputName = "${className}QuintSuite"
+        val driverName = clazz.qualifiedName?.asString() ?: className
 
-        writeSuite(clazz, packageName, className, suiteOutputName, configBlock)
+        writeSuite(clazz, packageName, className, driverName, suiteOutputName, configBlock)
 
         if (adapter == AdapterOption.JUNIT) {
             writeJunitAdapter(clazz, packageName, className, suiteOutputName, adapterOutputName)
@@ -73,19 +74,20 @@ internal class QuintSuiteGenerator(
         clazz: KSClassDeclaration,
         packageName: String,
         className: String,
+        driverName: String,
         suiteOutputName: String,
         configBlock: CodeBlock,
     ) {
         val nameProperty = PropertySpec.builder("name", STRING)
             .addModifiers(KModifier.OVERRIDE)
-            .initializer("%S", className)
+            .initializer("%S", driverName)
             .build()
 
         val tracesBody = CodeBlock.builder()
             .add("return %T(%L, listener = listener).traceReplays(\n", replayRunnerClassName, configBlock)
             .indent()
             .add("driverFactory = { %T() },\n", clazz.toClassName())
-            .add("testName = %S,\n", className)
+            .add("testName = %S,\n", driverName)
             .unindent()
             .add(")\n")
             .build()

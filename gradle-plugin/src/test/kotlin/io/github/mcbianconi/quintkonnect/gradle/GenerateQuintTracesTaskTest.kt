@@ -63,7 +63,7 @@ class GenerateQuintTracesTaskTest {
     }
 
     @Test
-    fun `runs quint once per manifest into a subdirectory named after the driver's simple class name`(@TempDir tempDir: File) {
+    fun `runs quint once per manifest into a subdirectory named after the driver's fully qualified class name`(@TempDir tempDir: File) {
         val manifestDir = File(tempDir, "manifests").apply { mkdirs() }
         writeManifest(
             manifestDir,
@@ -75,7 +75,7 @@ class GenerateQuintTracesTaskTest {
 
         runConfiguredTask(tempDir, manifestDir, outDir, stubQuint(tempDir, argsFile))
 
-        val driverDir = File(outDir, "MyDriver")
+        val driverDir = File(outDir, "pkg.MyDriver")
         assertTrue(File(driverDir, "run_1.itf.json").isFile)
         assertEquals("cafe", File(driverDir, "seed.txt").readText())
         val args = argsFile.readText()
@@ -97,7 +97,7 @@ class GenerateQuintTracesTaskTest {
 
         runConfiguredTask(tempDir, manifestDir, outDir, stubQuint(tempDir, argsFile))
 
-        assertTrue(File(File(outDir, "MyTestDriver"), "test_1.itf.json").isFile)
+        assertTrue(File(File(outDir, "pkg.MyTestDriver"), "test_1.itf.json").isFile)
         val args = argsFile.readText()
         assertTrue(args.contains("test"))
         assertTrue(args.contains("--match ^a\\.Test$"))
@@ -123,7 +123,7 @@ class GenerateQuintTracesTaskTest {
         task.seedOverride.set("0xoverride")
         task.run()
 
-        assertEquals("0xoverride", File(File(outDir, "MyDriver"), "seed.txt").readText())
+        assertEquals("0xoverride", File(File(outDir, "pkg.MyDriver"), "seed.txt").readText())
     }
 
     @Test
@@ -143,7 +143,7 @@ class GenerateQuintTracesTaskTest {
         // Doesn't throw: a quint failure is a normal per-driver outcome, not a build failure.
         runConfiguredTask(tempDir, manifestDir, outDir, quint)
 
-        val driverDir = File(outDir, "FailingDriver")
+        val driverDir = File(outDir, "pkg.FailingDriver")
         assertFalse(File(driverDir, "run_1.itf.json").exists())
         val error = File(driverDir, "error.txt").readText()
         assertTrue(error.contains("invariant violated"))
@@ -160,7 +160,7 @@ class GenerateQuintTracesTaskTest {
             """{"driver":"pkg.MyDriver","kind":"run","spec":"spec.qnt","seed":"cafe","invariants":[]}""",
         )
         val outDir = File(tempDir, "out")
-        val staleFile = File(File(outDir, "MyDriver"), "run_99.itf.json").apply {
+        val staleFile = File(File(outDir, "pkg.MyDriver"), "run_99.itf.json").apply {
             parentFile.mkdirs()
             writeText("stale")
         }

@@ -60,7 +60,7 @@ class QuintSuiteAdapterOptionTest {
 
         val suiteClass = result.classLoader.loadClass("adapternone.AdapterOptionDriverQuintSuite")
         val suite = suiteClass.getField("INSTANCE").get(null) as QuintSuite
-        assertEquals("AdapterOptionDriver", suite.name)
+        assertEquals("adapternone.AdapterOptionDriver", suite.name)
 
         assertThrows(ClassNotFoundException::class.java) {
             result.classLoader.loadClass("adapternone.AdapterOptionDriverQuintRunTest")

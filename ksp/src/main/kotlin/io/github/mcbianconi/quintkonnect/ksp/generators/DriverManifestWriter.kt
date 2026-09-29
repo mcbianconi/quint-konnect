@@ -20,9 +20,8 @@ import kotlinx.serialization.json.putJsonArray
  * The `-<kind>` filename suffix names the manifest's kind (a driver takes only one of `@QuintRun`
  * and `@QuintTest`; the processor rejects both); nesting under the driver's own package path keeps two
  * same-named drivers in different packages from colliding on the manifest file itself (the
- * generated `build/quint-konnect/traces/<Driver>/` output directory this manifest ultimately feeds
- * is still keyed by the driver's simple class name only, matching `ReplayRunner`'s existing
- * `testName` — see docs/decisions/generate-quint-traces-task.md).
+ * generated `build/quint-konnect/traces/<package.Driver>/` output directory this manifest feeds
+ * is keyed by the fully qualified name too — see docs/decisions/generate-quint-traces-task.md).
  */
 internal object DriverManifestWriter {
 

@@ -115,6 +115,20 @@ class GenerateQuintTracesFunctionalTest {
     }
 
     @Test
+    fun `same-named drivers in different packages get separate trace directories`() {
+        listOf("a", "b").forEach { pkg ->
+            File(manifestDir, "$pkg-Foo.json").writeText(
+                """{"driver":"$pkg.Foo","kind":"run","spec":"spec.qnt","seed":"cafe","invariants":[]}""",
+            )
+        }
+
+        runner("genTraces").build()
+
+        assertTrue(File(projectDir, "build/traces/a.Foo/run_1.itf.json").isFile)
+        assertTrue(File(projectDir, "build/traces/b.Foo/run_1.itf.json").isFile)
+    }
+
+    @Test
     fun `changing maxSamplesOverride reruns even with a pinned seed`() {
         writeManifest("PinnedDriver", seed = "cafe")
 
@@ -133,7 +147,7 @@ class GenerateQuintTracesFunctionalTest {
         val second = runner("genTraces", "--build-cache").build()
 
         assertEquals(TaskOutcome.FROM_CACHE, second.task(":genTraces")?.outcome)
-        assertTrue(File(projectDir, "build/traces/PinnedDriver/run_1.itf.json").isFile)
+        assertTrue(File(projectDir, "build/traces/pkg.PinnedDriver/run_1.itf.json").isFile)
     }
 
     @Test
@@ -152,7 +166,7 @@ class GenerateQuintTracesFunctionalTest {
 
         runner("genTraces").build()
 
-        assertEquals("cafe", File(projectDir, "build/traces/PinnedDriver/seed.txt").readText())
+        assertEquals("cafe", File(projectDir, "build/traces/pkg.PinnedDriver/seed.txt").readText())
     }
 
     private fun runner(vararg args: String): GradleRunner =

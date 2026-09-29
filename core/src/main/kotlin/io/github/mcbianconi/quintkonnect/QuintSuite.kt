@@ -14,7 +14,7 @@ import io.github.mcbianconi.quintkonnect.listener.ReplayListener
  */
 public interface QuintSuite {
 
-    /** This driver's simple class name, matching [ReplayRunner.traceReplays]'s own `testName`. */
+    /** This driver's fully qualified class name, matching [ReplayRunner.traceReplays]'s own `testName`. */
     public val name: String
 
     /** Generates this suite's traces and returns one [TraceReplay] per trace, reported to [listener]. */
