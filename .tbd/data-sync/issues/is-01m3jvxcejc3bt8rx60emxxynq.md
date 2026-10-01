@@ -3,11 +3,11 @@ type: is
 id: is-01m3jvxcejc3bt8rx60emxxynq
 title: End-to-end test for replay with readSpecIr
 kind: task
-status: in_progress
+status: open
 priority: 3
-version: 2
+version: 4
 spec_path: docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md
-delegate: claude-code@vm
+delegate: null
 labels:
   - roadmap
   - assessment
@@ -16,9 +16,13 @@ parent_id: is-01m3jvwgzvywep10dcef17jwd3
 hold: null
 hold_until: null
 created_at: 2026-09-28T02:01:14.962Z
-updated_at: 2026-09-28T02:17:47.866Z
+updated_at: 2026-10-01T02:58:18.990Z
 started_at: 2026-09-28T02:17:47.866Z
 ---
 Spec section B9 (docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md).
 Closed bead qk-sa74 asked for this; current tests (gradle-plugin/src/functionalTest/.../QuintIrFunctionalTest.kt:136,165) only check the task graph.
 Add a functional test or a CI step that compiles a readSpecIr project and replays a saved .itf.json with -Pquint.replay (compileTestKotlin and test both pass).
+
+## Notes
+
+Restart 2026-09-30: claim cleared; no code landed. Ready to pick up again from the bead description.
