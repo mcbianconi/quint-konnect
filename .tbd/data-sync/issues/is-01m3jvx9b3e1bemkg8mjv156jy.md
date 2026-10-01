@@ -3,9 +3,9 @@ type: is
 id: is-01m3jvx9b3e1bemkg8mjv156jy
 title: "generateQuintTraces ignores spec content: stale traces with a pinned seed"
 kind: bug
-status: open
+status: closed
 priority: 1
-version: 8
+version: 9
 spec_path: docs/project/specs/active/plan-2026-09-28-post-0.2.0-assessment-fixes.md
 delegate: null
 labels:
@@ -20,10 +20,10 @@ parent_id: is-01m3jvwgzvywep10dcef17jwd3
 hold: null
 hold_until: null
 created_at: 2026-09-28T02:01:11.778Z
-updated_at: 2026-10-01T02:58:18.121Z
+updated_at: 2026-10-01T03:43:01.183Z
 started_at: 2026-09-28T02:17:47.853Z
-closed_at: null
-close_reason: null
+closed_at: 2026-10-01T03:43:01.182Z
+close_reason: Committed on the local GitButler stack. Plugin tests passed. Not pushed.
 resolution: null
 duplicate_of: null
 ---
