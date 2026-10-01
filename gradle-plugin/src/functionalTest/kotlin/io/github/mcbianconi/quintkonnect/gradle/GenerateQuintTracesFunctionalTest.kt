@@ -171,7 +171,14 @@ class GenerateQuintTracesFunctionalTest {
 
     @Test
     fun `a hung quint fails the build and names the task`() {
-        quintStub.writeText("#!/bin/sh\nsleep 60\n")
+        val pidFile = File(projectDir, "quint.pid")
+        quintStub.writeText(
+            """
+            #!/bin/sh
+            echo ${'$'}${'$'} > '${pidFile.absolutePath}'
+            sleep 60
+            """.trimIndent(),
+        )
         writeManifest("PinnedDriver", seed = "cafe")
         buildFile.appendText(
             """
@@ -186,6 +193,10 @@ class GenerateQuintTracesFunctionalTest {
 
         assertTrue(result.output.contains("Execution failed for task ':genTraces'"))
         assertTrue(result.output.contains("Timeout has been exceeded"))
+        val pid = pidFile.readText().trim().toLong()
+        val alive = ProcessHandle.of(pid).map { it.isAlive }.orElse(false)
+        if (alive) ProcessHandle.of(pid).ifPresent { it.destroyForcibly() }
+        assertTrue(!alive, "quint child $pid was still running after the timeout")
     }
 
     private fun runner(vararg args: String): GradleRunner =

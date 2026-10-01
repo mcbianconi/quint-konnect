@@ -3,6 +3,7 @@ package io.github.mcbianconi.quintkonnect.gradle
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -181,7 +182,11 @@ public class QuintKonnectPlugin : Plugin<Project> {
             val testSources = project.extensions.getByType(KotlinJvmProjectExtension::class.java)
                 .sourceSets.getByName("test")
             val hasDrivers = project.providers.of(QuintDriverSources::class.java) { spec ->
-                val roots = testSources.kotlin.srcDirs.filter { dir -> "generated/ksp" !in dir.invariantSeparatorsPath }
+                val javaTestDirs = project.extensions.findByType(JavaPluginExtension::class.java)
+                    ?.sourceSets?.findByName("test")?.java?.srcDirs.orEmpty()
+                val roots = (testSources.kotlin.srcDirs + javaTestDirs)
+                    .filter { dir -> "generated/ksp" !in dir.invariantSeparatorsPath }
+                    .distinct()
                 spec.parameters.roots.from(roots)
             }
             val quintDownload = extension.downloadQuint.map { enabled ->

@@ -117,6 +117,21 @@ class QuintKonnectPluginTest {
     }
 
     @Test
+    fun `a fully qualified QuintRun annotation still depends test on checkQuint`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        writeQuintDriver(
+            project,
+            "@io.github.mcbianconi.quintkonnect.annotations.QuintRun(spec = \"s.qnt\")\nclass SampleDriver\n",
+        )
+
+        val test = project.tasks.getByName("test") as TestTask
+        val deps = test.taskDependencies.getDependencies(test).map { it.name }
+        assertTrue("checkQuint" in deps, deps.toString())
+    }
+
+    @Test
     fun `generateTraces makes test depend on generateQuintTraces even with no drivers`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(QuintKonnectPlugin::class.java)
@@ -249,8 +264,11 @@ class QuintKonnectPluginTest {
     }
 }
 
-private fun writeQuintDriver(project: Project) {
+private fun writeQuintDriver(
+    project: Project,
+    sourceText: String = "@QuintRun(spec = \"s.qnt\")\nclass SampleDriver\n",
+) {
     val source = project.file("src/test/kotlin/SampleDriver.kt")
     source.parentFile.mkdirs()
-    source.writeText("@QuintRun(spec = \"s.qnt\")\nclass SampleDriver\n")
+    source.writeText(sourceText)
 }
