@@ -1,5 +1,11 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
+import java.time.Duration
+
+// Same limit TraceGenerator uses (GeneratorConfig.timeout). A hung quint must fail the build
+// instead of holding the Gradle daemon (qk-f78q, qk-0vs7).
+internal val QUINT_TASK_TIMEOUT: Duration = Duration.ofMinutes(10)
+
 /**
  * Whether one `Test` task needs `quint`, and where that `quint` runs.
  *

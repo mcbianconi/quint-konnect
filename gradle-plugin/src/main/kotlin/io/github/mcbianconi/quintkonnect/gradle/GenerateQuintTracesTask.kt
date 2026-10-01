@@ -136,6 +136,7 @@ public abstract class GenerateQuintTracesTask : DefaultTask() {
             "so Test tasks can replay saved traces instead of running quint themselves."
         outputs.upToDateWhen { everySeedIsPinned() }
         outputs.cacheIf { everySeedIsPinned() }
+        timeout.convention(QUINT_TASK_TIMEOUT)
     }
 
     // A random per-driver seed (below) is only reproducible for as long as this task's own cached

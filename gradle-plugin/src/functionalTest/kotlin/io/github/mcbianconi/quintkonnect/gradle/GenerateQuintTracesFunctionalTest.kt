@@ -169,6 +169,25 @@ class GenerateQuintTracesFunctionalTest {
         assertEquals("cafe", File(projectDir, "build/traces/pkg.PinnedDriver/seed.txt").readText())
     }
 
+    @Test
+    fun `a hung quint fails the build and names the task`() {
+        quintStub.writeText("#!/bin/sh\nsleep 60\n")
+        writeManifest("PinnedDriver", seed = "cafe")
+        buildFile.appendText(
+            """
+
+            tasks.named<io.github.mcbianconi.quintkonnect.gradle.GenerateQuintTracesTask>("genTraces") {
+                timeout.set(java.time.Duration.ofSeconds(2))
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner("genTraces").buildAndFail()
+
+        assertTrue(result.output.contains("Execution failed for task ':genTraces'"))
+        assertTrue(result.output.contains("Timeout has been exceeded"))
+    }
+
     private fun runner(vararg args: String): GradleRunner =
         GradleRunner.create()
             .withProjectDir(projectDir)

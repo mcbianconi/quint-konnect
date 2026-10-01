@@ -56,6 +56,7 @@ public abstract class QuintIrTask : DefaultTask() {
     init {
         group = "build"
         description = "Runs `quint typecheck` on every configured spec, for KSP to read action/nondet types from."
+        timeout.convention(QUINT_TASK_TIMEOUT)
     }
 
     @TaskAction

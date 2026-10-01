@@ -69,7 +69,7 @@ Applying the plugin to a Kotlin JVM module:
   default runs `quint` at test time. With the flag on, the task runs `quint` once per driver into
   `build/quint-konnect/traces/` before `test`, and those tests replay the files (cached when
   every driver's seed is pinned; the spec files, including `quintIrSpecs` and imports, are inputs,
-  so a spec change reruns it);
+  so a spec change reruns it). `generateQuintTraces` and `quintIr` each time out after 10 minutes;
 - registers `shrinkQuintTraces`, a `Test` task over `test`'s classes that reruns `quint` with the
   same seed and smaller `--max-steps` to find a shorter failing trace
   (`./gradlew shrinkQuintTraces --tests '*MyDriver*' -Pquint.seed=<seed>`).

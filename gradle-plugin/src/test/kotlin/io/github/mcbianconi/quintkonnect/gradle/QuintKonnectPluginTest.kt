@@ -27,6 +27,18 @@ class QuintKonnectPluginTest {
     }
 
     @Test
+    fun `generateQuintTraces and quintIr time out after 10 minutes`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+
+        val traces = project.tasks.getByName("generateQuintTraces")
+        val quintIr = project.tasks.getByName("quintIr")
+        assertEquals(QUINT_TASK_TIMEOUT, traces.timeout.get())
+        assertEquals(QUINT_TASK_TIMEOUT, quintIr.timeout.get())
+    }
+
+    @Test
     fun `does not apply KSP without kotlin jvm`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(QuintKonnectPlugin::class.java)
