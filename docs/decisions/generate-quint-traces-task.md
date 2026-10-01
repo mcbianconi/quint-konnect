@@ -6,8 +6,11 @@ date: 2026-09-27
 `generateQuintTraces` (gradle-plugin's `GenerateQuintTracesTask`) runs `quint` once per
 `@QuintRun`/`@QuintTest` driver into `build/quint-konnect/traces/<Driver>/`, reading a small JSON
 manifest KSP writes per driver instead of the SOURCE-retention annotation itself (a Gradle task
-can't read that). Every Test task depends on it (unless `-Pquint.replay` is set) and gets
-`quintkonnect.tracesDir` pointed at its output; `ReplayRunner`'s default `TraceSource`
+can't read that). It is opt-in (`quintKonnect.generateTraces`, default `false`, qk-blt0). When
+the flag is on, every Test task except `shrinkQuintTraces` depends on it (unless `-Pquint.replay`
+is set) and gets `quintkonnect.tracesDir` pointed at its output. When the flag is off, tests
+invoke `quint` themselves at test time, so a `--tests` filter only starts `quint` for the drivers
+that run. `ReplayRunner`'s default `TraceSource`
 (`TracesDirTraceSource`, core's `trace/TraceSource.kt`) replays `<tracesDir>/<testName>/` when
 present, falling back to invoking `quint` itself (`TraceGenerator`) otherwise — so `integration-tests` and any
 non-plugin consumer keep working unchanged (qk-adm2).
@@ -74,8 +77,9 @@ cache-hit even with nothing else changed. `GenerateQuintTracesTask` instead:
   "unpinned", so setting either one always makes a build cacheable regardless of individual
   manifests' own `seed`.
 
-**How to apply:** Don't add an opt-out flag for this task (the bead's intent is default-on: every
-Test task depends on it unless replaying, matching `checkQuint`/`downloadQuint`'s own guard). Don't
+**How to apply:** Pregeneration stays off unless `quintKonnect.generateTraces` is set (qk-blt0).
+A Test task depends on `checkQuint` only when it will invoke `quint`: a driver source is present,
+or `generateTraces` is on. A project with no `@QuintRun`/`@QuintTest` sources does not. Don't
 call `RunConfig`/`TestConfig.toCommand` from the task action — those read `quintkonnect.*` system
 properties and resolve a relative `spec` against the *process'* own state, which in the Gradle
 daemon is the daemon's, not this task's; `GenerateQuintTracesTask` mirrors the argv construction

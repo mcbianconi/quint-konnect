@@ -40,6 +40,7 @@ public class QuintKonnectPlugin : Plugin<Project> {
         extension.quintVersion.convention(DEFAULT_QUINT_VERSION)
         extension.downloadQuint.convention(false)
         extension.configureTestLogging.convention(true)
+        extension.generateTraces.convention(false)
         extension.readSpecIr.convention(false)
         extension.quintIrSpecs.from(project.fileTree(project.projectDir) { it.include("src/test/resources/**/*.qnt") })
 
@@ -177,17 +178,29 @@ public class QuintKonnectPlugin : Plugin<Project> {
 
             val projectDir = project.projectDir.absolutePath
             val failuresDir = project.layout.buildDirectory.dir("quint-konnect/failures")
+            val testSources = project.extensions.getByType(KotlinJvmProjectExtension::class.java)
+                .sourceSets.getByName("test")
+            val hasDrivers = project.providers.of(QuintDriverSources::class.java) { spec ->
+                val roots = testSources.kotlin.srcDirs.filter { dir -> "generated/ksp" !in dir.invariantSeparatorsPath }
+                spec.parameters.roots.from(roots)
+            }
+            val quintDownload = extension.downloadQuint.map { enabled ->
+                if (enabled) listOf(downloadQuint) else emptyList<Any>()
+            }
             project.tasks.withType(Test::class.java).configureEach { test ->
-                // Replaying a saved trace needs no quint installation at all: skip checkQuint (and
-                // the download it can depend on) rather than fail a run that never invokes quint.
-                // generateQuintTraces needs quint too, for the same reason.
-                if (replayOverride == null) {
+                // Replaying a saved trace needs no quint installation at all. A project with no
+                // @QuintRun/@QuintTest sources does not either (qk-blt0). Pregeneration is opt-in.
+                val wiring = testQuintWiring(
+                    replay = replayOverride != null,
+                    generateTraces = extension.generateTraces.get(),
+                    hasDrivers = hasDrivers.get(),
+                    shrink = test.name == SHRINK_TASK_NAME,
+                )
+                if (wiring != TestQuintWiring.None) {
                     test.dependsOn(checkQuint)
-                    test.dependsOn(
-                        extension.downloadQuint.map { enabled -> if (enabled) listOf(downloadQuint) else emptyList<Any>() },
-                    )
+                    test.dependsOn(quintDownload)
                 }
-                if (replayOverride == null && test.name != SHRINK_TASK_NAME) {
+                if (wiring == TestQuintWiring.Pregenerate) {
                     test.dependsOn(generateQuintTraces)
                     test.jvmArgumentProviders.add(
                         TracesDirArgumentProvider(

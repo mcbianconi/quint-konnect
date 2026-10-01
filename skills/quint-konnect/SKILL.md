@@ -31,6 +31,9 @@ fallback) before writing any build file — it has the exact dependency coordina
 - Prefer applying the Gradle plugin, id `io.github.mcbianconi.quint-konnect` version `0.2.0`. It
   applies KSP, adds the `kspTest`/`testImplementation` dependencies, wires the generated test
   source directory, and adds a `checkQuint` task that fails the build if `quint` is missing.
+  `checkQuint` is a dependency of a `Test` task only when that task will run `quint`. Trace
+  pregeneration is `quintKonnect { generateTraces.set(true) }` (default off, so `quint` runs at
+  test time and a `--tests` filter only starts it for the drivers that run).
 - Without the plugin, apply `com.google.devtools.ksp` yourself, add
   `kspTest("io.github.mcbianconi:quint-konnect-ksp:0.2.0")` and
   `testImplementation("io.github.mcbianconi:quint-konnect-core:0.2.0")`, and wire

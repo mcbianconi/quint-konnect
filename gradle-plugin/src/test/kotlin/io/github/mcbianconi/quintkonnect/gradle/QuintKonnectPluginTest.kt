@@ -1,5 +1,6 @@
 package io.github.mcbianconi.quintkonnect.gradle
 
+import org.gradle.api.Project
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.testfixtures.ProjectBuilder
@@ -21,6 +22,7 @@ class QuintKonnectPluginTest {
 
         val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
         assertEquals(DEFAULT_QUINT_VERSION, extension.quintVersion.get())
+        assertFalse(extension.generateTraces.get())
         assertNotNull(project.tasks.findByName("checkQuint"))
     }
 
@@ -77,9 +79,42 @@ class QuintKonnectPluginTest {
         assertEquals(":test", shrink.systemProperties[TEST_TASK_PATH_SYSTEM_PROPERTY])
 
         val shrinkDeps = shrink.taskDependencies.getDependencies(shrink).map { it.name }
+        val testDeps = test.taskDependencies.getDependencies(test).map { it.name }
+        assertFalse("checkQuint" in shrinkDeps, shrinkDeps.toString())
+        assertFalse("generateQuintTraces" in shrinkDeps, shrinkDeps.toString())
+        assertFalse("checkQuint" in testDeps, testDeps.toString())
+        assertFalse("generateQuintTraces" in testDeps, testDeps.toString())
+    }
+
+    @Test
+    fun `a driver source depends test on checkQuint and leaves pregeneration off`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        writeQuintDriver(project)
+
+        val test = project.tasks.getByName("test") as TestTask
+        val deps = test.taskDependencies.getDependencies(test).map { it.name }
+        assertTrue("checkQuint" in deps, deps.toString())
+        assertFalse("generateQuintTraces" in deps, deps.toString())
+
+        val shrink = project.tasks.getByName(SHRINK_TASK_NAME) as TestTask
+        val shrinkDeps = shrink.taskDependencies.getDependencies(shrink).map { it.name }
         assertTrue("checkQuint" in shrinkDeps, shrinkDeps.toString())
         assertFalse("generateQuintTraces" in shrinkDeps, shrinkDeps.toString())
-        assertTrue("generateQuintTraces" in test.taskDependencies.getDependencies(test).map { it.name })
+    }
+
+    @Test
+    fun `generateTraces makes test depend on generateQuintTraces even with no drivers`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        project.extensions.getByType(QuintKonnectExtension::class.java).generateTraces.set(true)
+
+        val test = project.tasks.getByName("test") as TestTask
+        val deps = test.taskDependencies.getDependencies(test).map { it.name }
+        assertTrue("checkQuint" in deps, deps.toString())
+        assertTrue("generateQuintTraces" in deps, deps.toString())
     }
 
     @Test
@@ -123,15 +158,27 @@ class QuintKonnectPluginTest {
     }
 
     @Test
-    fun `enabling downloadQuint makes Test tasks depend on downloadQuint`() {
+    fun `enabling downloadQuint makes a driver test depend on downloadQuint`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(QuintKonnectPlugin::class.java)
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        writeQuintDriver(project)
         val extension = project.extensions.getByType(QuintKonnectExtension::class.java)
         extension.downloadQuint.set(true)
 
         val testTask = project.tasks.getByName("test") as TestTask
         assertTrue(testTask.taskDependencies.getDependencies(testTask).any { it.name == "downloadQuint" })
+    }
+
+    @Test
+    fun `enabling downloadQuint does not download quint for a project with no drivers`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(QuintKonnectPlugin::class.java)
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        project.extensions.getByType(QuintKonnectExtension::class.java).downloadQuint.set(true)
+
+        val testTask = project.tasks.getByName("test") as TestTask
+        assertTrue(testTask.taskDependencies.getDependencies(testTask).none { it.name == "downloadQuint" })
     }
 
     @Test
@@ -188,4 +235,10 @@ class QuintKonnectPluginTest {
         val testTask = project.tasks.getByName("test") as TestTask
         assertEquals(TestExceptionFormat.SHORT, testTask.testLogging.exceptionFormat)
     }
+}
+
+private fun writeQuintDriver(project: Project) {
+    val source = project.file("src/test/kotlin/SampleDriver.kt")
+    source.parentFile.mkdirs()
+    source.writeText("@QuintRun(spec = \"s.qnt\")\nclass SampleDriver\n")
 }

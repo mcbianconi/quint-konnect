@@ -159,13 +159,14 @@ Six modules in the root build, in dependency order, plus the separate `example` 
   `testImplementation` dependencies on `ksp`/`core`, wires the KSP-generated test source
   directory, configures `Test` tasks (`useJUnitPlatform()`, the project-dir system property
   `core`'s `RunConfig`/`TestConfig` resolve a relative `spec` against), and registers
-  `checkQuint` (every `Test` task depends on it) to fail on a missing `quint` and warn on a
-  version mismatch against `quintKonnect.quintVersion`. It also configures `testLogging`
+  `checkQuint` (a `Test` task depends on it when that task will run `quint`) to fail on a missing
+  `quint` and warn on a version mismatch against `quintKonnect.quintVersion`. It also configures `testLogging`
   (opt out with `quintKonnect.configureTestLogging`) and registers `quintIr`, which runs
   `quint typecheck --out` on `quintKonnect.quintIrSpecs` and, when `quintKonnect.readSpecIr`
   is true, passes the IR directory to KSP as the `quintkonnect.irDir` option
-  (docs/decisions/quint-ir-source.md). It registers `generateQuintTraces`, which runs quint once
-  per driver into `build/quint-konnect/traces/` for Test tasks to replay
+  (docs/decisions/quint-ir-source.md). It registers `generateQuintTraces`, off unless
+  `quintKonnect.generateTraces` is set, which runs quint once per driver into
+  `build/quint-konnect/traces/` for Test tasks to replay
   (docs/decisions/generate-quint-traces-task.md), and `shrinkQuintTraces`, a Test task over
   `test`'s classes that runs quint itself with `quintkonnect.shrink` set so `ReplayRunner`
   reports the shortest failing trace (core's `trace/Shrink.kt`). Tested with `ProjectBuilder` (`test`)

@@ -61,11 +61,13 @@ Applying the plugin to a Kotlin JVM module:
   test JVM's working directory. This only applies to test JVMs Gradle itself launches — an IDE
   test runner that bypasses Gradle still resolves a relative `spec` against its own working
   directory, which can differ. If a spec "not found" only happens from the IDE, that's why.
-- registers a `checkQuint` task (every `Test` task depends on it) that fails the build if `quint`
-  isn't on `PATH`, and warns (without failing) if its version doesn't match
-  `quintKonnect.quintVersion` (default `"0.32.0"`).
-- registers `generateQuintTraces`, which runs `quint` once per driver into
-  `build/quint-konnect/traces/` before `test`, so `Test` tasks replay those files (cached when
+- registers a `checkQuint` task that fails the build if `quint` isn't on `PATH`, and warns
+  (without failing) if its version doesn't match `quintKonnect.quintVersion` (default `"0.32.0"`).
+  A `Test` task depends on it when the project has a `@QuintRun` or `@QuintTest` driver, or when
+  `generateTraces` is on. A project with no drivers does not.
+- registers `generateQuintTraces`, off unless `quintKonnect { generateTraces.set(true) }`. The
+  default runs `quint` at test time. With the flag on, the task runs `quint` once per driver into
+  `build/quint-konnect/traces/` before `test`, and those tests replay the files (cached when
   every driver's seed is pinned; the spec files, including `quintIrSpecs` and imports, are inputs,
   so a spec change reruns it);
 - registers `shrinkQuintTraces`, a `Test` task over `test`'s classes that reruns `quint` with the

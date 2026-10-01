@@ -49,9 +49,15 @@ Applying `io.github.mcbianconi.quint-konnect` to a Kotlin JVM module:
   relative `spec` (`@QuintRun`/`@QuintTest`) resolve against the Gradle project directory instead
   of the test JVM's working directory (only for test JVMs Gradle itself launches; an IDE test
   runner that bypasses Gradle still resolves against its own working directory);
-- registers a `checkQuint` task, that every `Test` task depends on, which fails the build if
-  `quint` isn't on `PATH` and warns (without failing) if its version doesn't match
-  `quintKonnect.quintVersion` (default `"0.32.0"`, matching CI's pin).
+- registers a `checkQuint` task, which fails the build if `quint` isn't on `PATH` and warns
+  (without failing) if its version doesn't match `quintKonnect.quintVersion` (default `"0.32.0"`,
+  matching CI's pin). A `Test` task depends on it when that task will run `quint` (the project
+  has a `@QuintRun` or `@QuintTest` driver, or `generateTraces` is on). A project with no drivers
+  does not.
+- registers `generateQuintTraces`, off unless `quintKonnect { generateTraces.set(true) }`. The
+  default runs `quint` at test time, so `--tests` starts it only for the drivers that run. With
+  the flag on, the task runs `quint` once per driver into `build/quint-konnect/traces/` before
+  `test`, and those tests replay the files.
 
 ```kotlin
 quintKonnect {
@@ -72,9 +78,9 @@ or override it with your own `tasks.test { testLogging { ... } }` below `plugins
 `quintVersion`'s standalone binary from quint's GitHub releases (macOS and Linux only, see
 [the decision record](docs/decisions/no-windows-support.md)) into
 `<gradleUserHome>/caches/quint-konnect/quint/<version>/<os-arch>/quint`, verifying its checksum
-when one is known for that version. Every `Test` task and `checkQuint` then depend on
-`downloadQuint` and use that executable instead of `quint` on `PATH`, so a fresh clone needs no
-Node/quint install. Leaving it at the default `false` keeps resolving `quint` from `PATH`, as
+when one is known for that version. `checkQuint`, and every `Test` task that will run `quint`,
+then depend on `downloadQuint` and use that executable instead of `quint` on `PATH`, so a fresh
+clone needs no Node/quint install. Leaving it at the default `false` keeps resolving `quint` from `PATH`, as
 before.
 
 `quint-konnect-core`'s API brings in `kotlinx-serialization-json` transitively, so you don't need

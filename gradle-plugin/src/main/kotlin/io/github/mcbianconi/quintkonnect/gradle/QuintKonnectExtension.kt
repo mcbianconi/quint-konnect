@@ -29,6 +29,11 @@ public abstract class QuintKonnectExtension {
     // to add to it.
     public abstract val quintIrSpecs: ConfigurableFileCollection
 
+    // Opt-in: true makes every Test task that is not replaying depend on `generateQuintTraces`
+    // and replay its files. false (the default) leaves trace generation to test time, so a
+    // `--tests` filter starts quint only for the drivers that run (qk-blt0).
+    public abstract val generateTraces: Property<Boolean>
+
     // Opt-in: true makes every KSP task depend on `quintIr` and passes its output to the
     // processor, which then reports a @QuintAction name/parameter not found in the spec, a
     // parameter type that clearly doesn't match its nondet's, and a spec action reachable at

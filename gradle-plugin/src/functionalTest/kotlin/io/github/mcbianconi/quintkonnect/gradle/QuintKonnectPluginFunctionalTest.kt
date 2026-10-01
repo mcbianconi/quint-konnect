@@ -30,7 +30,7 @@ class QuintKonnectPluginFunctionalTest {
     }
 
     @Test
-    fun `applies KSP, wires dependencies and depends every Test task on checkQuint`() {
+    fun `applies KSP and wires dependencies without quint for a project that has no drivers`() {
         buildFile.writeText(
             """
             plugins {
@@ -47,9 +47,12 @@ class QuintKonnectPluginFunctionalTest {
                     val testTask = tasks.named("test").get()
                     val dependsOnCheckQuint = testTask.taskDependencies.getDependencies(testTask)
                         .any { it.name == "checkQuint" }
+                    val dependsOnGenerate = testTask.taskDependencies.getDependencies(testTask)
+                        .any { it.name == "generateQuintTraces" }
                     println("kspTest=${'$'}kspTest")
                     println("testImplementation=${'$'}testImplementation")
                     println("dependsOnCheckQuint=${'$'}dependsOnCheckQuint")
+                    println("dependsOnGenerateQuintTraces=${'$'}dependsOnGenerate")
                 }
             }
             """.trimIndent(),
@@ -59,8 +62,41 @@ class QuintKonnectPluginFunctionalTest {
 
         assertTrue(result.output.contains("kspTest=io.github.mcbianconi:quint-konnect-ksp:"))
         assertTrue(result.output.contains("testImplementation=io.github.mcbianconi:quint-konnect-core:"))
-        assertTrue(result.output.contains("dependsOnCheckQuint=true"))
+        assertTrue(result.output.contains("dependsOnCheckQuint=false"))
+        assertTrue(result.output.contains("dependsOnGenerateQuintTraces=false"))
         assertEquals(TaskOutcome.SUCCESS, result.task(":printQuintKonnectDiagnostics")?.outcome)
+    }
+
+    @Test
+    fun `a driver source depends test on checkQuint and not on generateQuintTraces`() {
+        File(projectDir, "src/test/kotlin/SampleDriver.kt").apply {
+            parentFile.mkdirs()
+            writeText("@QuintRun(spec = \"s.qnt\")\nclass SampleDriver\n")
+        }
+        buildFile.writeText(diagnosticsBuild())
+
+        val result = runner("printQuintKonnectDiagnostics").build()
+
+        assertTrue(result.output.contains("dependsOnCheckQuint=true"))
+        assertTrue(result.output.contains("dependsOnGenerateQuintTraces=false"))
+    }
+
+    @Test
+    fun `generateTraces opts test into generateQuintTraces`() {
+        buildFile.writeText(
+            diagnosticsBuild(
+                """
+                quintKonnect {
+                    generateTraces.set(true)
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val result = runner("printQuintKonnectDiagnostics").build()
+
+        assertTrue(result.output.contains("dependsOnCheckQuint=true"))
+        assertTrue(result.output.contains("dependsOnGenerateQuintTraces=true"))
     }
 
     @Test
@@ -451,6 +487,28 @@ class QuintKonnectPluginFunctionalTest {
 
         assertTrue(result.output.contains("-Dquintkonnect.parallelism=4"))
     }
+
+    private fun diagnosticsBuild(extra: String = ""): String =
+        """
+        plugins {
+            id("org.jetbrains.kotlin.jvm") version "$fixtureKotlinVersion"
+            id("io.github.mcbianconi.quint-konnect")
+        }
+
+        $extra
+
+        tasks.register("printQuintKonnectDiagnostics") {
+            doLast {
+                val testTask = tasks.named("test").get()
+                val dependsOnCheckQuint = testTask.taskDependencies.getDependencies(testTask)
+                    .any { it.name == "checkQuint" }
+                val dependsOnGenerate = testTask.taskDependencies.getDependencies(testTask)
+                    .any { it.name == "generateQuintTraces" }
+                println("dependsOnCheckQuint=${'$'}dependsOnCheckQuint")
+                println("dependsOnGenerateQuintTraces=${'$'}dependsOnGenerate")
+            }
+        }
+        """.trimIndent()
 
     private fun runner(vararg args: String): GradleRunner =
         GradleRunner.create()

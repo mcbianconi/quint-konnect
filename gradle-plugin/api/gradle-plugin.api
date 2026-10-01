@@ -49,6 +49,7 @@ public abstract class io/github/mcbianconi/quintkonnect/gradle/QuintKonnectExten
 	public fun <init> ()V
 	public abstract fun getConfigureTestLogging ()Lorg/gradle/api/provider/Property;
 	public abstract fun getDownloadQuint ()Lorg/gradle/api/provider/Property;
+	public abstract fun getGenerateTraces ()Lorg/gradle/api/provider/Property;
 	public abstract fun getQuintIrSpecs ()Lorg/gradle/api/file/ConfigurableFileCollection;
 	public abstract fun getQuintVersion ()Lorg/gradle/api/provider/Property;
 	public abstract fun getReadSpecIr ()Lorg/gradle/api/provider/Property;
