@@ -281,7 +281,7 @@ Debugging notes:
   against. Generated `@TestFactory` methods carry
   `@Execution(ExecutionMode.CONCURRENT)`, so their per-trace dynamic tests run concurrently as
   soon as `junit.jupiter.execution.parallel.enabled=true` is set — no other JUnit configuration
-  needed, and it's a no-op otherwise (see the README's "Running traces in parallel").
+  needed, and it's a no-op otherwise (see the README's "Run traces in parallel").
 - `@QuintRun(invariants = ["inv"])` passes invariants to `quint run --invariants`; a violation
   fails the test naming the invariant, the seed and the violating trace.
 - `spec` and `main` are fixed at compile time. `maxSamples`, `maxSteps`, `seed` and verbosity

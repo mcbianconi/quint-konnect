@@ -26,7 +26,7 @@ private val zeroTracesMessage =
 // Set by the quintkonnect Gradle plugin's Test tasks (QuintKonnectPlugin.kt) from the
 // `-Pquint.parallelism` Gradle property. Only affects runTest's own thread pool below;
 // traceReplays' per-trace dynamic tests parallelize through JUnit's own dynamic test execution
-// instead (see README.md's "Running traces in parallel" section).
+// instead (see README.md's "Run traces in parallel" section).
 internal const val PARALLELISM_PROPERTY: String = "quintkonnect.parallelism"
 
 internal fun resolveParallelism(override: String? = System.getProperty(PARALLELISM_PROPERTY)): Int =

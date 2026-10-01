@@ -1,6 +1,4 @@
-# Project Instructions for AI Agents
-
-This file provides instructions and context for AI coding agents working on this project.
+# Project instructions
 
 <!-- BEGIN TBD INTEGRATION format=f08 surface=agents-md -->
 ## tbd
@@ -20,197 +18,65 @@ actions rather than telling them to run commands.
 
 <!-- END TBD INTEGRATION -->
 
-## Build & Test
+## Commands
 
-Requires JDK 21 and `quint` in `PATH` (CI pins `@informalsystems/quint@0.32.0`, see the
-comment on that line in `.github/workflows/ci.yml`). A consumer project can instead set
-`quintKonnect { downloadQuint.set(true) }` to have the Gradle plugin download the pinned version
-itself (README.md's "Downloading quint instead of installing it" section); `gradle-plugin`'s own
-`functionalTest` exercises that path against a local `file://` fixture, not a real download.
+This repository's build needs JDK 21 and `quint` 0.32.0 on `PATH`. CI pins `@informalsystems/quint@0.32.0` in `.github/workflows/ci.yml`. A consumer project can set `quintKonnect.downloadQuint` instead of installing `quint`. The plugin's functional test points that download at a local `file://` fixture.
 
-This repo's own tests run on JUnit 6.1.3 (`gradle/libs.versions.toml`'s `junit` version). The
-`gradle-plugin` doesn't add a JUnit dependency itself (see its section below) — a consumer picks
-their own JUnit Jupiter version. The generated JUnit adapter classes only call `@TestFactory` and
-`DynamicTest.dynamicTest(String, Executable)`, unchanged from JUnit Jupiter 5.0 through 6.x, so a
-consumer can stay on JUnit 5 or move to JUnit 6 independently of this project's own version; see
-README.md's "Supported JUnit versions" section.
+`./gradlew build` builds the root modules. It does not build `example`. `example` is a separate build. Run `./gradlew -p example build`.
 
-```bash
-./gradlew :annotations:build         # Build annotation declarations
-./gradlew :itf:test                  # Run ITF parsing/decoding unit tests
-./gradlew :core:test                 # Run core unit tests (no quint CLI required)
-./gradlew :ksp:build                 # Build KSP processor
-./gradlew :ksp:test                  # Run KSP processor tests (kotlin-compile-testing + KSP2, no quint CLI required)
-./gradlew :gradle-plugin:test         # Run the Gradle plugin's unit tests (ProjectBuilder, no quint CLI required)
-./gradlew :gradle-plugin:functionalTest # Run its TestKit functional tests (requires quint in PATH: one test asserts checkQuint's real-mismatch warning)
-./gradlew -p example build           # Build example (separate build applying the plugin) + run its tests (requires quint in PATH)
-./gradlew :integration-tests:test    # Run regression tests against real quint (requires quint in PATH)
-./gradlew build                      # Build all modules (not example, see below)
-```
+These tasks need `quint` on `PATH`.
 
-Run a single test with `--tests`, e.g. `./gradlew :core:test --tests TraceGeneratorTest`.
-`QUINT_VERBOSE=1`/`2`, `QUINT_SEED=<hex>` and `QUINT_COLOR=always|never` control logging,
-reproducibility and colours (see README.md's Environment variables section).
+- `./gradlew :gradle-plugin:functionalTest`. One test asserts the real `checkQuint` version warning.
+- `./gradlew :integration-tests:test`
+- `./gradlew -p example build`
 
-A project applying the Gradle plugin can also override `@QuintRun`/`@QuintTest`'s `maxSamples`,
-`maxSteps` and `seed`, plus the console listener's verbosity, per invocation (no recompile) with
-`-Pquint.maxSamples=<int>`, `-Pquint.maxSteps=<int>`, `-Pquint.seed=<hex>` and
-`-Pquint.verbose=0|1|2` — see README.md's "Runtime overrides for PR vs nightly CI profiles"
-section for the full precedence and the `quintkonnect.*` system properties they map to.
-`-Pquint.replay=<path>` replays a saved `.itf.json` trace instead of generating new ones (no
-`quint` installation needed; see README.md's "Replaying a saved trace"), and
-`-Pquint.parallelism=<int>` runs `Runner.runTest`'s traces on a thread pool of that size (see
-README.md's "Running traces in parallel"; generated tests parallelize through JUnit's own dynamic
-test execution instead).
+`:core:test`, `:ksp:test`, `:itf:test`, and `:gradle-plugin:test` do not. `:ksp:test` uses kotlin-compile-testing. `:gradle-plugin:test` uses ProjectBuilder.
 
-`annotations`, `itf`, `core`, `ksp` and `gradle-plugin` (not `example` or `integration-tests`)
-build with Kotlin's explicit API mode (`quintkonnect.library` convention plugin in `build-logic/`): every public
-declaration needs an explicit `public`/`internal`/`private` modifier, and each module
-keeps a reference ABI dump at `<module>/api/<module>.api`, checked by `checkKotlinAbi`
-(runs as part of `check`/`build`). After a deliberate public API change in one of those
-modules, regenerate its dump with `./gradlew :<module>:updateKotlinAbi` (or
-`./gradlew updateKotlinAbi` for all of them) and commit the updated `.api` file.
-Reified inline functions (`NondetPicks.decode`/`decodeOrNull`, `ItfValue.decode()`) don't
-appear in the ABI dump, so `checkKotlinAbi` doesn't guard their signatures; review those
-by hand.
+Run one test with `--tests`, for example `./gradlew :core:test --tests TraceGeneratorTest`.
 
-## Formatting (ktlint)
+`QUINT_VERBOSE` is `0`, `1`, or `2`. `QUINT_SEED` fixes the seed. `QUINT_COLOR` is `always` or `never`.
 
-Kotlin sources and `*.gradle.kts` scripts are formatted with ktlint, run through Spotless
-(`quintkonnect.ktlint` convention plugin in `build-logic/`, versions in
-`gradle/libs.versions.toml`). It covers each module's `src/` and build script plus the root
-scripts; `build-logic/` and `example/` are separate builds, so the root project lints their files.
-Generated sources under `build/` aren't checked.
+These Gradle properties override one test run without a recompile: `-Pquint.maxSamples`, `-Pquint.maxSteps`, `-Pquint.seed`, `-Pquint.verbose` (`0`, `1`, or `2`), and `-Pquint.replay=<path>`. Seed order is `-Pquint.seed`, then a non-empty annotation `seed`, then `QUINT_SEED`, then a random seed. The system-property names and the rest of the precedence are in README.md, under "Override a run from Gradle".
+
+`-Pquint.parallelism` changes only `Runner.runTest`. Generated tests do not read it. They parallelize through JUnit. See README.md, "Run traces in parallel".
+
+`-Pquint.replay` does not run `quint` at test time. When `readSpecIr` is true, `quintIr` still runs. See `docs/decisions/replay-needs-quint-with-read-spec-ir.md`.
+
+`generateTraces` defaults to false. Quint then runs during the test, so `--tests` starts it only for the drivers that run. A `Test` task depends on `checkQuint` only when that task will run `quint`.
+
+Format with Spotless, not a ktlint Gradle plugin.
 
 ```bash
-./gradlew spotlessApply                     # Format every covered file in place
-./gradlew spotlessCheck                     # Check only; part of `check`, so `build` and CI fail on unformatted code
-./gradlew spotlessApply -PspotlessIdeHook=<absolute path>  # Format one file, leaving everything else alone
-./gradlew spotlessInstallGitPrePushHook     # Once per clone: run spotlessCheck before each push
+./gradlew spotlessApply -PspotlessIdeHook=<absolute path>
+./gradlew spotlessCheck
 ```
 
-Use the single-file form when other work is in progress in the same checkout (parallel agents in
-one GitButler workspace), since plain `spotlessApply` rewrites their uncommitted files too.
+The first command formats one file. Plain `spotlessApply` rewrites every uncommitted Kotlin file in the checkout. Use the single-file form when other agents share the GitButler workspace.
 
-Style settings live in `.editorconfig` (`intellij_idea` code style, `function-signature` rule
-disabled); its comments say why, and what to run after editing it so the change takes effect.
+`but commit` and `but land` do not run git hooks. `spotlessCheck` runs on `git push`, `but push`, and `but pr new`. A violation runs `spotlessApply` and fails the push. `/ship-it` runs `build` before it lands.
 
-The pre-push hook (`.git/hooks/pre-push`; the installer appends to an existing hook) runs
-`spotlessCheck`, and on a violation runs `spotlessApply` and fails the push, leaving the fixes in
-the working tree to commit before pushing again. It runs on `git push`, `but push` and
-`but pr new`. GitButler's `but commit` and `but land` run no git hooks, so under GitButler the
-check happens on push, and `/ship-it` relies on the `build` it runs before landing.
+## Landmines
+
+- `@QuintTest` traces have no `mbt::*` variables. Set `DriverConfig.nondetPath`. See `docs/decisions/quint-test-needs-nondet-path.md`.
+- `annotations`, `itf`, `core`, `ksp`, and `gradle-plugin` keep an ABI dump at `<module>/api/<module>.api`. `checkKotlinAbi` runs as part of `check`. After a public API change, run `./gradlew :<module>:updateKotlinAbi` and commit the dump. `./gradlew updateKotlinAbi` updates every module. Reified inline functions are absent from the dump: `NondetPicks.decode`, `NondetPicks.decodeOrNull`, and `ItfValue.decode`. Review those signatures by hand. A new public class is an API change.
+- This project does not target Windows. See `docs/decisions/no-windows-support.md`.
+- The Gradle plugin publishes to Maven Central, not the Gradle Plugin Portal. See `docs/decisions/gradle-plugin-distribution.md`.
+- The plugin adds no JUnit dependency. The generated adapter calls `@TestFactory` and `DynamicTest.dynamicTest` only.
 
 ## Releasing
 
-`annotations`, `itf`, `core`, `ksp` and `gradle-plugin` publish to Maven Central under
-`io.github.mcbianconi` (`quintkonnect.publish` convention plugin in `build-logic/`, the
-vanniktech gradle-maven-publish-plugin); `example` and `integration-tests` are not
-published. `gradle-plugin` also publishes its plugin marker artifact (`java-gradle-plugin`),
-not to the Gradle Plugin Portal (`docs/decisions/gradle-plugin-distribution.md`).
-`.github/workflows/release.yml`
-triggers on pushing a tag matching `v*`, runs `./gradlew publishAndReleaseToMavenCentral`,
-generates categorized release notes from conventional commits via `git-cliff` (`cliff.toml`),
-and creates the GitHub Release with `gh release create --notes-file`.
+`annotations`, `itf`, `core`, `ksp`, and `gradle-plugin` publish under `io.github.mcbianconi`. `example` and `integration-tests` do not.
 
-To release: bump `version` in
-`build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts`, commit, then push a tag
-`v<that version>` (e.g. `v0.1.0`). The tag only triggers the workflow — it always publishes
-whatever version is currently set in that file, so pushing a tag without bumping the
-version re-uploads the existing version and Central rejects it as a duplicate. Keep the
-tag name matching the version anyway, for a readable history.
+`.github/workflows/release.yml` runs on a tag that matches `v*`. It publishes the `version` in `build-logic/src/main/kotlin/quintkonnect.kotlin-jvm.gradle.kts`. The tag does not select the version. A tag that does not match that file republishes the current version, and Maven Central rejects the duplicate. Bump the version, then push a tag `v<version>` with the same number.
 
-To test locally without publishing anywhere remote: `./gradlew publishToMavenLocal`.
-Signing is skipped unless `signingInMemoryKey` is set as a Gradle property, so this works
-without keys; check `~/.m2/repository/io/github/mcbianconi/` for the result.
+In that same commit, set `.claude-plugin/plugin.json` `version` to the library version. Update every remaining copy of the old version under `skills/quint-konnect/` and in README.md. Search those trees for the version you are replacing. See `docs/decisions/agent-skill-plugin.md`.
 
-`.claude-plugin/plugin.json`'s `version` must equal the library version and is bumped in the
-same commit (`docs/decisions/agent-skill-plugin.md`). Since `skills/quint-konnect/` and
-README.md now spell out `0.1.0` as literal coordinates rather than a `<VERSION>` placeholder,
-a version bump must also update every `0.1.0` under `skills/quint-konnect/` and in README.md
-(`grep -rn '0\.1\.0' skills/quint-konnect README.md` to find them), or the skill goes stale
-against the new release.
+`./gradlew publishToMavenLocal` publishes locally and does not sign unless `signingInMemoryKey` is set. The files are under `~/.m2/repository/io/github/mcbianconi/`.
 
-## Architecture Overview
+## Policy
 
-Six modules in the root build, in dependency order, plus the separate `example` build:
+The Quint-to-Kotlin type table is `skills/quint-konnect/references/types.md`. Do not copy it into another doc.
 
-- `annotations` — `@QuintRun`, `@QuintTest`, `@QuintAction` declarations only. No runtime
-  dependency, so it stays on a driver's compile classpath without pulling in `core`.
-- `itf` — ITF parsing and decoding (`ItfValue`, `ItfTrace`/`parseTrace`,
-  `ItfValueSerializer`, `ItfValue.decode`). `ItfValue.decode` runs an internal kotlinx
-  `Decoder` over the `ItfValue` tree.
-- `core` — the runtime: `quint` CLI invocation and trace generation (`trace/`, behind the
-  injectable `TraceSource`), step extraction (`Step.kt`), nondet pick decoding (`nondet/`),
-  state comparison (`State.kt`), and the replay loop (`ReplayRunner`, observed by a
-  `ReplayListener`; `listener/ConsoleReplayListener` is the default). Generated suites call
-  `ReplayRunner.traceReplays` to get one `TraceReplay` per trace; `Runner.runTest` is kept for
-  binary compatibility.
-- `ksp` — a KSP2 processor that reads `@QuintRun`/`@QuintTest`/`@QuintAction` on a driver
-  class and generates a runner-neutral `<Driver>QuintSuite` (core's `QuintSuite`), a JUnit Jupiter
-  adapter class delegating to it (skipped with `quintkonnect.adapter=none`), and a
-  `generatedStep()` dispatcher (`ksp/generators/`). `Driver.step`'s default implementation
-  (`core`) finds the generated dispatcher by class name, so a driver doesn't need to override
-  `step` itself. With spec IR (`quintkonnect.irDir`), it also generates `object <Module>Spec` of
-  `@Serializable` spec types (`generators/SpecTypesGenerator.kt`) and defers such a driver one
-  round so signatures that reference them resolve.
-- `gradle-plugin` — a Gradle plugin (`io.github.mcbianconi.quint-konnect`,
-  `QuintKonnectPlugin`) that, on a Kotlin JVM project, applies KSP, adds the `kspTest`/
-  `testImplementation` dependencies on `ksp`/`core`, wires the KSP-generated test source
-  directory, configures `Test` tasks (`useJUnitPlatform()`, the project-dir system property
-  `core`'s `RunConfig`/`TestConfig` resolve a relative `spec` against), and registers
-  `checkQuint` (a `Test` task depends on it when that task will run `quint`) to fail on a missing
-  `quint` and warn on a version mismatch against `quintKonnect.quintVersion`. It also configures `testLogging`
-  (opt out with `quintKonnect.configureTestLogging`) and registers `quintIr`, which runs
-  `quint typecheck --out` on `quintKonnect.quintIrSpecs` and, when `quintKonnect.readSpecIr`
-  is true, passes the IR directory to KSP as the `quintkonnect.irDir` option
-  (docs/decisions/quint-ir-source.md). It registers `generateQuintTraces`, off unless
-  `quintKonnect.generateTraces` is set, which runs quint once per driver into
-  `build/quint-konnect/traces/` for Test tasks to replay
-  (docs/decisions/generate-quint-traces-task.md), and `shrinkQuintTraces`, a Test task over
-  `test`'s classes that runs quint itself with `quintkonnect.shrink` set so `ReplayRunner`
-  reports the shortest failing trace (core's `trace/Shrink.kt`). Tested with `ProjectBuilder` (`test`)
-  and Gradle TestKit (`functionalTest`, applies the plugin to a fixture project via
-  `withPluginClasspath()`).
-- `example` — end-to-end examples: TicTacToe (state types generated from the spec's IR),
-  rock-paper-scissors, a buggy driver the tests expect to fail, and a `@QuintTest` counter. Not
-  part of the root build: its own `settings.gradle.kts` applies `gradle-plugin` with `readSpecIr`
-  like a user project, with `includeBuild("..")` plus `dependencySubstitution` standing in for the
-  Maven Central coordinates (`pluginManagement { includeBuild("..") }` would silently drop the
-  substitution). Run it with `./gradlew -p example build`.
-- `integration-tests` — unpublished regression tests against real quint that go through
-  `core`'s internals rather than what a user would write: exact shrink output, a saved-trace
-  replay via `ItfFileTraceSource`, an invariant violation through `Runner.runTest`, and the
-  escaped-names fixture (qk-gu38). Wires KSP and `core` as project dependencies (not through
-  `gradle-plugin`, to avoid a `publishToMavenLocal` dependency), sets the plugin's project-dir
-  system property by hand and mirrors `quintIr` with one `quint typecheck` task per spec.
+A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the Gradle plugin, or the `QUINT_SEED`, `QUINT_VERBOSE`, `QUINT_COLOR`, or `-Pquint.*` properties updates `skills/quint-konnect/` in the same change.
 
-Data flow: a Quint spec is run through the `quint` CLI (`quint run --mbt` or
-`quint test`) to produce ITF trace files; the default `TraceSource` (`TraceGenerator`)
-invokes the CLI and parses the output into `ItfTrace`/`ItfValue`; `ReplayRunner` replays
-each trace step against the driver (generated `generatedStep()` dispatches to the right
-`@QuintAction` method, decoding nondet picks into method parameters) and, when the driver
-provides a `TypedState`, compares implementation state against the spec's state
-(`State.check`) after each step. A step or state mismatch surfaces as an `AssertionError`
-naming the trace, step, action and nondet picks (see `ReplayRunner.kt`), and every
-`ReplayListener` (the console one included) is notified of the failure before it's thrown.
-Construct a `ReplayRunner` directly to plug in a custom `TraceSource` or `ReplayListener`;
-generated `<Driver>QuintSuite` objects call `ReplayRunner.traceReplays` and the JUnit adapter
-exposes their `TraceReplay`s as `@TestFactory fun traces(): List<DynamicTest>`; `Runner.runTest`
-stays for binary compatibility.
-
-`@QuintTest` needs `DriverConfig.nondetPath`, because `quint test` does not write the
-`mbt::*` variables (`docs/decisions/quint-test-needs-nondet-path.md`).
-
-## Conventions & Patterns
-
-See `skills/quint-konnect/references/types.md` for the Quint-to-Kotlin type mapping table and
-`docs/decisions/` for standing project decisions (license, platform support, ITF
-collection/Option/BigInt mapping, the `@QuintTest` nondet path requirement, `gradle-plugin`'s
-Maven-Central-only distribution).
-
-## Keeping the agent skill in sync
-
-A change to `annotations`, `Driver`, `TypedState`, `DriverConfig`, the Gradle plugin, or the
-`QUINT_SEED`/`QUINT_VERBOSE`/`QUINT_COLOR` env vars or Gradle properties must update
-`skills/quint-konnect/` in the same change.
+Add a file under `docs/decisions/` only when the decision is not already in the code, the tests, the KDoc, or another doc.

@@ -200,7 +200,7 @@ One PR per phase, through the normal CI. No release is involved: nothing publish
   that can't be confirmed, `functionalTest` stays at 1 fork.
 - Does `example` warrant the same treatment later? It would need its own `gradle.properties`.
   It also runs through the published-plugin path, so a JUnit config there would dogfood the
-  README's "Running traces in parallel" instructions.
+  README's "Run traces in parallel" instructions.
 
 ## Results
 

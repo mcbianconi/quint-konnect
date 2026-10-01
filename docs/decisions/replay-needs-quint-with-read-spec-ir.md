@@ -4,7 +4,7 @@ date: 2026-09-27
 ---
 
 `-Pquint.replay` skips `checkQuint`/`downloadQuint` on the Test task itself (README.md's
-"Replaying a saved trace"), but `QuintIrWiring.kt`'s `wireQuintIr` wires `quintIr` into every KSP
+"Replay a saved trace"), but `QuintIrWiring.kt`'s `wireQuintIr` wires `quintIr` into every KSP
 task whenever `quintKonnect { readSpecIr.set(true) }`, regardless of `-Pquint.replay`. A replay run
 with `readSpecIr` on still needs `quint` installed (bead qk-sa74).
 
